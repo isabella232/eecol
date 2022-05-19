@@ -477,7 +477,7 @@ export function makeLinksRelative(main) {
       try {
         const url = new URL(a.href);
         const relative = hosts.some((host) => url.hostname.includes(host));
-        if (relative) a.href = `${url.pathname}${url.search}${url.hash}`;
+        if (relative) a.href = `${url.pathname.split('.')[0]}${url.search}${url.hash}`;
       } catch (e) {
         // something went wrong
         // eslint-disable-next-line no-console
@@ -622,7 +622,7 @@ initHlx();
 
 const LCP_BLOCKS = ['hero']; // add your LCP blocks to the list
 const RUM_GENERATION = 'project-1'; // add your RUM generation information here
-const PRODUCTION_DOMAINS = [];
+const PRODUCTION_DOMAINS = [ 'poc-staging.eecol.com' ];
 
 sampleRUM('top');
 window.addEventListener('load', () => sampleRUM('load'));

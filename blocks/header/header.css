@@ -157,7 +157,7 @@ header nav[aria-expanded='true'] .nav-tools li {
 
 /* desktop nav styles */
 @media (min-width: 1000px) {
-  header nav {
+    header nav {
     display: flex;
     justify-content: space-between;
     height: var(--nav-height);
@@ -257,4 +257,9 @@ header nav[aria-expanded='true'] .nav-tools li {
     padding: 16px;
     box-shadow: 0 0 5px var(text-color);
   }
+
+  header nav .nav-sections > ul > li[aria-expanded='true'] > ul > li > ul {
+    display: none;
+  }
+
 }
