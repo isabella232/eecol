@@ -1,4 +1,4 @@
-import { readBlockConfig, decorateIcons, makeLinksRelative } from '../../scripts/scripts.js';
+import { readBlockConfig, decorateIcons, makeLinksRelative, fetchPlaceholders } from '../../scripts/scripts.js';
 
 /**
  * collapses all open nav sections
@@ -20,6 +20,8 @@ export default async function decorate(block) {
   const cfg = readBlockConfig(block);
   block.textContent = '';
 
+  const ph = await fetchPlaceholders('/ca/en');
+
   // fetch nav content
   const navPath = cfg.nav || '/nav';
   const resp = await fetch(`${navPath}.plain.html`);
@@ -32,13 +34,13 @@ export default async function decorate(block) {
     decorateIcons(nav);
     makeLinksRelative(nav);
 
-    const classes = ['brand', 'sections', 'tools'];
+    const classes = ['topbar', 'brand', 'sections', 'search', 'tools'];
     classes.forEach((e, j) => {
       const section = nav.children[j];
       if (section) section.classList.add(`nav-${e}`);
     });
 
-    const navSections = [...nav.children][1];
+    const navSections = [...nav.children][2];
     if (navSections) {
       navSections.querySelectorAll(':scope > ul > li').forEach((navSection) => {
         if (navSection.querySelector('ul')) navSection.classList.add('nav-drop');
@@ -49,6 +51,16 @@ export default async function decorate(block) {
         });
       });
     }
+
+    nav.querySelectorAll('.nav-tools .icon').forEach((icon) => {
+      icon.closest('p').classList.add(`nav-tools-${icon.className.split('icon-')[1]}`);
+    });
+
+    const search = nav.querySelector('.nav-search');
+    const input = document.createElement('input');
+    input.id = 'nav-tools-search-input';
+    input.setAttribute('placeholder', ph.searchPlaceholder); 
+    search.prepend(input);
 
     // hamburger for mobile
     const hamburger = document.createElement('div');
