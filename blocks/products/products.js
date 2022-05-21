@@ -3,6 +3,7 @@ import {
   lookupPages,
   createOptimizedPicture,
   readBlockConfig,
+  toCamelCase,
 } from '../../scripts/scripts.js';
 
 export function createProductCard(product, prefix, ph) {
@@ -107,6 +108,7 @@ export default async function decorate(block) {
 
   const createFilterConfig = () => {
     const filterConfig = { ...config };
+    delete filterConfig.facets;
     getSelectedFilters().forEach((checked) => {
       const facetKey = checked.name;
       const facetValue = checked.value;
@@ -195,7 +197,10 @@ export default async function decorate(block) {
   const getPrice = (string) => +string.substr(1);
 
   const runSearch = async (filterConfig = config) => {
-    const facets = { manufacturer: {}, price: {} };
+    const facets = {};
+    config.facets.split(',').forEach((f) => {
+      facets[toCamelCase(f.trim())] = {};
+    });
     const sorts = {
       name: (a, b) => a.title.localeCompare(b.title),
       'price-asc': (a, b) => getPrice(a.price) - getPrice(b.price),
@@ -218,5 +223,5 @@ export default async function decorate(block) {
     fulltextElement.style.display = 'none';
   }
 
-  runSearch(config);
+  runSearch(createFilterConfig(config));
 }
