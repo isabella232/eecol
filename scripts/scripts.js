@@ -622,7 +622,7 @@ initHlx();
 
 const LCP_BLOCKS = ['hero']; // add your LCP blocks to the list
 const RUM_GENERATION = 'project-1'; // add your RUM generation information here
-const PRODUCTION_DOMAINS = [ 'poc-staging.eecol.com' ];
+const PRODUCTION_DOMAINS = ['poc-staging.eecol.com'];
 
 sampleRUM('top');
 window.addEventListener('load', () => sampleRUM('load'));
@@ -724,4 +724,76 @@ function loadDelayed() {
   // eslint-disable-next-line import/no-cycle
   window.setTimeout(() => import('./delayed.js'), 3000);
   // load anything that can be postponed to the latest here
+}
+
+export async function lookupPages(config, facets = {}) {
+  /* load index */
+  if (!window.pageIndex) {
+    const resp = await fetch('/query-index.json');
+    const json = await resp.json();
+    const lookup = {};
+    json.data.forEach((row) => {
+      lookup[row.path] = row;
+    });
+    window.pageIndex = { data: json.data, lookup };
+  }
+
+  /* simple array lookup */
+  if (Array.isArray(config)) {
+    const pathnames = config;
+    return (pathnames.map((path) => window.pageIndex.lookup[path]).filter((e) => e));
+  }
+
+  /* setup config */
+  const facetKeys = Object.keys(facets);
+  const keys = Object.keys(config);
+  const tokens = {};
+  keys.forEach((key) => {
+    tokens[key] = config[key].split(',').map((t) => t.trim());
+  });
+
+  /* filter */
+  const results = window.pageIndex.data.filter((row) => {
+    const filterMatches = {};
+    let matchedAll = keys.every((key) => {
+      let matched = false;
+      if (row[key]) {
+        const rowValues = row[key].split(',').map((t) => t.trim());
+        matched = tokens[key].some((t) => rowValues.includes(t));
+      }
+      if (key === 'fulltext') {
+        const fulltext = row.title.toLowerCase();
+        matched = fulltext.includes(config.fulltext.toLowerCase());
+      }
+      filterMatches[key] = matched;
+      return matched;
+    });
+
+    const isProduct = () => !!row.price;
+
+    if (!isProduct()) matchedAll = false;
+
+    /* facets */
+    facetKeys.forEach((facetKey) => {
+      let includeInFacet = true;
+      Object.keys(filterMatches).forEach((filterKey) => {
+        if (filterKey !== facetKey && !filterMatches[filterKey]) includeInFacet = false;
+      });
+      if (includeInFacet) {
+        if (row[facetKey]) {
+          const rowValues = row[facetKey].split(',').map((t) => t.trim());
+          rowValues.forEach((val) => {
+            if (facets[facetKey][val]) {
+              facets[facetKey][val] += 1;
+            } else {
+              facets[facetKey][val] = 1;
+            }
+          });
+        }
+      }
+    });
+    console.log(matchedAll);
+    return (matchedAll);
+  });
+  return results;
 }
