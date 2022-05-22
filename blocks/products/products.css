@@ -1,8 +1,4 @@
 
-main .products-wrapper {
-    max-width: unset;
-}
-
 main .products-controls {
     text-align: center;
 }
@@ -24,7 +20,7 @@ main .products-facets  {
 }
 
 main .products-facets > div {
-    padding: 20px;
+    padding: 0;
     overflow-y: scroll;
     width: 360px;
     background-color: var(--background-color);
@@ -179,25 +175,47 @@ main .products-sortby ul.visible {
 
 
 main .products-results {
-    display: flex;
-    flex-wrap: wrap;
     font-size: var(--body-font-size-m);
 }
 
 main .products-results > div {
-    width: 50%;
-    position: relative;
+    display: flex;
+    border: 1px solid var(--highlight-background-color);
+    margin: 10px 0;
+    box-shadow: 0 2px 5px 0 var(--overlay-background-color);
 }
 
-main .products-results a.button:any-link {
+main .products-results > div > a {
+    flex: 0 0 120px;
+    line-height: 0;
+    margin-right: 16px;
+}
+
+main .products-results .products-card-detail {
+    flex: 1;
+}
+
+main .products-results .products-card-details p {
+    margin: 0;
     font-size: var(--body-font-size-s);
+}
+
+main .products-results img {
+    height: 150px;
+    width: 150px;
+    object-fit: contain;
+}
+
+
+main .products-results a.button:any-link {
+    font-size: var(--body-font-size-xs);
     padding: 4px 15px;
     text-transform: uppercase;
 }
 
 
 main .products-results h4 {
-    font-size: var(--body-font-size-m);
+    font-size: var(--body-font-size-s);
     font-family: var(--body-font-family);
 }
 
@@ -250,7 +268,8 @@ main .products-results .highlight {
 
     main .products {
         display: grid;
-        grid-template-areas: '- controls sortby' 'facets results results';
+        grid-template-areas: 'controls controls sortby' 'facets results results';
+        grid-template-columns: 376px 1fr;
     }
 
     main .products-sortby {
@@ -284,16 +303,4 @@ main .products-results .highlight {
         min-width: 190px;
     }    
 }
-
-main .products-results img {
-    aspect-ratio: 400 / 496;
-    width: 100%;
-}
-
-@media (min-width: 1200px) {
-    main .products-results > div {
-        width: calc(100%/3);
-        }
-}
-
 

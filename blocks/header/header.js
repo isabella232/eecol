@@ -1,4 +1,10 @@
-import { readBlockConfig, decorateIcons, makeLinksRelative, fetchPlaceholders } from '../../scripts/scripts.js';
+import {
+  readBlockConfig,
+  decorateIcons,
+  makeLinksRelative,
+  fetchPlaceholders,
+  lookupPages,
+} from '../../scripts/scripts.js';
 
 /**
  * collapses all open nav sections
@@ -57,10 +63,60 @@ export default async function decorate(block) {
     });
 
     const search = nav.querySelector('.nav-search');
+    const suggestions = document.createElement('div');
+    suggestions.className = 'nav-search-suggestions';
+    search.prepend(suggestions);
     const input = document.createElement('input');
-    input.id = 'nav-tools-search-input';
-    input.setAttribute('placeholder', ph.searchPlaceholder); 
+    input.id = 'nav-search-input';
+    input.setAttribute('list', 'nav-search-suggestion');
+    input.setAttribute('placeholder', ph.searchPlaceholder);
     search.prepend(input);
+
+    const MAX_SUGGESTIONS = 10;
+
+    const addHighlight = (text, highlight) => {
+      if (highlight) {
+        const offset = text.toLowerCase().indexOf(highlight.toLowerCase());
+        if (offset >= 0) {
+          return `${text.substr(0, offset)}<span class="highlight">${text.substr(offset, highlight.length)}</span>${text.substr(offset + highlight.length)}`;
+        }
+      }
+      return text;
+    };
+
+    const filterNav = (query) => {
+      const q = query.toLowerCase();
+      const results = [...nav.querySelectorAll('a')].filter((e) => e.textContent.toLowerCase().includes(q)).slice(0, MAX_SUGGESTIONS);
+      return results.map((e) => ({ title: e.textContent, href: e.href }));
+    };
+
+    const fillSuggestions = async () => {
+      suggestions.textContent = '';
+      const query = input.value;
+      const results = filterNav(query);
+      if (results.length < MAX_SUGGESTIONS) {
+        const products = await lookupPages({ fulltext: query });
+        while (results.length < MAX_SUGGESTIONS && products.length) {
+          const res = products.shift();
+          results.push({ title: res.title, href: res.path });
+        }
+      }
+      results.forEach((r) => {
+        const option = document.createElement('div');
+        option.innerHTML = `<a href="${r.href}">${addHighlight(r.title, query)}</a>`;
+        suggestions.append(option);
+      });
+    };
+
+    fillSuggestions();
+    input.addEventListener('input', fillSuggestions);
+    input.addEventListener('focus', () => {
+      setTimeout(() => suggestions.classList.add('visible'), 300);
+    });
+
+    input.addEventListener('blur', () => {
+      setTimeout(() => suggestions.classList.remove('visible'), 300);
+    });
 
     // hamburger for mobile
     const hamburger = document.createElement('div');

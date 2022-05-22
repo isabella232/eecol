@@ -194,8 +194,9 @@ header .nav-search {
   display: flex;
   align-items: center;
   height: 53px;
-  box-sizing: border-box;
   width: 100%;
+  box-sizing: border-box;
+  position: relative;
 }
 
 header .nav-search input {
@@ -203,7 +204,37 @@ header .nav-search input {
   background-color: var(--background-color); 
   box-sizing: border-box;
   width: 100%;
+  border-radius: 5px;
+  border: 2px solid var(--text-color);
 }
+
+header .nav-search-suggestions {
+  position: absolute;
+  background-color: var(--overlay-background-color);
+  width: calc(100% - 42px);
+  top: 47px;
+  border: 1px solid var(--highlight-background-color);
+  box-shadow: 0 30px 60px -40px rgb(31 38 23 / 50%);
+  display: none;
+}
+
+header .nav-search-suggestions .highlight {
+  background-color: var(--link-color);
+  font-weight: 600;
+  color: var(--background-color);
+}
+
+
+header .nav-search .nav-search-suggestions.visible {
+  display: unset;
+}
+
+header .nav-search-suggestions > div {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--highlight-background-color);
+  font-size: var(--body-font-size-xs)
+}
+
 
 header nav .nav-search p {
   display: inline;
@@ -360,4 +391,9 @@ header nav[aria-expanded='true'] .nav-tools li {
   header .nav-tools .nav-tools-search {
     position: unset;
   }
+
+  header .nav-search-suggestions {
+    top: 53px;
+  }
+  
 }

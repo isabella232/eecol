@@ -792,8 +792,15 @@ export async function lookupPages(config, facets = {}) {
         }
       }
     });
-    console.log(matchedAll);
     return (matchedAll);
   });
   return results;
+}
+
+export function formatCurrency(amount, currency) {
+  const formatter = new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency,
+  });
+  return (formatter.format(amount));
 }

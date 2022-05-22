@@ -4,15 +4,17 @@ import {
   createOptimizedPicture,
   readBlockConfig,
   toCamelCase,
+  formatCurrency,
 } from '../../scripts/scripts.js';
 
 export function createProductCard(product, prefix, ph) {
   const card = document.createElement('div');
   card.className = `${prefix}-card`;
-  card.innerHTML = `
+  card.innerHTML = `<div class="${prefix}-card-details">
     <h4>${product.title}</h4>
-    <p>${product.price}</p>
-    <p><a class="button" href=${product.path}>${ph.addToCart}</a></p>`;
+    <p>${formatCurrency(product.price, ph.currency || 'USD')}</p>
+    <p><a class="button" href=${product.path}>${ph.addToCart}</a></p>
+    </div>`;
   const a = document.createElement('a');
   a.href = product.path;
   a.append(createOptimizedPicture(product.image, product.title, false, [{ width: 400 }]));
@@ -194,7 +196,7 @@ export default async function decorate(block) {
     });
   };
 
-  const getPrice = (string) => +string.substr(1);
+  const getPrice = (string) => +string;
 
   const runSearch = async (filterConfig = config) => {
     const facets = {};
