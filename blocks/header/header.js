@@ -52,15 +52,35 @@ export default async function decorate(block) {
 
     // ----< tripod's auth poc >-------------------
     // hack: get sign-in button
-    const btnSignIn = nav.children[0].children[1].querySelector('a');
-    btnSignIn.href = '';
+    const authNavi = nav.children[0].children[1];
+    while (authNavi.firstChild) {
+      authNavi.firstChild.remove();
+    }
     const account = await getCurrentAccount();
     if (account) {
-      btnSignIn.innerText = `Welcome ${account.name} | Sign out`;
-      btnSignIn.onclick = signOut;
+      authNavi.appendChild(document.createTextNode('Welcome '));
+      const btnProfile = document.createElement('a');
+      authNavi.appendChild(btnProfile);
+      btnProfile.innerText = account.name;
+      btnProfile.href = '/profile.html';
+      authNavi.appendChild(document.createTextNode(' | '));
+
+      const btnSignOut = document.createElement('a');
+      authNavi.appendChild(btnSignOut);
+      btnSignOut.innerText = 'Sign out';
+      btnSignOut.onclick = signOut;
     } else {
+      const btnSignIn = document.createElement('a');
+      authNavi.appendChild(btnSignIn);
+      btnSignIn.href = '';
       btnSignIn.innerText = 'Sign in';
       btnSignIn.onclick = signIn;
+      authNavi.appendChild(document.createTextNode(' or '));
+      const btnRegister = document.createElement('a');
+      authNavi.appendChild(btnRegister);
+      btnRegister.href = '/content/eecol/ca/en/register';
+      btnRegister.innerText = 'Register';
+      authNavi.appendChild(document.createTextNode(' CAD'));
     }
     // ----< eof tripod's auth poc >-------------------
 
