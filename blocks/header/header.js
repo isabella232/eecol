@@ -8,6 +8,8 @@ import {
   decorateBlock,
 } from '../../scripts/scripts.js';
 
+import { signIn } from '../../scripts/auth.js';
+
 /**
  * collapses all open nav sections
  * @param {Element} sections The container element
