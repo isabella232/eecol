@@ -68,12 +68,14 @@ export default async function decorate(block) {
       const btnSignOut = document.createElement('a');
       authNavi.appendChild(btnSignOut);
       btnSignOut.innerText = 'Sign out';
+      btnSignOut.style.cursor = 'pointer';
       btnSignOut.onclick = signOut;
     } else {
       const btnSignIn = document.createElement('a');
       authNavi.appendChild(btnSignIn);
       btnSignIn.innerText = 'Sign in';
       btnSignIn.onclick = signIn;
+      btnSignIn.style.cursor = 'pointer';
       authNavi.appendChild(document.createTextNode(' or '));
       const btnRegister = document.createElement('a');
       authNavi.appendChild(btnRegister);
