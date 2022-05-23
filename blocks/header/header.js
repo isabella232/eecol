@@ -4,6 +4,8 @@ import {
   makeLinksRelative,
   fetchPlaceholders,
   lookupPages,
+  loadBlock,
+  decorateBlock,
 } from '../../scripts/scripts.js';
 
 /**
@@ -131,5 +133,14 @@ export default async function decorate(block) {
     nav.setAttribute('aria-expanded', 'false');
     decorateIcons(nav);
     block.append(nav);
+
+    /* init cart */
+    const cartIcon = block.querySelector('.icon-cart');
+    const cart = document.createElement('div');
+    cartIcon.parentElement.append(cart);
+    cart.append(cartIcon);
+    cart.classList.add('cart');
+    decorateBlock(cart);
+    loadBlock(cart);
   }
 }

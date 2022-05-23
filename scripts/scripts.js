@@ -655,13 +655,29 @@ function loadFooter(footer) {
   loadBlock(footerBlock);
 }
 
+function buildProductBlock(main) {
+  const picture = main.querySelector('picture');
+  const h1 = main.querySelector('h1');
+
+  if (picture && h1) {
+    const section = document.createElement('div');
+    section.append(buildBlock('product', { elems: [h1, picture] }));
+    main.prepend(section);
+  }
+}
+
 /**
  * Builds all synthetic blocks in a container element.
  * @param {Element} main The container element
  */
 function buildAutoBlocks(main) {
   try {
-    buildHeroBlock(main);
+    const isProduct = !!getMetadata('manufacturer');
+    if (isProduct) {
+      buildProductBlock(main);
+    } else {
+      buildHeroBlock(main);
+    }
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('Auto Blocking failed', error);

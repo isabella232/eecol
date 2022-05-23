@@ -263,7 +263,7 @@ header nav[aria-expanded='true'] .nav-tools li {
     display: grid;
     grid-template: 'topbar topbar topbar' 'brand search tools' 'sections sections sections  ';
     justify-content: space-between;
-    grid-template-columns: 150px 1fr 80px;
+    grid-template-columns: 150px 1fr 112px;
 
   }
 
@@ -390,6 +390,10 @@ header nav[aria-expanded='true'] .nav-tools li {
 
   header .nav-tools .nav-tools-search {
     position: unset;
+  }
+
+  header .nav-tools {
+    padding-right: 32px;
   }
 
   header .nav-search-suggestions {
