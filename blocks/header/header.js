@@ -72,7 +72,6 @@ export default async function decorate(block) {
     } else {
       const btnSignIn = document.createElement('a');
       authNavi.appendChild(btnSignIn);
-      btnSignIn.href = '';
       btnSignIn.innerText = 'Sign in';
       btnSignIn.onclick = signIn;
       authNavi.appendChild(document.createTextNode(' or '));
