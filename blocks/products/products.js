@@ -225,5 +225,9 @@ export default async function decorate(block) {
     fulltextElement.style.display = 'none';
   }
 
+  const usp = new URLSearchParams(window.location.search);
+  if (usp.has('query')) {
+    fulltextElement.value = usp.get('query');
+  }
   runSearch(createFilterConfig(config));
 }

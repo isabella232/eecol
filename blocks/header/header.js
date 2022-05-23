@@ -112,6 +112,11 @@ export default async function decorate(block) {
 
     fillSuggestions();
     input.addEventListener('input', fillSuggestions);
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        window.location.href = `/ca/en/search?query=${input.value}`;
+      }
+    });
     input.addEventListener('focus', () => {
       setTimeout(() => suggestions.classList.add('visible'), 300);
     });
