@@ -1,10 +1,13 @@
 /* global msal */
 
+const { protocol, host } = new URL(window.location.href);
+const redirectUri = `${protocol}//${host}/login.html`;
+
 const msalConfig = {
   auth: {
     clientId: '83a36355-ad17-4ed0-8701-e99a3020f86a',
     authority: 'https://login.microsoftonline.com/common',
-    // redirectUri: 'http://localhost:3000/login.html',
+    redirectUri,
     navigateToLoginRequestUrl: true,
   },
   cache: {
@@ -46,34 +49,19 @@ const ms = new msal.PublicClientApplication(msalConfig);
 
 let username = '';
 
-export async function showWelcomeMessage(account) {
-  document.getElementById('info').innerText = JSON.stringify(account, null, 2);
-  document.getElementById('welcome').innerText = `Welcome: ${account.name} <${account.username}>`;
-  await showProfile();
-  await showProfilePicture();
-}
-
 async function selectAccount() {
   const currentAccounts = ms.getAllAccounts();
   if (currentAccounts.length === 0) {
-    return;
+    console.warn('no accounts?');
   } else if (currentAccounts.length > 1) {
     // Add your account choosing logic here
     console.warn('Multiple accounts detected.');
   } else if (currentAccounts.length === 1) {
     username = currentAccounts[0].username;
-    await showWelcomeMessage(currentAccounts[0]);
+    // await showWelcomeMessage(currentAccounts[0]);
+    return currentAccounts[0];
   }
-}
-
-async function handleResponse(response) {
-  console.log('response', response);
-  if (response !== null) {
-    username = response.account.username;
-    await showWelcomeMessage(response.account);
-  } else {
-    await selectAccount();
-  }
+  return null;
 }
 
 export function signIn() {
@@ -84,64 +72,49 @@ export async function signOut() {
   const logoutRequest = {
     account: ms.getAccountByUsername(username),
     postLogoutRedirectUri: msalConfig.auth.redirectUri,
-    onRedirectNavigate: (url) => {
-      // Return false if you would like to stop navigation after local logout
-      return false;
-    },
+    // Return false if you would like to stop navigation after local logout
+    onRedirectNavigate: () => false,
   };
   ms.logoutRedirect(logoutRequest);
 }
 
-export async function getTokenRedirect(request) {
+async function getTokenRedirect(request) {
   request.account = ms.getAccountByUsername(username);
-  return ms.acquireTokenSilent(request)
-    .catch(error => {
-      console.warn('silent token acquisition fails. acquiring token using redirect');
-      if (error instanceof msal.InteractionRequiredAuthError) {
-        // fallback to interaction when silent call fails
-        return ms.acquireTokenRedirect(request);
-      } else {
-        console.warn(error);
-      }
-    });
+  try {
+    return await ms.acquireTokenSilent(request);
+  } catch (e) {
+    console.warn('silent token acquisition fails. acquiring token using redirect');
+    if (e instanceof msal.InteractionRequiredAuthError) {
+      // fallback to interaction when silent call fails
+      return ms.acquireTokenRedirect(request);
+    }
+    console.warn(e);
+    return null;
+  }
 }
 
-async function showProfile() {
-  const { accessToken } = await getTokenRedirect(loginRequest);
-  const res = await fetch('https://graph.microsoft.com/v1.0/me/', {
-    headers: {
-      authorization: `Bearer ${accessToken}`,
-    },
-  });
-  console.log(res);
-  const json = await res.json();
-  console.log(json);
-  document.getElementById('profile').innerText = JSON.stringify(json, null, 2);
+export async function getToken() {
+  return getTokenRedirect(loginRequest);
 }
 
-async function showProfilePicture() {
-  const { accessToken } = await getTokenRedirect(loginRequest);
-  const res = await fetch('https://graph.microsoft.com/v1.0/me/photo/$value', {
-    headers: {
-      authorization: `Bearer ${accessToken}`,
-    },
-  });
-  const blobUrl = URL.createObjectURL(await res.blob());
-  document.getElementById('avatar')
-    .setAttribute('src', blobUrl);
+export async function getCurrentAccount() {
+  try {
+    const response = await ms.handleRedirectPromise();
+    if (response) {
+      console.log('handle redirect response -> ', response);
+      username = response.account.username;
+      return response.account;
+    }
+    return await selectAccount();
+  } catch (e) {
+    console.error(e);
+  }
+  return null;
 }
 
 ms.addEventCallback((message) => {
-  // Update UI or interact with EventMessage here
+  // console.log('event', message);
   if (message.eventType === msal.EventType.LOGOUT_SUCCESS) {
-    console.log(message.payload);
     window.location.reload();
   }
 });
-
-ms.handleRedirectPromise()
-  .then(handleResponse)
-  .catch((error) => {
-    console.error(error);
-  });
-

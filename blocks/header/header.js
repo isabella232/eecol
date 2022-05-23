@@ -8,7 +8,7 @@ import {
   decorateBlock,
 } from '../../scripts/scripts.js';
 
-import { signIn } from '../../scripts/auth.js';
+import { signIn, signOut, getCurrentAccount } from '../../scripts/auth.js';
 
 /**
  * collapses all open nav sections
@@ -49,6 +49,20 @@ export default async function decorate(block) {
       const section = nav.children[j];
       if (section) section.classList.add(`nav-${e}`);
     });
+
+    // ----< tripod's auth poc >-------------------
+    // hack: get sign-in button
+    const btnSignIn = nav.children[0].children[1].querySelector('a');
+    btnSignIn.href = '';
+    const account = await getCurrentAccount();
+    if (account) {
+      btnSignIn.innerText = `Welcome ${account.name} | Sign out`;
+      btnSignIn.onclick = signOut;
+    } else {
+      btnSignIn.innerText = 'Sign in';
+      btnSignIn.onclick = signIn;
+    }
+    // ----< eof tripod's auth poc >-------------------
 
     const navSections = [...nav.children][2];
     if (navSections) {

@@ -1,0 +1,61 @@
+<html>
+<head>
+    <script type="text/javascript" src="https://alcdn.msauth.net/browser/2.24.0/js/msal-browser.min.js"></script>
+</head>
+<body>
+
+<button id="login">login</button>
+<button id="logout">logout</button>
+<div id="welcome"></div>
+<img id="avatar">
+<div id="profile"></div>
+<div id="info"></div>
+
+<script type="module">
+  import { signIn, signOut, getToken, getCurrentAccount } from './scripts/auth.js';
+
+  async function showProfile(account) {
+    const { accessToken } = await getToken(account);
+    const res = await fetch('https://graph.microsoft.com/v1.0/me/', {
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+    });
+    console.log(res);
+    const json = await res.json();
+    console.log(json);
+    document.getElementById('profile').innerText = JSON.stringify(json, null, 2);
+  }
+
+  async function showProfilePicture(account) {
+    const { accessToken } = await getToken();
+    const res = await fetch('https://graph.microsoft.com/v1.0/me/photo/$value', {
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+      },
+    });
+    const blobUrl = URL.createObjectURL(await res.blob());
+    document.getElementById('avatar')
+      .setAttribute('src', blobUrl);
+  }
+
+  export async function showWelcomeMessage(account) {
+    document.getElementById('info').innerText = JSON.stringify(account, null, 2);
+    document.getElementById('welcome').innerText = `Welcome: ${account.name} <${account.username}>`;
+    await showProfile(account);
+    await showProfilePicture(account);
+  }
+
+
+  document.getElementById('login').onclick = signIn;
+  document.getElementById('logout').onclick = signOut;
+
+  const account = await getCurrentAccount();
+  if (account) {
+    showWelcomeMessage(account);
+  }
+
+
+</script>
+</body>
+</html>

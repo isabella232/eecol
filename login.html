@@ -3,19 +3,11 @@
     <script type="text/javascript" src="https://alcdn.msauth.net/browser/2.24.0/js/msal-browser.min.js"></script>
 </head>
 <body>
-
-<button id="login">login</button>
-<button id="logout">logout</button>
-<div id="welcome"></div>
-<img id="avatar">
-<div id="profile"></div>
-<div id="info"></div>
+initiating login...
 
 <script type="module">
-  import { signIn, signOut } from './scripts/auth.js';
-
-  document.getElementById('login').onclick = signIn;
-  document.getElementById('logout').onclick = signOut;
+  import { getCurrentAccount } from './scripts/auth.js';
+  await getCurrentAccount();
 </script>
 </body>
 </html>
