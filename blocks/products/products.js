@@ -1,38 +1,47 @@
+
 import {
   fetchPlaceholders,
-  lookupPages,
-  createOptimizedPicture,
-  readBlockConfig,
   toCamelCase,
+  getMetadata,
+} from 'https://cdn.skypack.dev/@dylandepass/helix-web-library@v1.6.1/dist/helix-web-library.esm.js';
+
+import {
+  lookupPages,
   formatCurrency,
+  loadCategories,
+  categoriesDictionary,
+  categories
 } from '../../scripts/scripts.js';
+
 
 export function createProductCard(product, prefix, ph) {
   const card = document.createElement('div');
   card.className = `${prefix}-card`;
-  card.innerHTML = `<div class="${prefix}-card-details">
-    <h4>${product.title}</h4>
-    <p>${formatCurrency(product.price, ph.currency || 'USD')}</p>
-    <p><a class="button" href=${product.path}>${ph.addToCart}</a></p>
+  card.innerHTML = /*html*/
+    `<a><img src="${product.image}" alt="${product.name}" /></a>
+     <div class="${prefix}-card-details">
+      <h4>${product.name}</h4>
+      <p>${formatCurrency(product.final_price, ph.currency || 'USD')}</p>
+      <p>
+        <a class="button" href=${product.path}>${ph.addToCart}</a>
+      </p>
     </div>`;
-  const a = document.createElement('a');
-  a.href = product.path;
-  a.append(createOptimizedPicture(product.image, product.title, false, [{ width: 400 }]));
-  card.prepend(a);
   return (card);
 }
 
 export default async function decorate(block) {
   const ph = await fetchPlaceholders('/ca/en');
-
+  await loadCategories();
   const addEventListeners = (elements, event, callback) => {
     elements.forEach((e) => {
       e.addEventListener(event, callback);
     });
   };
 
-  let config = [...document.querySelectorAll('a')].map((a) => new URL(a.href).pathname);
-  if (!config.length) config = readBlockConfig(block);
+  const config = {
+    category: window.location.pathname.split("/").pop(),
+    facets: getMetadata('facets')
+  }
 
   block.innerHTML = `<div class="products-controls"><input id="fulltext" placeholder="${ph.typeToSearch}">
       <p class="products-results-count"><span id="products-results-count"></span> ${ph.results}</p>
@@ -121,16 +130,37 @@ export default async function decorate(block) {
     return (filterConfig);
   };
 
+  // const renderFacet = (facet, values) => {
+  //   const facetValues = Object.keys(facets[facetKey]);
+  //   return /*html*/`
+  //     <div class="products-facet">
+  //       <h3>Manufacturer</h3>
+  //       ${values.map((value) => {
+  //     return /*html*/`
+  //           <input type="checkbox" value="E-17" id=`products-filter-${value}` name="bulb_shape">
+  //           <label for="products-filter-E-17">E-17 (1)</label>
+  //         `
+  //   })
+  //     }
+  //     </div>
+  //   `;
+  // };
+
   const displayFacets = (facets, filters) => {
     const selected = getSelectedFilters().map((check) => check.value);
-    facetsElement.innerHTML = `<div><div class="products-filters"><h2>${ph.filters}</h2>
-    <div class="products-filters-selected"></div>
-    <p><button class="products-filters-clear secondary">${ph.clearAll}</button></p>
-    <div class="products-filters-facetlist"></div>
-    </div>
-    <div class="products-apply-filters">
-      <button>See Results</button>
-    </div></div>`;
+    const facetKeys = Object.keys(facets);
+    facetsElement.innerHTML = /*html*/`
+      <div>
+        <div class="products-filters">
+          <h2>${ph.filters}</h2>
+          <div class="products-filters-selected"></div>
+          <p><button class="products-filters-clear secondary">${ph.clearAll}</button></p>
+          <div class="products-filters-facetlist"></div>
+        </div>
+        <div class="products-apply-filters">
+          <button>See Results</button>
+        </div>
+      </div>`;
 
     addEventListeners([
       facetsElement.querySelector('.products-apply-filters button'),
@@ -165,14 +195,13 @@ export default async function decorate(block) {
 
     /* list facets */
     const facetsList = block.querySelector('.products-filters-facetlist');
-    const facetKeys = Object.keys(facets);
     facetKeys.forEach((facetKey) => {
       const filter = filters[facetKey];
       const filterValues = filter ? filter.split(',').map((t) => t.trim()) : [];
       const div = document.createElement('div');
       div.className = 'products-facet';
       const h3 = document.createElement('h3');
-      h3.innerHTML = ph[facetKey];
+      h3.innerHTML = ph[toCamelCase(facetKey)];
       div.append(h3);
       const facetValues = Object.keys(facets[facetKey]);
       facetValues.forEach((facetValue) => {
@@ -201,16 +230,19 @@ export default async function decorate(block) {
   const runSearch = async (filterConfig = config) => {
     const facets = {};
     config.facets.split(',').forEach((f) => {
-      facets[toCamelCase(f.trim())] = {};
+      facets[f] = {};
     });
-    const sorts = {
-      name: (a, b) => a.title.localeCompare(b.title),
-      'price-asc': (a, b) => getPrice(a.price) - getPrice(b.price),
-      'price-desc': (a, b) => getPrice(b.price) - getPrice(a.price),
-    };
-    const results = await lookupPages(filterConfig, facets);
-    const sortBy = document.getElementById('products-sortby') ? document.getElementById('products-sortby').dataset.sort : 'best';
-    if (sortBy && sorts[sortBy]) results.sort(sorts[sortBy]);
+    // const sorts = {
+    //   name: (a, b) => a.title.localeCompare(b.title),
+    //   'price-asc': (a, b) => getPrice(a.price) - getPrice(b.price),
+    //   'price-desc': (a, b) => getPrice(b.price) - getPrice(a.price),
+    // };
+
+    const results = await lookupCategory(filterConfig.category, facets);
+
+    // const sortBy = document.getElementById('products-sortby') ? document.getElementById('products-sortby').dataset.sort : 'best';
+    // if (sortBy && sorts[sortBy]) results.sort(sorts[sortBy]);
+
     block.querySelector('#products-results-count').textContent = results.length;
     displayResults(results, null);
     displayFacets(facets, filterConfig);
@@ -230,4 +262,35 @@ export default async function decorate(block) {
     fulltextElement.value = usp.get('query');
   }
   runSearch(createFilterConfig(config));
+}
+
+async function lookupCategory(categoryId, facets) {
+  const category = categoriesDictionary[categoryId];
+  if (category) {
+    const req = await fetch(`https://wesco.experience-adobe.com/productLookup?category=${category.uid}&facets=${Object.keys(facets).join(',')}`);
+    const json = await req.json();
+    const products = json.data;
+
+    const results = products.filter((row) => {
+      populateFacetOptions(row, facets);
+      return row;
+    });
+    return results;
+  }
+}
+
+function populateFacetOptions(row, facets) {
+  const facetKeys = Object.keys(facets);
+  facetKeys.forEach((facetKey) => {
+    if (row[facetKey]) {
+      const rowValues = row[facetKey].split(',').map((t) => t.trim());
+      rowValues.forEach((val) => {
+        if (facets[facetKey][val]) {
+          facets[facetKey][val] += 1;
+        } else {
+          facets[facetKey][val] = 1;
+        }
+      });
+    }
+  });
 }

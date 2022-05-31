@@ -1,4 +1,5 @@
-import { fetchPlaceholders, formatCurrency, createOptimizedPicture } from '../../scripts/scripts.js';
+import { formatCurrency } from '../../scripts/scripts.js';
+import { fetchPlaceholders, createOptimizedPicture } from 'https://cdn.skypack.dev/@dylandepass/helix-web-library@v1.6.1/dist/helix-web-library.esm.js';
 
 class Cart {
   constructor() {

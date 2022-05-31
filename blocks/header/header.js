@@ -1,12 +1,16 @@
 import {
+  lookupPages,
+} from '../../scripts/scripts.js';
+
+import {
   readBlockConfig,
   decorateIcons,
   makeLinksRelative,
   fetchPlaceholders,
-  lookupPages,
   loadBlock,
   decorateBlock,
-} from '../../scripts/scripts.js';
+} from 'https://cdn.skypack.dev/@dylandepass/helix-web-library@v1.6.1/dist/helix-web-library.esm.js';
+
 
 /**
  * collapses all open nav sections
