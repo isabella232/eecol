@@ -9,22 +9,21 @@ import {
 export default async function decorateProduct(block) {
   const ph = await getPlaceholders('/ca/en');
   const selectedModifiers = {};
-  let selectedModifierImage;
 
   const getProduct = async () => {
-    let sku = window.location.pathname.split("/").pop();
+    if (window.wesco && window.wesco.currentProduct) return window.wesco.currentProduct;
+    let sku = window.location.pathname.split('/').pop();
     const [product] = await lookupProduct(sku);
-    const { final_price, name, image } = product;
+    const { final_price, name, image, description } = product;
     const details = {};
-    const usp = new URLSearchParams();
-    const modkeys = Object.keys(selectedModifiers);
-    modkeys.forEach((key) => {
-      usp.append(key, selectedModifiers[key]);
-      details[key] = selectedModifiers[key];
-    });
-    sku += usp.toString();
-    [details.title] = name;
+    details.title = name;
     details.image = image;
+    details.description = description;
+    window.wesco = {
+      product: {
+        sku, details, final_price
+      },
+    };
     return { sku, details, final_price };
   };
 
@@ -150,17 +149,27 @@ export default async function decorateProduct(block) {
     return (div);
   };
 
-  const h1 = document.querySelector('h1');
-  const { final_price } = await getProduct();
-  const picture = block.querySelector('picture');
-
+  const product = await getProduct();
+  console.log(product);
+  const { final_price, details, sku } = product;
+  const { image, title, description } = details;
+  console.log(details);
   block.textContent = '';
+
+  const picture = document.createElement('img');
+  picture.src = image;
+
+  const h1 = document.createElement('h1');
+  h1.textContent = title;
+
+  const p = document.createElement('p');
+  p.textContent = description;
 
   const config = document.createElement('div');
   config.className = 'product-config';
   config.append(createQuantity(), createAddToButtons());
   block.append(createHeading(h1, final_price), picture, config);
-
+  block.append(p);
   enableAddToCart();
 
   document.body.addEventListener('cart-update', enableAddToCart);

@@ -234,9 +234,8 @@ div.product-wrapper {
     .product {
         display: grid;
         grid-template-areas: 
-            'images heading'
+            'heading heading'
             'images config';
-        grid-template-rows: 50px 1fr;
         grid-template-columns: 1fr 300px;
     }
 
