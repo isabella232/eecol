@@ -156,8 +156,8 @@ export default async function decorateProduct(block) {
   console.log(details);
   block.textContent = '';
 
-  const picture = document.createElement('img');
-  picture.src = image;
+  const picture = document.createElement('picture');
+  picture.innerHTML = `<img src="${image}">`;
 
   const h1 = document.createElement('h1');
   h1.textContent = title;

@@ -31,7 +31,11 @@ div.product-wrapper {
     position: relative;
   }
   
-  
+.product img {
+    min-width: 274px;
+    min-height: 274px;
+}
+
 .product .product-images::-webkit-scrollbar {
       display: none;
     }
