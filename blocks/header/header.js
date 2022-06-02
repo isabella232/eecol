@@ -1,5 +1,7 @@
 import {
   lookupPages,
+  categoriesDictionary,
+  categories,
 } from '../../scripts/scripts.js';
 
 import {
@@ -21,6 +23,19 @@ function collapseAllNavSections(sections) {
   sections.querySelectorAll('.nav-sections > ul > li').forEach((section) => {
     section.setAttribute('aria-expanded', 'false');
   });
+}
+
+function createCategory(children) {
+  const ul = document.createElement('ul');
+  children.forEach((child) => {
+    const li = document.createElement('li');
+    li.innerHTML = `<a href="/ca/en/products/category/${child.url_path}">${child.name}</a>`;
+    if (child.children) {
+      li.append(createCategory(child.children));
+    }
+    ul.append(li);
+  });
+  return (ul);
 }
 
 /**
@@ -142,6 +157,10 @@ export default async function decorate(block) {
     nav.setAttribute('aria-expanded', 'false');
     decorateIcons(nav);
     block.append(nav);
+
+    const categs = createCategory(categories);
+    const products = nav.querySelector('.nav-sections > ul:first-of-type > li:first-of-type > ul');
+    products.replaceWith(categs);
 
     /* init cart */
     const cartIcon = block.querySelector('.icon-cart');
