@@ -28,6 +28,8 @@ HelixApp.init({
       const pageType = getMetadata('pagetype');
       if (pageType === 'category') {
         buildCategoryBlock(main);
+      } else if (pageType === 'product') {
+        buildProductBlock(main);
       } else {
         console.log('builder hero');
         buildHeroBlock(main);
@@ -51,14 +53,10 @@ function buildHeroBlock(main) {
 }
 
 function buildProductBlock(main) {
-  const picture = main.querySelector('picture');
-  const h1 = main.querySelector('h1');
-
-  if (picture && h1) {
-    const section = document.createElement('div');
-    section.append(buildBlock('product', { elems: [h1, picture] }));
-    main.prepend(section);
-  }
+  const section = document.createElement('div');
+  section.append(buildBlock('product', { elems: [] }));
+  main.innerHTML = '';
+  main.append(section);
 }
 
 function buildCategoryBlock(main) {
@@ -167,6 +165,23 @@ export async function lookupCategory(category, categoryFacets = {}) {
     products = json.data;
   }
   return products;
+}
+
+
+/**
+ * Returns an array of products for a category
+ * @param {*} category 
+ * @param {*} categoryFacets 
+ * @returns 
+ */
+export async function lookupProduct(sku) {
+  let product = {};
+  if (sku) {
+    const req = await fetch(`https://wesco.experience-adobe.com/productLookup?sku=${sku}`);
+    const json = await req.json();
+    product = json.data;
+  }
+  return product;
 }
 
 /**

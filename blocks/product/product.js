@@ -1,20 +1,20 @@
+import { getMetadata, toClassName } from 'https://cdn.skypack.dev/@dylandepass/helix-web-library@v1.6.1/dist/helix-web-library.esm.js';
+
 import {
-  fetchPlaceholders,
-  getMetadata,
-  lookupPages,
-  toClassName,
+  getPlaceholders,
+  lookupProduct,
   formatCurrency,
 } from '../../scripts/scripts.js';
 
 export default async function decorateProduct(block) {
-  const ph = await fetchPlaceholders('/ca/en');
+  const ph = await getPlaceholders('/ca/en');
   const selectedModifiers = {};
   let selectedModifierImage;
 
   const getProduct = async () => {
-    let sku = window.location.pathname;
-    const [product] = await lookupPages([sku]);
-    const { price } = product;
+    let sku = window.location.pathname.split("/").pop();
+    const [product] = await lookupProduct(sku);
+    const { final_price, name, image } = product;
     const details = {};
     const usp = new URLSearchParams();
     const modkeys = Object.keys(selectedModifiers);
@@ -23,9 +23,9 @@ export default async function decorateProduct(block) {
       details[key] = selectedModifiers[key];
     });
     sku += usp.toString();
-    [details.title] = getMetadata('og:title').split('|');
-    details.image = block.querySelector('img').currentSrc;
-    return { sku, details, price };
+    [details.title] = name;
+    details.image = image;
+    return { sku, details, final_price };
   };
 
   const enableAddToCart = async () => {
@@ -128,7 +128,7 @@ export default async function decorateProduct(block) {
   const addToCart = async () => {
     const quantity = +block.querySelector('.product-quantity input').value;
     const product = await getProduct();
-    if (window.cart) window.cart.add(product.sku, product.details, product.price, quantity);
+    if (window.cart) window.cart.add(product.sku, product.details, product.final_price, quantity);
     enableAddToCart();
   };
 
@@ -151,7 +151,7 @@ export default async function decorateProduct(block) {
   };
 
   const h1 = document.querySelector('h1');
-  const { price } = await getProduct();
+  const { final_price } = await getProduct();
   const picture = block.querySelector('picture');
 
   block.textContent = '';
@@ -159,7 +159,7 @@ export default async function decorateProduct(block) {
   const config = document.createElement('div');
   config.className = 'product-config';
   config.append(createQuantity(), createAddToButtons());
-  block.append(createHeading(h1, price), picture, config);
+  block.append(createHeading(h1, final_price), picture, config);
 
   enableAddToCart();
 
