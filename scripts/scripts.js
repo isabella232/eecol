@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
-import { HelixApp, decorateSections, buildBlock, getMetadata } from 'https://cdn.skypack.dev/@dylandepass/helix-web-library@v1.6.1/dist/helix-web-library.esm.js';
+import { HelixApp, buildBlock, getMetadata, fetchPlaceholders } from 'https://cdn.skypack.dev/@dylandepass/helix-web-library@v1.6.1/dist/helix-web-library.esm.js';
 
 export let categoriesDictionary = {};
 export let categories = [];
@@ -20,6 +20,9 @@ HelixApp.init({
   rumGeneration: ['project-1'],
   productionDomains: ['poc-staging.eecol.com']
 })
+  .withLoadEager(async (main) => {
+    await loadCategories();
+  })
   .withBuildAutoBlocks((main) => {
     try {
       const pageType = getMetadata('pagetype');
@@ -60,8 +63,9 @@ function buildProductBlock(main) {
 
 function buildCategoryBlock(main) {
   const section = document.createElement('div');
-  section.append(buildBlock('products', { elems: [] }));
-  main.prepend(section);
+  section.append(buildBlock('category', { elems: [] }));
+  main.innerHTML = '';
+  main.append(section);
 }
 
 function buildCategoryDictionary(category, categoriesDictionary) {
@@ -149,10 +153,60 @@ export async function lookupPages(config, facets = {}) {
   return products;
 }
 
+/**
+ * Returns an array of products for a category
+ * @param {*} category 
+ * @param {*} categoryFacets 
+ * @returns 
+ */
+export async function lookupCategory(category, categoryFacets = {}) {
+  let products = [];
+  if (category) {
+    const req = await fetch(`https://wesco.experience-adobe.com/productLookup?category=${category.uid}&facets=${Object.keys(categoryFacets).join(',')}`);
+    const json = await req.json();
+    products = json.data;
+  }
+  return products;
+}
+
+/**
+ * Return site placeholders
+ * @returns {Object} Site placeholders
+ */
+export async function getPlaceholders() {
+  if (!window.placeholders) {
+    window.placeholders = await fetchPlaceholders('/ca/en');
+  }
+  return window.placeholders;
+}
+
+export const getNumber = (value) => +value;
+
 export function formatCurrency(amount, currency) {
   const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency,
   });
   return (formatter.format(amount));
+}
+
+export function addEventListeners(elements, event, callback) {
+  elements.forEach((e) => {
+    e.addEventListener(event, callback);
+  });
+};
+
+export function addQueryParam(key, value) {
+  const sp = new URLSearchParams(window.location.search);
+  sp.set(key, value);
+  const path = `${window.location.pathname}?${sp.toString()}`;
+  history.pushState(null, '', path);
+}
+
+export function removeQueryParam(key) {
+  const sp = new URLSearchParams(window.location.search);
+  sp.delete(key);
+  const paramsString = sp.toString();
+  const path = (paramsString != '') ? `${window.location.pathname}?${paramsString}` : window.location.pathname;
+  history.pushState(null, '', path);
 }
