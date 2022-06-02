@@ -3,4 +3,3 @@ mountpoints:
 
 folders:
   /ca/en/products/category/: /ca/en/products/category/default
-  /ca/en/products/: /ca/en/products/default
