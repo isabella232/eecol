@@ -55,10 +55,14 @@ header .nav-brand {
   line-height: 1em;
   padding: 0 12px;
   box-sizing: border-box;
-  height: 46px;
   display: flex;
   align-items: center;
   background-color: #f5f7f6;
+}
+
+header .nav-brand img {
+  width: 141px;
+  height: 45px;
 }
 
 header nav .nav-brand p {

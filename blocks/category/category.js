@@ -374,7 +374,7 @@ export function renderProductCard(product, prefix, placeholders) {
   const card = document.createElement('div');
   card.className = `${prefix}-card`;
   card.innerHTML = /* html */
-    `<a><img src="${product.image}" alt="${product.name}" /></a>
+    `<a><img src="${product.image}" alt="${product.name}" width="150" height="150"/></a>
      <div class="${prefix}-card-details">
       <h4>${product.name}</h4>
       <p>${formatCurrency(product.final_price, placeholders.currency || 'USD')}</p>
