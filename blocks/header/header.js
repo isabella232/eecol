@@ -5,7 +5,7 @@ import {
   fetchPlaceholders,
   loadBlock,
   decorateBlock,
-} from 'https://cdn.skypack.dev/@dylandepass/helix-web-library@v1.6.1/dist/helix-web-library.esm.js';
+} from '../../scripts/helix-web-library.esm.js';
 import {
   searchProducts,
   getCategories,
