@@ -376,7 +376,7 @@ export function renderProductCard(product, prefix, placeholders) {
   card.innerHTML = /* html */
     `<a><img src="${product.image}" alt="${product.name}" width="150" height="150"/></a>
      <div class="${prefix}-card-details">
-      <h4>${product.name}</h4>
+      <h4><a href="${product.path}">${product.name}</a></h4>
       <p>${formatCurrency(product.final_price, placeholders.currency || 'USD')}</p>
       <p>
         <a class="button" href=${product.path}>${placeholders.addToCart}</a>
