@@ -1,10 +1,4 @@
 import {
-  lookupPages,
-  categoriesDictionary,
-  categories,
-} from '../../scripts/scripts.js';
-
-import {
   readBlockConfig,
   decorateIcons,
   makeLinksRelative,
@@ -12,7 +6,10 @@ import {
   loadBlock,
   decorateBlock,
 } from 'https://cdn.skypack.dev/@dylandepass/helix-web-library@v1.6.1/dist/helix-web-library.esm.js';
-
+import {
+  searchProducts,
+  getCategories,
+} from '../../scripts/scripts.js';
 
 /**
  * collapses all open nav sections
@@ -48,6 +45,7 @@ export default async function decorate(block) {
   block.textContent = '';
 
   const ph = await fetchPlaceholders('/ca/en');
+  const categories = await getCategories();
 
   // fetch nav content
   const navPath = cfg.nav || '/nav';
@@ -116,7 +114,7 @@ export default async function decorate(block) {
       const query = input.value;
       const results = filterNav(query);
       if (results.length < MAX_SUGGESTIONS) {
-        const products = await lookupPages({ fulltext: query });
+        const products = await searchProducts({ fulltext: query });
         while (results.length < MAX_SUGGESTIONS && products.length) {
           const res = products.shift();
           results.push({ title: res.title, href: res.path });

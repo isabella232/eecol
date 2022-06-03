@@ -10,37 +10,14 @@
  * governing permissions and limitations under the License.
  */
 
-import { HelixApp, buildBlock, getMetadata, fetchPlaceholders } from 'https://cdn.skypack.dev/@dylandepass/helix-web-library@v1.6.1/dist/helix-web-library.esm.js';
+import {
+  HelixApp, buildBlock, getMetadata, fetchPlaceholders,
+} from 'https://cdn.skypack.dev/@dylandepass/helix-web-library@v1.6.1/dist/helix-web-library.esm.js';
 
-export let categoriesDictionary = {};
-export let categories = [];
-
-HelixApp.init({
-  lcpBlocks: ['hero'],
-  rumGeneration: ['project-1'],
-  productionDomains: ['poc-staging.eecol.com']
-})
-  .withLoadEager(async (main) => {
-    await loadCategories();
-  })
-  .withBuildAutoBlocks((main) => {
-    try {
-      const pageType = getMetadata('pagetype');
-      if (pageType === 'category') {
-        buildCategoryBlock(main);
-      } else if (pageType === 'product') {
-        buildProductBlock(main);
-      } else {
-        console.log('builder hero');
-        buildHeroBlock(main);
-      }
-    } catch (error) {
-      // eslint-disable-next-line no-console
-      console.error('Auto Blocking failed', error);
-    }
-  })
-  .decorate();
-
+/**
+ * Builds the hero autoblock
+ * @param {HTMLElement} main
+ */
 function buildHeroBlock(main) {
   const h1 = main.querySelector('h1');
   const picture = main.querySelector('picture');
@@ -52,6 +29,10 @@ function buildHeroBlock(main) {
   }
 }
 
+/**
+ * Builds the product page autoblock
+ * @param {HTMLElement} main
+ */
 function buildProductBlock(main) {
   const section = document.createElement('div');
   section.append(buildBlock('product', { elems: [] }));
@@ -59,6 +40,10 @@ function buildProductBlock(main) {
   main.append(section);
 }
 
+/**
+ * Builds the category page autoblock
+ * @param {HTMLElement} main
+ */
 function buildCategoryBlock(main) {
   const section = document.createElement('div');
   section.append(buildBlock('category', { elems: [] }));
@@ -66,96 +51,77 @@ function buildCategoryBlock(main) {
   main.append(section);
 }
 
+/**
+ * Recursively build a dictionary of categories
+ * @param {Object} category
+ * @param {Object} categoriesDictionary
+ */
 function buildCategoryDictionary(category, categoriesDictionary) {
   categoriesDictionary[category.url_key] = { ...category };
   delete categoriesDictionary[category.url_key].children;
   if (category.children) {
-    category.children.forEach(child => buildCategoryDictionary(child, categoriesDictionary));
+    category.children.forEach((child) => buildCategoryDictionary(child, categoriesDictionary));
   }
 }
 
-export async function loadCategories() {
-  if (categories.length === 0) {
+/**
+ * Fetches a hierarchy of categories from the server
+ */
+async function fetchCategories() {
+  if (!window.categories) {
     const response = await fetch('https://wesco.experience-adobe.com/categories');
     const json = await response.json();
-    categories = json.categories.items[0].children;
-    categories.forEach(child => buildCategoryDictionary(child, categoriesDictionary));
-    buildCategoryDictionary(categories, categoriesDictionary);
-    categoriesDictionary = categoriesDictionary;
+    const categories = json.categories?.items[0].children;
+    const categoriesDictionary = {};
+    categories.forEach((child) => buildCategoryDictionary(child, categoriesDictionary));
+
+    // Store categories in a hierarchy
+    window.categories = categories;
+
+    // Store categories in a dictionary
+    window.categoriesDictionary = categoriesDictionary;
   }
 }
 
-export async function lookupPages(config, facets = {}) {
-  /* load index */
+/**
+ * Returns fetched categories
+ * @returns {Object}
+ */
+export async function getCategories() {
   if (!window.categories) {
-    window.categories = await fetchCategories();
-  }
-  if (!window.pageIndex) {
-    const resp = await fetch('/query-index.json');
-    const json = await resp.json();
-    const lookup = {};
-    json.data.forEach((row) => {
-      lookup[row.path] = row;
-    });
-    window.pageIndex = { data: json.data, lookup };
+    await fetchCategories();
   }
 
-  /* simple array lookup */
-  if (Array.isArray(config)) {
-    const pathnames = config;
-    return (pathnames.map((path) => window.pageIndex.lookup[path]).filter((e) => e));
+  return window.categories;
+}
+
+/**
+ * Returns a dictionary of fetched categories
+ * @returns {Object}
+ */
+export async function getCategoriesDictionary() {
+  if (!window.categoriesDictionary) {
+    await fetchCategories();
   }
 
-  /* setup config */
-  const keys = Object.keys(config);
-  const tokens = {};
-  keys.forEach((key) => {
-    tokens[key] = config[key].split(',').map((t) => t.trim());
-  });
+  return window.categoriesDictionary;
+}
 
-  let products = [];
-  if (config.category) {
-    const category = window.categoriesDictionary[config.category];
-    if (category) {
-      const req = await fetch(`https://wesco.experience-adobe.com/productLookup?category=${category.uid}`);
-      const json = await req.json();
-      products = json.data;
-    }
-  }
-
-  /* filter */
-  const results = products.filter((row) => {
-    // const filterMatches = {};
-    // let matchedAll = keys.every((key) => {
-    //   let matched = false;
-    //   if (row[key]) {
-    //     const rowValues = row[key].split(',').map((t) => t.trim());
-    //     matched = tokens[key].some((t) => rowValues.includes(t));
-    //   }
-    //   if (key === 'fulltext') {
-    //     const fulltext = row.title.toLowerCase();
-    //     matched = fulltext.includes(config.fulltext.toLowerCase());
-    //   }
-    //   filterMatches[key] = matched;
-    //   return matched;
-    // });
-
-    // const isProduct = () => !!row.price;
-
-    // if (!isProduct()) matchedAll = false;
-
-    /* facets */
-    /** facet keys = ['manufacturer'] */
-    // populateFacetOptions(row, facets);
-  });
-  return products;
+/**
+ * Given a query string, return matching products
+ * @param {string} query
+ * @returns {Object}[]
+ */
+export async function searchProducts(query) {
+  // TODO: Implement search
+  return query;
 }
 
 /**
  * Returns an array of products for a category
- * @param {*} category 
- * @param {*} categoryFacets 
- * @returns 
+ * @param {*} category
+ * @param {*} categoryFacets
+ * @returns
  */
 export async function lookupCategory(category, categoryFacets = {}) {
   let products = [];
@@ -167,12 +133,11 @@ export async function lookupCategory(category, categoryFacets = {}) {
   return products;
 }
 
-
 /**
  * Returns an array of products for a category
- * @param {*} category 
- * @param {*} categoryFacets 
- * @returns 
+ * @param {*} category
+ * @param {*} categoryFacets
+ * @returns
  */
 export async function lookupProduct(sku) {
   let product = {};
@@ -195,8 +160,12 @@ export async function getPlaceholders() {
   return window.placeholders;
 }
 
-export const getNumber = (value) => +value;
-
+/**
+ * Formats a price given a currency
+ * @param {*} amount
+ * @param {*} currency
+ * @returns
+ */
 export function formatCurrency(amount, currency) {
   const formatter = new Intl.NumberFormat('en-US', {
     style: 'currency',
@@ -205,23 +174,73 @@ export function formatCurrency(amount, currency) {
   return (formatter.format(amount));
 }
 
+/**
+ * Helper function to add a callback to multiple HTMLElements
+ */
 export function addEventListeners(elements, event, callback) {
   elements.forEach((e) => {
     e.addEventListener(event, callback);
   });
-};
+}
 
+/**
+ * Helper function guarentees the return of a number primitive
+ * @param {string|number} value
+ * @returns
+ */
+export const getNumber = (value) => +value;
+
+/**
+ * Adds a query param to the window location
+ * @param {string} key
+ * @param {string} value
+ */
 export function addQueryParam(key, value) {
   const sp = new URLSearchParams(window.location.search);
   sp.set(key, value);
   const path = `${window.location.pathname}?${sp.toString()}`;
-  history.pushState(null, '', path);
+  window.history.pushState(null, '', path);
 }
 
+/**
+ * Removes a query param from the window location
+ * @param {string} key
+ * @param {string} value
+ */
 export function removeQueryParam(key) {
   const sp = new URLSearchParams(window.location.search);
   sp.delete(key);
   const paramsString = sp.toString();
-  const path = (paramsString != '') ? `${window.location.pathname}?${paramsString}` : window.location.pathname;
-  history.pushState(null, '', path);
+  const path = (paramsString !== '') ? `${window.location.pathname}?${paramsString}` : window.location.pathname;
+  window.history.pushState(null, '', path);
 }
+
+/**
+ *
+ * Start the Helix Decoration Flow
+ *
+ */
+HelixApp.init({
+  lcpBlocks: ['hero'],
+  rumGeneration: ['project-1'],
+  productionDomains: ['poc-staging.eecol.com'],
+})
+  .withLoadEager(async () => {
+    await fetchCategories();
+  })
+  .withBuildAutoBlocks((main) => {
+    try {
+      const pageType = getMetadata('pagetype');
+      if (pageType === 'category') {
+        buildCategoryBlock(main);
+      } else if (pageType === 'product') {
+        buildProductBlock(main);
+      } else {
+        buildHeroBlock(main);
+      }
+    } catch (error) {
+      // eslint-disable-next-line no-console
+      console.error('Auto Blocking failed', error);
+    }
+  })
+  .decorate();

@@ -6,17 +6,17 @@ import {
 import {
   getPlaceholders,
   formatCurrency,
-  categoriesDictionary,
+  getCategoriesDictionary,
   getNumber,
   addEventListeners,
   lookupCategory,
   addQueryParam,
-  removeQueryParam
+  removeQueryParam,
 } from '../../scripts/scripts.js';
 
 /**
  * Decorates a categories page
- * @param {HTMLElement} block 
+ * @param {HTMLElement} block
  */
 export default async function decorate(block) {
   /**
@@ -59,7 +59,7 @@ export default async function decorate(block) {
 
   /**
    * On Facet deselected callback
-   * @param {MouseEvent} event 
+   * @param {MouseEvent} event
    */
   const onFacetDeSelected = (event) => {
     const value = event.currentTarget.getAttribute('data-value');
@@ -71,7 +71,7 @@ export default async function decorate(block) {
 
   /**
    * On facet selection cleared
-   * @param {MouseEvent} event 
+   * @param {MouseEvent} event
    */
   const onClearFacetSelection = (event) => {
     activeFilterConfig = {};
@@ -81,7 +81,7 @@ export default async function decorate(block) {
 
   /**
    * Sorts a collection of results
-   * @param {*} collection 
+   * @param {*} collection
    */
   const sortCollection = (collection) => {
     const sorts = {
@@ -95,7 +95,7 @@ export default async function decorate(block) {
 
   /**
    * Block render function
-   * @param {Object[]} collection 
+   * @param {Object[]} collection
    */
   const render = (collection) => {
     // Update results cound
@@ -118,10 +118,11 @@ export default async function decorate(block) {
     collection.forEach((product) => {
       resultsElement.append(renderProductCard(product, 'products', placeholders));
     });
-  }
+  };
 
   const placeholders = await getPlaceholders('/ca/en');
-  const categoryId = window.location.pathname.split("/").pop();
+  const categoryId = window.location.pathname.split('/').pop();
+  const categoriesDictionary = await getCategoriesDictionary();
   const category = categoriesDictionary[categoryId];
   const categoryFacets = getCategoryFacets();
 
@@ -149,7 +150,7 @@ export default async function decorate(block) {
  */
 function getCategoryFacets() {
   const facets = getMetadata('facets');
-  let results = {};
+  const results = {};
   if (facets) {
     facets.split(',').forEach((f) => {
       results[f] = {};
@@ -160,9 +161,9 @@ function getCategoryFacets() {
 
 /**
  * Given a collection of products, returns facet options
- * @param {Object[]} collection 
- * @param {Object} facets 
- * @param {Object} filterConfig 
+ * @param {Object[]} collection
+ * @param {Object} facets
+ * @param {Object} filterConfig
  * @returns {Object} facet options for the collection
  */
 function getCollectionFacets(collection, facets = {}, filterConfig = {}) {
@@ -189,8 +190,8 @@ function getCollectionFacets(collection, facets = {}, filterConfig = {}) {
 
 /**
  * Constructs a filter config object
- * @param {HTMLElement} block 
- * @param {Object} activeFilterConfig 
+ * @param {HTMLElement} block
+ * @param {Object} activeFilterConfig
  * @returns {Object} A filter config
  */
 function getFilterConfig(block, activeFilterConfig) {
@@ -210,12 +211,12 @@ function getFilterConfig(block, activeFilterConfig) {
     ...filterConfig,
     ...activeFilterConfig,
   });
-};
+}
 
 /**
  * Filters a collection of results based on a filter config
- * @param {Object[]} results 
- * @param {Object} filterConfig 
+ * @param {Object[]} results
+ * @param {Object} filterConfig
  * @returns {Object[]} A filtered collection of results
  */
 function filterResults(results, filterConfig) {
@@ -227,7 +228,7 @@ function filterResults(results, filterConfig) {
   });
   const filteredResults = results.filter((row) => {
     const filterMatches = {};
-    let matchedAll = keys.every((key) => {
+    const matchedAll = keys.every((key) => {
       let matched = false;
       if (row[key]) {
         const rowValues = row[key].split(',').map((t) => t.trim());
@@ -244,15 +245,15 @@ function filterResults(results, filterConfig) {
   });
 
   return filteredResults ?? results;
-};
+}
 
 /**
  * Creates the scafolding for the block
- * @param {Object} category 
- * @param {Object} placeholders 
+ * @param {Object} category
+ * @param {Object} placeholders
  */
 function renderBlockScafolding(category, placeholders) {
-  return /*html*/`
+  return /* html */`
     <div class="category-title">
       <h1>${category.name}</h1>
       <p class="products-results-count"><span id="products-results-count"></span> ${placeholders.results}</p>
@@ -275,15 +276,15 @@ function renderBlockScafolding(category, placeholders) {
       </ul>
     </div>
     <div class="products-results"></div>`;
-};
+}
 
 /**
  * Creates scafolding the facets element
- * @param {Object} placeholders 
+ * @param {Object} placeholders
  * @returns {string}
  */
 function renderFacetsScafolding(placeholders) {
-  return /*html*/`
+  return /* html */`
     <div>
       <div class="products-filters">
         <h2>${placeholders.filters}</h2>
@@ -294,15 +295,15 @@ function renderFacetsScafolding(placeholders) {
       <div class="products-apply-filters">
         <button>See Results</button>
       </div>
-    </div>`
-};
+    </div>`;
+}
 
 /**
  * Renders a list of facet options
- * @param {HTMLElement} block 
- * @param {Object} facets 
- * @param {Object} placeholders 
- * @param {*} onFacetSelected 
+ * @param {HTMLElement} block
+ * @param {Object} facets
+ * @param {Object} placeholders
+ * @param {*} onFacetSelected
  */
 function renderFilteredFacets(block, facets, placeholders, onFacetSelected) {
   const facetKeys = Object.keys(facets);
@@ -317,63 +318,62 @@ function renderFilteredFacets(block, facets, placeholders, onFacetSelected) {
   facetsList.innerHTML = facetsHTML;
 
   addEventListeners([...facetsList.querySelectorAll('input')], 'change', onFacetSelected);
-};
+}
 
 /**
  * Render all the actve facets in the facets container
- * @param {HTMLElement} block 
- * @param {Object} activeFilterConfig 
- * @param {Object} placeholders 
- * @param {*} onFacetDeSelected 
+ * @param {HTMLElement} block
+ * @param {Object} activeFilterConfig
+ * @param {Object} placeholders
+ * @param {*} onFacetDeSelected
  */
 function renderActiveFacets(block, activeFilterConfig, placeholders, onFacetDeSelected) {
   const selectedFiltersContainer = block.querySelector('.products-filters-selected');
   for (const [key, value] of Object.entries(activeFilterConfig)) {
     if (key === 'fulltext') {
       continue;
-    };
+    }
     const span = document.createElement('span');
     span.setAttribute('data-value', key);
     span.className = 'products-filters-tag';
     span.textContent = `${placeholders[toCamelCase(key)]}: ${value}`;
     span.addEventListener('click', onFacetDeSelected);
     selectedFiltersContainer.append(span);
-  };
+  }
 }
 
 /**
  * Render a facet
- * @param {string} facetKey 
- * @param {Object} categoryFacets 
- * @param {Object} placeholders 
+ * @param {string} facetKey
+ * @param {Object} categoryFacets
+ * @param {Object} placeholders
  * @returns The facet HTML
  */
 function renderFacet(facetKey, categoryFacets, placeholders) {
   const facet = categoryFacets[facetKey];
   const values = Object.keys(facet);
-  return /*html*/`
+  return /* html */`
       <div class="products-facet">
         <h3>${placeholders[toCamelCase(facetKey)]}</h3>
-        ${values.map((value) => {
-    return /*html*/`
+        ${values.map((value) =>
+  /* html */`
             <input type="checkbox" value="${value}" id="products-filter-${value}" name="${facetKey}">
-            <label for="products-filter-${value}">${value} (${facet[value]})</label>`
-  }).join('')}
+            <label for="products-filter-${value}">${value} (${facet[value]})</label>`).join('')}
       </div>
     `;
-};
+}
 
 /**
  * Renders a product card
- * @param {Object} product 
- * @param {string} prefix 
- * @param {Object} placeholders 
+ * @param {Object} product
+ * @param {string} prefix
+ * @param {Object} placeholders
  * @returns The product card element
  */
 export function renderProductCard(product, prefix, placeholders) {
   const card = document.createElement('div');
   card.className = `${prefix}-card`;
-  card.innerHTML = /*html*/
+  card.innerHTML = /* html */
     `<a><img src="${product.image}" alt="${product.name}" /></a>
      <div class="${prefix}-card-details">
       <h4>${product.name}</h4>
