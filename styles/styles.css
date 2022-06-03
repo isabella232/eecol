@@ -58,6 +58,11 @@ body.appear {
   display: unset;
 }
 
+img {
+  width: auto;
+  height: auto;
+}
+
 header {
   height: var(--nav-height);
 }
