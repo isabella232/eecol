@@ -1,31 +1,30 @@
+import { getMetadata, toClassName } from 'https://cdn.skypack.dev/@dylandepass/helix-web-library@v1.6.1/dist/helix-web-library.esm.js';
+
 import {
-  fetchPlaceholders,
-  getMetadata,
-  lookupPages,
-  toClassName,
+  getPlaceholders,
+  lookupProduct,
   formatCurrency,
 } from '../../scripts/scripts.js';
 
 export default async function decorateProduct(block) {
-  const ph = await fetchPlaceholders('/ca/en');
+  const ph = await getPlaceholders('/ca/en');
   const selectedModifiers = {};
-  let selectedModifierImage;
 
   const getProduct = async () => {
-    let sku = window.location.pathname;
-    const [product] = await lookupPages([sku]);
-    const { price } = product;
+    if (window.wesco && window.wesco.currentProduct) return window.wesco.currentProduct;
+    let sku = window.location.pathname.split('/').pop();
+    const [product] = await lookupProduct(sku);
+    const { final_price, name, image, description } = product;
     const details = {};
-    const usp = new URLSearchParams();
-    const modkeys = Object.keys(selectedModifiers);
-    modkeys.forEach((key) => {
-      usp.append(key, selectedModifiers[key]);
-      details[key] = selectedModifiers[key];
-    });
-    sku += usp.toString();
-    [details.title] = getMetadata('og:title').split('|');
-    details.image = block.querySelector('img').currentSrc;
-    return { sku, details, price };
+    details.title = name;
+    details.image = image;
+    details.description = description;
+    window.wesco = {
+      product: {
+        sku, details, final_price
+      },
+    };
+    return { sku, details, final_price };
   };
 
   const enableAddToCart = async () => {
@@ -128,7 +127,7 @@ export default async function decorateProduct(block) {
   const addToCart = async () => {
     const quantity = +block.querySelector('.product-quantity input').value;
     const product = await getProduct();
-    if (window.cart) window.cart.add(product.sku, product.details, product.price, quantity);
+    if (window.cart) window.cart.add(product.sku, product.details, product.final_price, quantity);
     enableAddToCart();
   };
 
@@ -150,17 +149,27 @@ export default async function decorateProduct(block) {
     return (div);
   };
 
-  const h1 = document.querySelector('h1');
-  const { price } = await getProduct();
-  const picture = block.querySelector('picture');
-
+  const product = await getProduct();
+  console.log(product);
+  const { final_price, details, sku } = product;
+  const { image, title, description } = details;
+  console.log(details);
   block.textContent = '';
+
+  const picture = document.createElement('picture');
+  picture.innerHTML = `<img src="${image}">`;
+
+  const h1 = document.createElement('h1');
+  h1.textContent = title;
+
+  const p = document.createElement('p');
+  p.textContent = description;
 
   const config = document.createElement('div');
   config.className = 'product-config';
   config.append(createQuantity(), createAddToButtons());
-  block.append(createHeading(h1, price), picture, config);
-
+  block.append(createHeading(h1, final_price), picture, config);
+  block.append(p);
   enableAddToCart();
 
   document.body.addEventListener('cart-update', enableAddToCart);

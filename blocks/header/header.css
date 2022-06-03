@@ -55,10 +55,14 @@ header .nav-brand {
   line-height: 1em;
   padding: 0 12px;
   box-sizing: border-box;
-  height: 46px;
   display: flex;
   align-items: center;
   background-color: #f5f7f6;
+}
+
+header .nav-brand img {
+  width: 141px;
+  height: 45px;
 }
 
 header nav .nav-brand p {
@@ -148,7 +152,10 @@ header nav .nav-sections ul  {
   font-size: 16px;
   font-weight: 500;
   list-style: none;
-  padding-left: 0;
+} 
+
+header nav .nav-sections ul ul ul > li {
+  font-size: 12px;
 } 
 
 header nav .nav-sections li {
@@ -265,6 +272,10 @@ header nav[aria-expanded='true'] .nav-tools li {
     justify-content: space-between;
     grid-template-columns: 150px 1fr 112px;
 
+  }
+
+  header nav .nav-sections > ul {
+    padding-left: 0;
   }
 
   header nav .nav-sections > ul > li.nav-drop {
@@ -387,6 +398,22 @@ header nav[aria-expanded='true'] .nav-tools li {
   header nav .nav-sections > ul > li[aria-expanded='true'] > ul > li > ul {
     display: none;
   }
+
+  header nav .nav-sections > ul > li[aria-expanded='true'] > ul > li:hover > ul {
+    display: unset;
+    position: absolute;
+    top: 0;
+    left: 331px;
+    width: calc(100vw - 331px);
+    height: 100%;
+    background-color: var(--overlay-background-color);
+    columns: 2;
+  }
+
+  header nav .nav-sections > ul > li[aria-expanded='true'] > ul > li:hover > ul > li {
+    font-size: 20px;
+  }
+
 
   header .nav-tools .nav-tools-search {
     position: unset;

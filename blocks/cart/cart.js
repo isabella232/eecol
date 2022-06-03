@@ -1,4 +1,5 @@
-import { fetchPlaceholders, formatCurrency, createOptimizedPicture } from '../../scripts/scripts.js';
+import { formatCurrency } from '../../scripts/scripts.js';
+import { fetchPlaceholders } from 'https://cdn.skypack.dev/@dylandepass/helix-web-library@v1.6.1/dist/helix-web-library.esm.js';
 
 class Cart {
   constructor() {
@@ -110,13 +111,14 @@ async function updateCartDisplay() {
 
   const createCartItem = (item) => {
     const { details } = item;
+    console.log(item);
     const div = document.createElement('div');
 
     const createMods = (keys) => keys.map((key) => (details[key] ? `<p>${ph[key]} : ${details[key]}</p>` : '')).join('');
 
     div.className = 'cart-item';
     div.innerHTML = `
-    <div class="cart-item-image">${createOptimizedPicture(details.image).outerHTML}
+    <div class="cart-item-image"><img src="${details.image}">
     </div>
     <div class="cart-item-details">
         <h3>${details.title}</h3>
