@@ -1,4 +1,4 @@
-import { getMetadata, toClassName } from 'https://cdn.skypack.dev/@dylandepass/helix-web-library@v1.6.1/dist/helix-web-library.esm.js';
+import { getMetadata, toClassName } from '../../scripts/helix-web-library.esm.js';
 
 import {
   getPlaceholders,
@@ -12,16 +12,18 @@ export default async function decorateProduct(block) {
 
   const getProduct = async () => {
     if (window.wesco && window.wesco.currentProduct) return window.wesco.currentProduct;
-    let sku = window.location.pathname.split('/').pop();
+    const sku = window.location.pathname.split('/').pop();
     const [product] = await lookupProduct(sku);
-    const { final_price, name, image, description } = product;
+    const {
+      final_price, name, image, description,
+    } = product;
     const details = {};
     details.title = name;
     details.image = image;
     details.description = description;
     window.wesco = {
       product: {
-        sku, details, final_price
+        sku, details, final_price,
       },
     };
     return { sku, details, final_price };

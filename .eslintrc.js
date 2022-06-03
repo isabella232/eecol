@@ -12,7 +12,6 @@ module.exports = {
   },
   rules: {
     // allow reassigning param
-    'import/no-unresolved': 'off', // temporarily disabled while we explore CDN distribution of helix-web-library, renenable after
     'no-param-reassign': [2, { props: false }],
     'linebreak-style': ['error', 'unix'],
     'import/extensions': ['error', {

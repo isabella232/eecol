@@ -1,5 +1,5 @@
 import { formatCurrency } from '../../scripts/scripts.js';
-import { fetchPlaceholders } from 'https://cdn.skypack.dev/@dylandepass/helix-web-library@v1.6.1/dist/helix-web-library.esm.js';
+import { fetchPlaceholders } from '../../scripts/helix-web-library.esm.js';
 
 class Cart {
   constructor() {

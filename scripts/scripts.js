@@ -12,7 +12,7 @@
 
 import {
   HelixApp, buildBlock, getMetadata, fetchPlaceholders,
-} from 'https://cdn.skypack.dev/@dylandepass/helix-web-library@v1.6.1/dist/helix-web-library.esm.js';
+} from './helix-web-library.esm.js';
 
 /**
  * Builds the hero autoblock

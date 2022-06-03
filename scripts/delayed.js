@@ -1,5 +1,5 @@
 // eslint-disable-next-line import/no-cycle
-import { sampleRUM } from 'https://cdn.skypack.dev/@dylandepass/helix-web-library@v1.6.1/dist/helix-web-library.esm.js';
+import { sampleRUM } from './helix-web-library.esm.js';
 
 // Core Web Vitals RUM collection
 sampleRUM('cwv');
