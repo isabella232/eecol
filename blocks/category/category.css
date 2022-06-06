@@ -1,3 +1,7 @@
+main bread-crumbs {
+    grid-area: breadcrumbs;
+}
+
 main .category-title {
     grid-area: title;
     display: flex;
@@ -291,7 +295,7 @@ main .products-results .highlight {
 
     main .category {
         display: grid;
-        grid-template-areas: 'title title title' 'controls controls sortby' 'facets results results';
+        grid-template-areas: 'breadcrumbs breadcrumbs breadcrumbs' 'title title title' 'controls controls sortby' 'facets results results';
         grid-template-columns: 376px 1fr;
     }
 
