@@ -1,4 +1,4 @@
-import { getMetadata, toClassName } from '../../scripts/helix-web-library.esm.js';
+import { toClassName } from '../../scripts/helix-web-library.esm.js';
 
 import {
   getPlaceholders,
@@ -15,15 +15,17 @@ export default async function decorateProduct(block) {
     const sku = window.location.pathname.split('/').pop();
     const [product] = await lookupProduct(sku);
     const {
-      final_price, name, image, description,
+      final_price, name, image, description, categories,
     } = product;
+
+    console.log('product', product);
     const details = {};
     details.title = name;
     details.image = image;
     details.description = description;
     window.wesco = {
       product: {
-        sku, details, final_price,
+        sku, details, final_price, categories,
       },
     };
     return { sku, details, final_price };
@@ -152,10 +154,9 @@ export default async function decorateProduct(block) {
   };
 
   const product = await getProduct();
-  console.log(product);
+  document.dispatchEvent(new CustomEvent('product-loaded'));
   const { final_price, details, sku } = product;
   const { image, title, description } = details;
-  console.log(details);
   block.textContent = '';
 
   const picture = document.createElement('picture');

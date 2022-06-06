@@ -30,25 +30,18 @@ function buildHeroBlock(main) {
 }
 
 /**
- * Builds the product page autoblock
+ * Builds an autoblock, the contents of which will be put into main
  * @param {HTMLElement} main
  */
-function buildProductBlock(main) {
+function buildAutoBlock(main, blockName, replace = true, prepend = false) {
   const section = document.createElement('div');
-  section.append(buildBlock('product', { elems: [] }));
-  main.innerHTML = '';
-  main.append(section);
-}
-
-/**
- * Builds the category page autoblock
- * @param {HTMLElement} main
- */
-function buildCategoryBlock(main) {
-  const section = document.createElement('div');
-  section.append(buildBlock('category', { elems: [] }));
-  main.innerHTML = '';
-  main.append(section);
+  section.append(buildBlock(blockName, { elems: [] }));
+  if (replace) {
+    main.innerHTML = '';
+    // If we are replacing the main content, we likely also want to add breadcrumbs
+    section.prepend(buildBlock('breadcrumbs', { elems: [] }));
+  }
+  return prepend ? main.prepend(section) : main.append(section);
 }
 
 /**
@@ -56,11 +49,17 @@ function buildCategoryBlock(main) {
  * @param {Object} category
  * @param {Object} categoriesDictionary
  */
-function buildCategoryDictionary(category, categoriesDictionary) {
-  categoriesDictionary[category.url_key] = { ...category };
-  delete categoriesDictionary[category.url_key].children;
+function buildCategoryDictionary(category, categoriesKeyDictionary, categoriesIdDictionary) {
+  const clone = { ...category };
+  delete clone.children;
+  categoriesKeyDictionary[category.url_key] = clone;
+  categoriesIdDictionary[category.uid] = clone;
   if (category.children) {
-    category.children.forEach((child) => buildCategoryDictionary(child, categoriesDictionary));
+    category.children.forEach((child) => buildCategoryDictionary(
+      child,
+      categoriesKeyDictionary,
+      categoriesIdDictionary,
+    ));
   }
 }
 
@@ -72,14 +71,20 @@ async function fetchCategories() {
     const response = await fetch('https://wesco.experience-adobe.com/categories');
     const json = await response.json();
     const categories = json.categories?.items[0].children;
-    const categoriesDictionary = {};
-    categories.forEach((child) => buildCategoryDictionary(child, categoriesDictionary));
+    const categoriesKeyDictionary = {};
+    const categoriesIdDictionary = {};
+    categories.forEach((child) => buildCategoryDictionary(
+      child,
+      categoriesKeyDictionary,
+      categoriesIdDictionary,
+    ));
 
     // Store categories in a hierarchy
     window.categories = categories;
 
     // Store categories in a dictionary
-    window.categoriesDictionary = categoriesDictionary;
+    window.categoriesKeyDictionary = categoriesKeyDictionary;
+    window.categoriesIdDictionary = categoriesIdDictionary;
   }
 }
 
@@ -99,12 +104,24 @@ export async function getCategories() {
  * Returns a dictionary of fetched categories
  * @returns {Object}
  */
-export async function getCategoriesDictionary() {
-  if (!window.categoriesDictionary) {
+export async function getCategoriesKeyDictionary() {
+  if (!window.categoriesKeyDictionary) {
     await fetchCategories();
   }
 
-  return window.categoriesDictionary;
+  return window.categoriesKeyDictionary;
+}
+
+/**
+ * Returns a dictionary of fetched categories
+ * @returns {Object}
+ */
+export async function getCategoriesIdDictionary() {
+  if (!window.categoriesIdDictionary) {
+    await fetchCategories();
+  }
+
+  return window.categoriesIdDictionary;
 }
 
 /**
@@ -215,6 +232,11 @@ export function removeQueryParam(key) {
   window.history.pushState(null, '', path);
 }
 
+const PageTypes = [
+  'category',
+  'product',
+];
+
 /**
  *
  * Start the Helix Decoration Flow
@@ -231,10 +253,8 @@ HelixApp.init({
   .withBuildAutoBlocks((main) => {
     try {
       const pageType = getMetadata('pagetype');
-      if (pageType === 'category') {
-        buildCategoryBlock(main);
-      } else if (pageType === 'product') {
-        buildProductBlock(main);
+      if (PageTypes.includes(pageType)) {
+        buildAutoBlock(main, pageType);
       } else {
         buildHeroBlock(main);
       }

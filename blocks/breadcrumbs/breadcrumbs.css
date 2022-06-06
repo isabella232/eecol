@@ -1,0 +1,25 @@
+main .breadcrumbs ul {
+  list-style-type: none;
+  padding-left: 0px;
+}
+
+main .breadcrumbs li {
+    display: inline;
+    font-size: var(--body-font-size-s);
+}
+
+main .breadcrumbs li:not(:last-child) {
+  text-decoration: underline;
+}
+
+main .breadcrumbs li:not(:first-child)::before {
+    content: "|";
+    font-size: 12px;
+    font-style: normal;
+    font-variant: normal;
+    font-weight: 400;
+    line-height: 1;
+    padding-right: 10px;
+    padding-left: 10px;
+    text-transform: none;
+}
