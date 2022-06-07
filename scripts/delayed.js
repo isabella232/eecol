@@ -17,6 +17,8 @@ function loadScript(url, callback, type) {
   return $script;
 }
 
+console.log(`referrer: ${document.referrer}`);
+
 loadScript('https://alcdn.msauth.net/browser/2.24.0/js/msal-browser.min.js', async () => {
   const { signIn, signOut, getCurrentAccount } = await import('./auth.js');
 
