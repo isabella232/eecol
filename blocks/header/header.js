@@ -11,8 +11,8 @@ import {
   getCategories,
 } from '../../scripts/scripts.js';
 
-function updateTopBar() {
-  const account = { name: sessionStorage.getItem('fullname') };
+async function updateTopBar() {
+  const account = sessionStorage.getItem('account') ? JSON.parse(sessionStorage.getItem('account')) : '';
   const nav = document.querySelector('nav');
   const authNavi = nav.children[1].children[1];
   while (authNavi.firstChild) {
@@ -20,6 +20,18 @@ function updateTopBar() {
   }
 
   if (account && account.name) {
+    const { accounts } = account;
+    if (accounts.length > 1) {
+      const select = document.createElement('select');
+      accounts.forEach((acct) => {
+        const option = document.createElement('option');
+        option.value = acct.accountId;
+        option.textContent = `Account: ${acct.accountName}`;
+        select.append(option);
+      });
+      authNavi.append(select);
+    }
+
     authNavi.appendChild(document.createTextNode('Welcome '));
     const btnProfile = document.createElement('a');
     authNavi.appendChild(btnProfile);

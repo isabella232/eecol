@@ -17,8 +17,6 @@ function loadScript(url, callback, type) {
   return $script;
 }
 
-console.log(`referrer: ${document.referrer}`);
-
 loadScript('https://alcdn.msauth.net/browser/2.24.0/js/msal-browser.min.js', async () => {
   const { signIn, signOut, getCurrentAccount } = await import('./auth.js');
 
@@ -30,17 +28,33 @@ loadScript('https://alcdn.msauth.net/browser/2.24.0/js/msal-browser.min.js', asy
     signOut();
   });
 
+  async function getAccounts(username) {
+    const resp = await fetch(`/accounts/account-map.json?id=${username}`);
+    const json = await resp.json();
+    return json.data.filter((elem) => (elem.email.startsWith('@') && username.endsWith(elem.email)) || username === elem.email);
+  }
+
   // ----< tripod's auth poc >-------------------
   // hack: get sign-in button
   const account = await getCurrentAccount();
-  if (account) {
+  // const account = null;
+  // const account = { name: 'uncled', username: 'uncled@adobe.com' };
+
+  const loggedIn = !!sessionStorage.getItem('account');
+  if (account && !loggedIn) {
     sessionStorage.setItem('fullname', account.name);
-  } else {
-    sessionStorage.removeItem('fullname');
+    account.accounts = await getAccounts(account.username);
+    sessionStorage.setItem('account', JSON.stringify(account));
+    const updateEvent = new Event('login-update');
+    document.body.dispatchEvent(updateEvent);
   }
 
-  const updateEvent = new Event('login-update');
-  document.body.dispatchEvent(updateEvent);
+  if (!account && loggedIn) {
+    sessionStorage.removeItem('fullname');
+    sessionStorage.removeItem('account');
+    const updateEvent = new Event('login-update');
+    document.body.dispatchEvent(updateEvent);
+  }
 
   // ----< eof tripod's auth poc >-------------------
 });
