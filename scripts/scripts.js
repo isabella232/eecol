@@ -262,5 +262,7 @@ HelixApp.init({
       // eslint-disable-next-line no-console
       console.error('Auto Blocking failed', error);
     }
+  }).withLoadDelayed(() => {
+    window.setTimeout(() => import('./delayed.js'), 3000);
   })
   .decorate();
