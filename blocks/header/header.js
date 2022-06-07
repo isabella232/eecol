@@ -12,7 +12,7 @@ import {
 } from '../../scripts/scripts.js';
 
 function updateTopBar() {
-  const account = { name: sessionStorage.getItem('') };
+  const account = { name: sessionStorage.getItem('fullname') };
   const nav = document.querySelector('nav');
   const authNavi = nav.children[1].children[1];
   while (authNavi.firstChild) {
