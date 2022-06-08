@@ -18,5 +18,6 @@ module.exports = {
       js: 'always',
     }],
     'max-classes-per-file': 'off',
+    'class-methods-use-this': 'off',
   },
 };

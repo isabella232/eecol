@@ -140,12 +140,11 @@ export async function searchProducts(query) {
  * @param {*} categoryFacets
  * @returns
  */
-export async function lookupCategory(category, categoryFacets = {}) {
+export async function lookupCategory(category, activeFilterConfig) {
   let products = [];
   if (category) {
-    const req = await fetch(`https://wesco.experience-adobe.com/productLookup?category=${category.uid}&facets=${Object.keys(categoryFacets).join(',')}`);
-    const json = await req.json();
-    products = json.data;
+    const req = await fetch(`https://wesco.experience-adobe.com/productLookup?category=${category.uid}${activeFilterConfig ? `&${activeFilterConfig}` : ''}`);
+    products = await req.json();
   }
   return products;
 }
@@ -232,6 +231,15 @@ export function removeQueryParam(key) {
   window.history.pushState(null, '', path);
 }
 
+/**
+ * Clears all query params from the window location
+ * @param {string} key
+ * @param {string} value
+ */
+export function clearQueryParams() {
+  window.history.pushState(null, '', window.location.pathname);
+}
+
 const PageTypes = [
   'category',
   'product',
@@ -263,6 +271,6 @@ HelixApp.init({
       console.error('Auto Blocking failed', error);
     }
   }).withLoadDelayed(() => {
-    window.setTimeout(() => import('./delayed.js'), 3000);
+    window.setTimeout(() => import('./delayed.js'), 100);
   })
   .decorate();

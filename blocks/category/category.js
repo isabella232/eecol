@@ -14,6 +14,7 @@ import {
   lookupCategory,
   addQueryParam,
   removeQueryParam,
+  clearQueryParams,
 } from '../../scripts/scripts.js';
 
 /**
@@ -21,12 +22,35 @@ import {
  */
 class CategoryFilterController {
   constructor(block, placeholders) {
+    /**
+     * Block HTMLElement
+     * @type {HTMLElement}
+     * @public
+     */
     this.block = block;
+
+    /**
+     * Placeholders object
+     * @type {Object}
+     * @public
+     */
     this.placeholders = placeholders;
+
+    /**
+     * Category facets are the ones defined in metadata.json
+     * @type {Object}
+     * @public
+     */
     this.categoryFacets = this.getCategoryFacets();
 
-    // Apply initial filter
+    /**
+     * The currently active filter
+     * @type {Object}
+     * @public
+     */
     this.activeFilterConfig = {};
+
+    // Check URL params for active filters
     const usp = new URLSearchParams(window.location.search);
     usp.forEach((value, key) => {
       if (key === 'query') {
@@ -62,8 +86,13 @@ class CategoryFilterController {
    */
   onClearFacetSelection = () => {
     this.activeFilterConfig = {};
+    clearQueryParams();
     this.block.dispatchEvent(new CustomEvent('filterUpdated', { detail: this.activeFilterConfig }));
   };
+
+  getFilterQueryParamsString() {
+    return Object.keys(this.activeFilterConfig).map((key) => `${key}=${this.activeFilterConfig[key]}`).join('&');
+  }
 
   /**
    * Returns the facets for a category
@@ -84,35 +113,6 @@ class CategoryFilterController {
   }
 
   /**
-   * Given a collection of products, returns facet options
-   * @param {Object[]} collection
-   * @param {Object} facets
-   * @param {Object} filterConfig
-   * @returns {Object} facet options for the collection
-   */
-  getCollectionFacets(collection) {
-    const facetOptions = {};
-    const facetKeys = Object.keys(this.categoryFacets);
-    collection.forEach((row) => {
-      facetKeys.forEach((facetKey) => {
-        if (row[facetKey] && !this.activeFilterConfig[facetKey]) {
-          const rowValues = row[facetKey].split(',').map((t) => t.trim());
-          rowValues.forEach((val) => {
-            if (!facetOptions[facetKey]) facetOptions[facetKey] = {};
-            if (facetOptions[facetKey][val]) {
-              facetOptions[facetKey][val] += 1;
-            } else {
-              facetOptions[facetKey][val] = 1;
-            }
-          });
-        }
-      });
-    });
-
-    return facetOptions;
-  }
-
-  /**
    * Constructs a filter config object
    * @returns {Object} A filter config
    */
@@ -128,7 +128,7 @@ class CategoryFilterController {
       else filterConfig[facetKey] = facetValue;
     });
 
-    filterConfig.fulltext = document.getElementById('fulltext').value;
+    // filterConfig.fulltext = document.getElementById('fulltext').value;
     return ({
       ...filterConfig,
       ...this.activeFilterConfig,
@@ -159,15 +159,16 @@ class CategoryFilterController {
    * @param {string} facetKey
    * @returns The facet HTML
    */
-  renderFacet(facetKey, filteredFacets) {
-    const facet = filteredFacets[facetKey];
-    const values = Object.keys(facet);
+  renderFacet(facet) {
+    // const facet = filteredFacets[facetKey];
+    //  const values = Object.keys(facet);
+    const { label, attribute_code: attributeCode, options } = facet;
     return /* html */`
       <div class="products-facet">
-        <h3>${this.placeholders[toCamelCase(facetKey)]}</h3>
-        ${values.map((value) =>/* html */`
-            <input type="checkbox" value="${value}" id="products-filter-${value}" name="${facetKey}">
-            <label for="products-filter-${value}">${value} (${facet[value]})</label>`).join('')}
+        <h3>${label}</h3>
+        ${options.map((option) =>/* html */`
+            <input type="checkbox" value="${option.value}" id="products-filter-${option.value}" name="${attributeCode}">
+            <label for="products-filter-${option.value}">${option.label} (${option.count})</label>`).join('')}
       </div>
     `;
   }
@@ -176,10 +177,7 @@ class CategoryFilterController {
    * Render categories filter
    * @param {Object[]} collection
    */
-  render(collection) {
-    // Update results cound
-    this.block.querySelector('#products-results-count').textContent = collection.length;
-
+  render() {
     // Render facets
     const facetsElement = this.block.querySelector('.products-facets');
     facetsElement.innerHTML = this.renderFacetsScafolding();
@@ -188,7 +186,7 @@ class CategoryFilterController {
     const selectedFiltersContainer = this.block.querySelector('.products-filters-selected');
     Object.keys(this.activeFilterConfig).forEach((key) => {
       const value = this.activeFilterConfig[key];
-      if (key !== 'fulltext') {
+      if (key !== 'fulltext' && key !== 'page') {
         const span = document.createElement('span');
         span.setAttribute('data-value', key);
         span.className = 'products-filters-tag';
@@ -199,11 +197,11 @@ class CategoryFilterController {
     });
 
     // Render filtered facets
-    const filteredFacets = this.getCollectionFacets(collection);
-    const facetKeys = Object.keys(filteredFacets);
     let facetsHTML = '';
-    facetKeys.forEach((facetKey) => {
-      facetsHTML += this.renderFacet(facetKey, filteredFacets);
+    this.collectionFacets.forEach((facetKey) => {
+      if (!['price', 'category_id'].includes(facetKey.attribute_code) && !this.activeFilterConfig[facetKey.attribute_code]) {
+        facetsHTML += this.renderFacet(facetKey);
+      }
     });
 
     const facetsList = this.block.querySelector('.products-filters-facetlist');
@@ -216,15 +214,155 @@ class CategoryFilterController {
   }
 }
 
+class CategoryPagingController {
+  constructor(block, placeholders) {
+    /**
+     * Block HTMLElement
+     * @type {HTMLElement}
+     * @public
+     */
+    this.block = block;
+
+    /**
+     * Placeholders object
+     * @type {Object}
+     * @public
+     */
+    this.placeholders = placeholders;
+  }
+
+  getPageValues(totalCount, pageInfo) {
+    const maxPagesDisplayed = 5;
+    const maxPagesBeforeAfter = 3;
+    const { current_page: currentPage, page_size: pageSize, total_pages: totalPages } = pageInfo;
+
+    let startPage;
+    let endPage;
+    if (totalPages <= maxPagesDisplayed) {
+      startPage = 1;
+      endPage = totalPages;
+    } else if (currentPage <= maxPagesBeforeAfter) {
+      startPage = 1;
+      endPage = maxPagesDisplayed;
+    } else if (currentPage + maxPagesBeforeAfter >= totalPages) {
+      startPage = totalPages - maxPagesDisplayed + 1;
+      endPage = totalPages;
+    } else {
+      startPage = currentPage - maxPagesBeforeAfter;
+      endPage = currentPage + maxPagesBeforeAfter;
+    }
+
+    const startIndex = (currentPage - 1) * pageSize;
+    const endIndex = Math.min(startIndex + pageSize - 1, totalCount - 1);
+
+    const pages = Array.from(Array((endPage + 1) - startPage).keys()).map((i) => startPage + i);
+
+    return {
+      totalCount,
+      currentPage,
+      pageSize,
+      totalPages,
+      startPage,
+      endPage,
+      startIndex,
+      endIndex,
+      pages,
+    };
+  }
+
+  range(start, end) {
+    const inc = (end - start) / Math.abs(end - start);
+    return Array.from(Array(Math.abs(end - start) + 1), (_, i) => start + i * inc);
+  }
+
+  onPageSelected = (event) => {
+    const selectedPage = event.target.getAttribute('data-page');
+    addQueryParam('page', selectedPage);
+    this.block.dispatchEvent(new CustomEvent('pageSelected', { detail: selectedPage }));
+  };
+
+  render(totalCount, pageInfo) {
+    const pageValues = this.getPageValues(totalCount, pageInfo);
+    const start = pageValues.currentPage === 1 ? 1 : pageValues.currentPage * pageValues.pageSize;
+    const end = pageValues.currentPage === 1 ? pageValues.pageSize : start + pageValues.pageSize;
+    const pagination = document.createElement('div');
+    pagination.className = 'pagination-container';
+    pagination.innerHTML = /* html */`
+      <div class="pagination-text">
+          ${start}-${end} out of ${pageValues.totalCount} results
+      </div>
+      <div class="pagination">
+        <div class="pagination-root">
+          <a class="pagination-navbutton inactive" aria-label="Show previous">
+              <span class="pagination-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+              </span>
+          </a>
+          ${pageValues.pages.map((page) =>/* html */`
+            <a class="pagination-tilebutton ${page === pageValues.currentPage ? 'active' : ''}">
+                <div class="tilebutton-text" data-page="${page}">
+                  ${page}
+                </div>
+            </a>
+          `).join('')}
+          <a class="pagination-navbutton" aria-label="Show next" href="">
+              <span class="pagination-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+              </span>
+          </a>
+        </div>
+      </div>
+    `;
+    const resultsBlock = this.block.querySelector('.products-results');
+    resultsBlock.append(pagination);
+    addEventListeners([...this.block.querySelectorAll('.pagination-tilebutton')], 'click', this.onPageSelected);
+  }
+}
+
 /**
  * The CategoryResultsController loads and renders a categories product results
  */
 class CategoryResultsController {
   constructor(block, placeholders) {
+    /**
+     * Block HTMLElement
+     * @type {HTMLElement}
+     * @public
+     */
     this.block = block;
+
+    /**
+     * Placeholders object
+     * @type {Object}
+     * @public
+     */
     this.placeholders = placeholders;
+
+    /**
+     * The CategoryFilterController is responsible for displaying the filter options
+     * and notifying the CategoryResultsController when a filter is selected
+     * @type {CategoryFilterController}
+     * @public
+     */
     this.categoryFilterController = new CategoryFilterController(block, placeholders);
+
+    // Listen for filter changes
     this.block.addEventListener('filterUpdated', this.onFilterUpdated);
+
+    /**
+     * The CategoryPagingController is responsible for rendering the pagination element
+     * and notifying the CategoryResultsController when a page is selected
+     * @type {CategoryPagingController}
+     * @public
+     */
+    this.categoryPagingController = new CategoryPagingController(this.block, this.placeholders);
+
+    // Listen for page changes
+    this.block.addEventListener('pageSelected', this.onPageSelected);
   }
 
   /**
@@ -243,13 +381,29 @@ class CategoryResultsController {
     // Render the category page scafolding
     this.block.innerHTML = this.renderBlockScafolding();
     this.activeFilterConfig = this.categoryFilterController.activeFilterConfig;
+    this.categoryPagingController = new CategoryPagingController(this.block, this.placeholders);
+
+    await this.fetchProducts();
+
+    this.initializeSort();
+  }
+
+  async fetchProducts() {
     this.results = await lookupCategory(
       this.category,
-      this.categoryFilterController.categoryFacets,
+      this.categoryFilterController.getFilterQueryParamsString(),
     );
-    const filtered = this.filterCollection(this.results);
-    this.render(filtered);
-    this.initializeSort();
+
+    const {
+      data: products,
+      facets,
+      totalCount,
+      pageInfo,
+    } = this.results;
+
+    // Use the facets returned from API to render the filter options
+    this.categoryFilterController.collectionFacets = facets;
+    this.render(products, totalCount, pageInfo);
   }
 
   /**
@@ -257,7 +411,7 @@ class CategoryResultsController {
    */
   initializeSort() {
     const sortList = this.block.querySelector('.products-sortby ul');
-    const selectSort = (selected) => {
+    const selectSort = async (selected) => {
       [...sortList.children].forEach((li) => li.classList.remove('selected'));
       selected.classList.add('selected');
       const sortBy = document.getElementById('products-sortby');
@@ -265,8 +419,7 @@ class CategoryResultsController {
       sortBy.dataset.sort = selected.dataset.sort;
       document.getElementById('products-sortby').textContent = selected.textContent;
       this.block.querySelector('.products-sortby ul').classList.remove('visible');
-      const filtered = this.filterCollection(this.results);
-      this.render(filtered);
+      await this.fetchProducts();
     };
 
     sortList.addEventListener('click', (event) => {
@@ -279,40 +432,6 @@ class CategoryResultsController {
     ], 'click', () => {
       this.block.querySelector('.products-sortby ul').classList.toggle('visible');
     });
-  }
-
-  /**
-   * Filters a collection of results based on a filter config
-   * @param {Object[]} results
-   * @param {Object} filterConfig
-   * @returns {Object[]} A filtered collection of results
-   */
-  filterCollection(collection) {
-    const keys = Object.keys(this.activeFilterConfig);
-    const tokens = {};
-
-    keys.forEach((key) => {
-      tokens[key] = this.activeFilterConfig[key].split(',').map((t) => t.trim());
-    });
-    const filteredCollection = collection.filter((row) => {
-      const filterMatches = {};
-      const matchedAll = keys.every((key) => {
-        let matched = false;
-        if (row[key]) {
-          const rowValues = row[key].split(',').map((t) => t.trim());
-          matched = tokens[key].some((t) => rowValues.includes(t));
-        }
-        if (key === 'fulltext') {
-          const fulltext = row.name.toLowerCase();
-          matched = fulltext.includes(this.activeFilterConfig.fulltext.toLowerCase());
-        }
-        filterMatches[key] = matched;
-        return matched;
-      });
-      return (matchedAll);
-    });
-
-    return filteredCollection ?? collection;
   }
 
   /**
@@ -365,19 +484,24 @@ class CategoryResultsController {
     return (card);
   }
 
-  onFilterUpdated = (event) => {
+  onFilterUpdated = async (event) => {
     this.activeFilterConfig = event.detail;
-    const filtered = this.filterCollection(this.results);
-    this.render(filtered);
+    await this.fetchProducts();
+  };
+
+  onPageSelected = async (event) => {
+    await this.fetchProducts();
   };
 
   /**
    * Block render function
    * @param {Object[]} collection
    */
-  render(collection) {
+  render(collection, totalCount, pageInfo) {
+    window.scrollTo({ top: 0 });
+
     // Update results cound
-    this.block.querySelector('#products-results-count').textContent = collection.length;
+    document.querySelector('#products-results-count').textContent = totalCount;
 
     // Render facets
     const resultsElement = this.block.querySelector('.products-results');
@@ -397,7 +521,8 @@ class CategoryResultsController {
       resultsElement.append(this.renderProductCard(product, 'products'));
     });
 
-    this.categoryFilterController.render(collection);
+    this.categoryFilterController.render();
+    this.categoryPagingController.render(totalCount, pageInfo);
   }
 }
 

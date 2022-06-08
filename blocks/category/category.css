@@ -15,6 +15,7 @@ main .category-title h1 {
     font-size: var(--heading-font-size-xl);
     padding-bottom: 0px;
     margin-bottom: 0px;
+    margin-top: 10px;
 }
 
 main .category-title .products-results-count {
@@ -200,14 +201,14 @@ main .products-results {
     font-size: var(--body-font-size-m);
 }
 
-main .products-results > div {
+main .products-results .products-card {
     display: flex;
     border: 1px solid var(--highlight-background-color);
     margin: 10px 0;
     box-shadow: 0 2px 5px 0 var(--overlay-background-color);
 }
 
-main .products-results > div > a {
+main .products-results .products-card > a {
     flex: 0 0 120px;
     line-height: 0;
     margin-right: 16px;
@@ -245,6 +246,47 @@ main .products-results .highlight {
     background-color: var(--link-color);
     color: var(--background-color);
     padding: 0 2px;
+}
+
+main .products-results .pagination-container {
+    align-items: center;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+main .products-results .pagination-container .pagination .pagination-root {
+    grid-column-gap: 0.7rem;
+    background-color: #fff;
+    display: grid;
+    grid-template-rows: 1fr;
+    justify-content: center;
+    padding-bottom: 1rem;
+    padding-top: 1rem;
+    text-align: center;
+}
+
+main .products-results .pagination-container .pagination .pagination-root .pagination-tilebutton {
+    font-weight: 400;
+    grid-row-start: 1;
+}
+
+main .products-results .pagination-container .pagination .pagination-root .pagination-tilebutton.active {
+    font-weight: 700;
+    grid-row-start: 1;
+}
+
+main .products-results .pagination-container .pagination .pagination-root .pagination-navbutton {
+    font-weight: 700;
+    grid-row-start: 1;
+    outline: none;
+}
+
+main .products-results .pagination-container .pagination .pagination-root .pagination-navbutton .pagination-icon {
+    align-items: center;
+    display: inline-flex;
+    justify-content: center;
+    touch-action: manipulation;
 }
 
 @media (min-width: 900px) {
