@@ -18,11 +18,11 @@ export default async function decorateProduct(block) {
       final_price, name, image, description, categories,
     } = product;
 
-    console.log('product', product);
     const details = {};
     details.title = name;
     details.image = image;
     details.description = description;
+    details.categories = categories;
     window.wesco = {
       product: {
         sku, details, final_price, categories,
@@ -176,4 +176,5 @@ export default async function decorateProduct(block) {
   enableAddToCart();
 
   document.body.addEventListener('cart-update', enableAddToCart);
+  document.body.addEventListener('account-change', enableAddToCart);
 }

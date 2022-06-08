@@ -15,6 +15,8 @@ import {
   addQueryParam,
   removeQueryParam,
   clearQueryParams,
+  getSelectedAccount,
+  checkProductsInCatalog,
 } from '../../scripts/scripts.js';
 
 /**
@@ -363,6 +365,9 @@ class CategoryResultsController {
 
     // Listen for page changes
     this.block.addEventListener('pageSelected', this.onPageSelected);
+    document.body.addEventListener('account-change', () => {
+      window.location.reload();
+    });
   }
 
   /**
@@ -472,6 +477,14 @@ class CategoryResultsController {
    * @returns The product card element
    */
   renderProductCard(product, prefix) {
+    const account = getSelectedAccount();
+    let productInCatalog = true;
+    if (account) {
+      const matches = checkProductsInCatalog([product.sku], account, [product]);
+      [productInCatalog] = matches;
+    }
+
+    const button = productInCatalog ? `<a class="button" href=${product.path}>${this.placeholders.addToCart}</a>` : `<a class="button disabled">${this.placeholders.notInCatalog}</a>`;
     const card = document.createElement('div');
     card.className = `${prefix}-card`;
     card.innerHTML = /* html */`
@@ -479,7 +492,7 @@ class CategoryResultsController {
       <div class="${prefix}-card-details">
         <h4><a href="${product.path}">${product.name}</a></h4>
         <p>${formatCurrency(product.final_price, this.placeholders.currency || 'USD')}</p>
-        <p><a class="button" href=${product.path}>${this.placeholders.addToCart}</a></p>
+        <p>${button}</p>
       </div>`;
     return (card);
   }
@@ -491,6 +504,11 @@ class CategoryResultsController {
 
   onPageSelected = async (event) => {
     await this.fetchProducts();
+  };
+
+  onAccountChanged = () => {
+    const filtered = this.filterCollection(this.results);
+    this.render(filtered);
   };
 
   /**
