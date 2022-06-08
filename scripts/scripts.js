@@ -277,7 +277,7 @@ const PageTypes = [
  */
 export function checkProductsInCatalog(skus, account, hints) {
   const nameLookup = window.categoriesNameDictionary;
-  if (account) {
+  if (account && account.config) {
     const allowedCategs = account.config.Categories.map((categ) => (nameLookup[categ] ? nameLookup[categ].uid : ''));
 
     return skus.map((sku, i) => {
