@@ -50,9 +50,9 @@ loadScript('https://alcdn.msauth.net/browser/2.24.0/js/msal-browser.min.js', asy
 
   // ----< tripod's auth poc >-------------------
   // hack: get sign-in button
-  // const account = await getCurrentAccount();
+  const account = await getCurrentAccount();
   // const account = null;
-  const account = { name: 'uncled', username: 'uncled@adobe.com' };
+  // const account = { name: 'uncled', username: 'uncled@adobe.com' };
 
   const loggedIn = !!sessionStorage.getItem('account');
   if (account && !loggedIn) {
