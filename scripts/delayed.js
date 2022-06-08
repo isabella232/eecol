@@ -20,40 +20,63 @@ function loadScript(url, callback, type) {
 loadScript('https://alcdn.msauth.net/browser/2.24.0/js/msal-browser.min.js', async () => {
   const { signIn, signOut, getCurrentAccount } = await import('./auth.js');
 
+  document.body.addEventListener('login', () => {
+    signIn();
+  });
+
+  document.body.addEventListener('logout', () => {
+    signOut();
+  });
+
+  async function getAccounts(username) {
+    const resp = await fetch(`/accounts/account-map.json?id=${username}`);
+    const json = await resp.json();
+    const accounts = json.data.filter((elem) => (elem.email.startsWith('@') && username.endsWith(elem.email)) || username === elem.email);
+    for (let i = 0; i < accounts.length; i += 1) {
+      const account = accounts[i];
+      // eslint-disable-next-line no-await-in-loop
+      const actResp = await fetch(`/accounts/${account.accountId}.json`);
+      // eslint-disable-next-line no-await-in-loop
+      const actConfig = await actResp.json();
+      account.config = {};
+      actConfig.data.forEach((row) => {
+        let value = row.Value;
+        if (value.includes('\n')) value = value.split('\n');
+        account.config[row.Key] = value;
+      });
+    }
+    return accounts;
+  }
+
   // ----< tripod's auth poc >-------------------
   // hack: get sign-in button
-  const nav = document.querySelector('nav');
-  console.log(nav);
-  const authNavi = nav.children[1].children[1];
-  while (authNavi.firstChild) {
-    authNavi.firstChild.remove();
-  }
   const account = await getCurrentAccount();
-  if (account) {
-    authNavi.appendChild(document.createTextNode('Welcome '));
-    const btnProfile = document.createElement('a');
-    authNavi.appendChild(btnProfile);
-    btnProfile.innerText = account.name;
-    btnProfile.href = '/profile.html';
-    authNavi.appendChild(document.createTextNode(' | '));
+  // const account = null;
+  // const account = { name: 'uncled', username: 'uncled@adobe.com' };
 
-    const btnSignOut = document.createElement('a');
-    authNavi.appendChild(btnSignOut);
-    btnSignOut.innerText = 'Sign out';
-    btnSignOut.style.cursor = 'pointer';
-    btnSignOut.onclick = signOut;
-  } else {
-    const btnSignIn = document.createElement('a');
-    authNavi.appendChild(btnSignIn);
-    btnSignIn.innerText = 'Sign in';
-    btnSignIn.onclick = signIn;
-    btnSignIn.style.cursor = 'pointer';
-    authNavi.appendChild(document.createTextNode(' or '));
-    const btnRegister = document.createElement('a');
-    authNavi.appendChild(btnRegister);
-    btnRegister.href = '/content/eecol/ca/en/register';
-    btnRegister.innerText = 'Register';
-    authNavi.appendChild(document.createTextNode(' CAD'));
+  const loggedIn = !!sessionStorage.getItem('account');
+  if (account && !loggedIn) {
+    sessionStorage.setItem('fullname', account.name);
+    account.accounts = await getAccounts(account.username);
+    account.accountsById = {};
+    account.accounts.forEach((acct) => {
+      account.accountsById[acct.accountId] = acct;
+    });
+    sessionStorage.setItem('account', JSON.stringify(account));
+    const updateEvent = new Event('login-update');
+    document.body.dispatchEvent(updateEvent);
+    const accountChange = new Event('account-change');
+    document.body.dispatchEvent(accountChange);
   }
+
+  if (!account && loggedIn) {
+    sessionStorage.removeItem('fullname');
+    sessionStorage.removeItem('account');
+    const updateEvent = new Event('login-update');
+    document.body.dispatchEvent(updateEvent);
+    const accountChange = new Event('account-change');
+    document.body.dispatchEvent(accountChange);
+  }
+
   // ----< eof tripod's auth poc >-------------------
 });

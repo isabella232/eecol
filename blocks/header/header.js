@@ -9,7 +9,68 @@ import {
 import {
   searchProducts,
   getCategories,
+  setSelectedAccount,
+  getSelectedAccount,
 } from '../../scripts/scripts.js';
+
+async function updateTopBar() {
+  const account = sessionStorage.getItem('account') ? JSON.parse(sessionStorage.getItem('account')) : '';
+  const nav = document.querySelector('nav');
+  const authNavi = nav.children[1].children[1];
+  while (authNavi.firstChild) {
+    authNavi.firstChild.remove();
+  }
+
+  if (account && account.name) {
+    const { accounts } = account;
+    if (accounts.length) {
+      const selectedAccount = getSelectedAccount();
+      const select = document.createElement('select');
+      accounts.forEach((acct) => {
+        const option = document.createElement('option');
+        option.value = acct.accountId;
+        option.textContent = `Account: ${acct.accountName}`;
+        if (acct.accountId === selectedAccount.accountId) option.setAttribute('selected', '');
+        select.append(option);
+      });
+      select.addEventListener(('change'), () => {
+        setSelectedAccount(select.value, account.accountsById[select.value]);
+      });
+      authNavi.append(select);
+    }
+
+    authNavi.appendChild(document.createTextNode('Welcome '));
+    const btnProfile = document.createElement('a');
+    authNavi.appendChild(btnProfile);
+    btnProfile.innerText = account.name;
+    btnProfile.href = '/profile.html';
+    authNavi.appendChild(document.createTextNode(' | '));
+
+    const btnSignOut = document.createElement('a');
+    authNavi.appendChild(btnSignOut);
+    btnSignOut.innerText = 'Sign out';
+    btnSignOut.style.cursor = 'pointer';
+    btnSignOut.onclick = () => {
+      const updateEvent = new Event('logout');
+      document.body.dispatchEvent(updateEvent);
+    };
+  } else {
+    const btnSignIn = document.createElement('a');
+    authNavi.appendChild(btnSignIn);
+    btnSignIn.innerText = 'Sign in';
+    btnSignIn.onclick = () => {
+      const updateEvent = new Event('login');
+      document.body.dispatchEvent(updateEvent);
+    };
+    btnSignIn.style.cursor = 'pointer';
+    authNavi.appendChild(document.createTextNode(' or '));
+    const btnRegister = document.createElement('a');
+    authNavi.appendChild(btnRegister);
+    btnRegister.href = '/content/eecol/ca/en/register';
+    btnRegister.innerText = 'Register';
+    authNavi.appendChild(document.createTextNode(' CAD'));
+  }
+}
 
 /**
  * collapses all open nav sections
@@ -159,6 +220,25 @@ export default async function decorate(block) {
     const categs = createCategory(categories);
     const products = nav.querySelector('.nav-sections > ul:first-of-type > li:first-of-type > ul');
     products.replaceWith(categs);
+
+    document.body.addEventListener('account-change', (event) => {
+      const account = getSelectedAccount();
+      if (account) {
+        const allowedCategs = account.config.Categories;
+        categs.querySelectorAll(':scope > li > a').forEach((a) => {
+          if (allowedCategs.includes(a.textContent)) a.closest('li').classList.remove('hidden');
+          else a.closest('li').classList.add('hidden');
+        });
+      } else {
+        categs.querySelectorAll('.hidden').forEach((hidden) => hidden.classList.remove('hidden'));
+      }
+    });
+
+    document.body.addEventListener('login-update', () => {
+      updateTopBar();
+    });
+
+    updateTopBar();
 
     /* init cart */
     const cartIcon = block.querySelector('.icon-cart');

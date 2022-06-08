@@ -162,6 +162,10 @@ header nav .nav-sections li {
   font-weight: 500;
 }
 
+header nav .nav-sections li.hidden {
+  display: none;
+}
+
 header nav[aria-expanded='true'] .nav-sections {
   display: block;
   align-self: flex-start;

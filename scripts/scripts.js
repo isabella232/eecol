@@ -246,6 +246,34 @@ const PageTypes = [
 ];
 
 /**
+ * Sets the currently set accountId in localstorage
+ * @param {string} accountId
+ */
+export function setSelectedAccount(accountId) {
+  localStorage.setItem('selectedAccount', accountId);
+  const accountChange = new Event('account-change');
+  document.body.dispatchEvent(accountChange);
+}
+
+/**
+ * gets the currently set account via localstorage
+ * @return {Object} selected account
+ */
+export function getSelectedAccount() {
+  const account = sessionStorage.getItem('account') ? JSON.parse(sessionStorage.getItem('account')) : '';
+  if (account && account.name) {
+    const { accounts } = account;
+    const selectedAccount = localStorage.getItem('selectedAccount');
+    if (account.accountsById && !account.accountsById[selectedAccount]) {
+      setSelectedAccount(accounts[0].accountId, accounts[0]);
+      return (accounts[0]);
+    }
+    return account.accountsById[selectedAccount];
+  }
+  return undefined;
+}
+
+/**
  *
  * Start the Helix Decoration Flow
  *
