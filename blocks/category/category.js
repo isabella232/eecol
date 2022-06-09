@@ -68,14 +68,6 @@ class CategoryFilterController {
   };
 
   /**
-   * On Facet deselected callback
-   * @param {MouseEvent} event
-   */
-  onPageSelected = () => {
-    this.applyURLParamFilters();
-  };
-
-  /**
    * On facet selection cleared
    * @param {MouseEvent} event
    */
@@ -86,6 +78,7 @@ class CategoryFilterController {
   };
 
   applyURLParamFilters() {
+    this.activeFilterConfig = {};
     const usp = new URLSearchParams(window.location.search);
     usp.forEach((value, key) => {
       if (key === 'query') {
@@ -405,6 +398,12 @@ class CategoryResultsController {
     document.body.addEventListener('account-change', () => {
       window.location.reload();
     });
+
+    // Listen for back/forward button clicks
+    window.addEventListener('popstate', () => {
+      this.categoryFilterController.applyURLParamFilters();
+      this.fetchProducts();
+    }, false);
   }
 
   /**
@@ -543,7 +542,7 @@ class CategoryResultsController {
   };
 
   onPageSelected = async () => {
-    this.categoryFilterController.onPageSelected();
+    this.categoryFilterController.applyURLParamFilters();
     await this.fetchProducts();
   };
 
