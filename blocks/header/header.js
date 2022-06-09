@@ -11,6 +11,7 @@ import {
   getCategories,
   setSelectedAccount,
   getSelectedAccount,
+  checkCategoriesInCatalog,
 } from '../../scripts/scripts.js';
 
 async function updateTopBar() {
@@ -221,20 +222,18 @@ export default async function decorate(block) {
     const products = nav.querySelector('.nav-sections > ul:first-of-type > li:first-of-type > ul');
     products.replaceWith(categs);
 
-    document.body.addEventListener('account-change', (event) => {
+    document.body.addEventListener('account-change', () => {
+      /* adjust navigation based on account information */
       const account = getSelectedAccount();
       if (account) {
-        const allowedCategs = account.config.Categories;
-        categs.querySelectorAll(':scope > li > a').forEach((a) => {
-          if (allowedCategs.includes(a.textContent)) a.closest('li').classList.remove('hidden');
-          else a.closest('li').classList.add('hidden');
-        });
-      } else {
-        categs.querySelectorAll('.hidden').forEach((hidden) => hidden.classList.remove('hidden'));
+        const topLevel = [...categs.querySelectorAll(':scope > li > a')];
+        const show = checkCategoriesInCatalog(topLevel.map((a) => a.textContent), account);
+        topLevel.forEach((a, i) => { a.closest('li').className = show[i] ? '' : 'hidden'; });
       }
     });
 
     document.body.addEventListener('login-update', () => {
+      /* logged-in state changed, reflect in top bar */
       updateTopBar();
     });
 

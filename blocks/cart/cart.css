@@ -56,6 +56,15 @@ header .cart .cart-item {
     padding: 32px 0;
 }
 
+header .cart .cart-item.cart-item-invalid {
+    background-color: #ffdddd;
+}
+
+header .cart .cart-item.cart-item-invalid .cart-item-details::after {
+    color: red;
+    content: 'Item not in catalog';
+}
+
 header .cart .cart-item-details {
     flex: 1;
     padding: 0 20px;

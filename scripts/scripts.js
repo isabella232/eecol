@@ -47,18 +47,27 @@ function buildAutoBlock(main, blockName, replace = true, prepend = false) {
 /**
  * Recursively build a dictionary of categories
  * @param {Object} category
- * @param {Object} categoriesDictionary
+ * @param {Object} categoriesKeyDictionary
+ * @param {Object} categoriesIdDictionary
+ * @param {Object} categoriesNameDictionary
  */
-function buildCategoryDictionary(category, categoriesKeyDictionary, categoriesIdDictionary) {
+function buildCategoryDictionary(
+  category,
+  categoriesKeyDictionary,
+  categoriesIdDictionary,
+  categoriesNameDictionary,
+) {
   const clone = { ...category };
   delete clone.children;
   categoriesKeyDictionary[category.url_key] = clone;
   categoriesIdDictionary[category.uid] = clone;
+  categoriesNameDictionary[category.name] = clone;
   if (category.children) {
     category.children.forEach((child) => buildCategoryDictionary(
       child,
       categoriesKeyDictionary,
       categoriesIdDictionary,
+      categoriesNameDictionary,
     ));
   }
 }
@@ -73,10 +82,12 @@ async function fetchCategories() {
     const categories = json.categories?.items[0].children;
     const categoriesKeyDictionary = {};
     const categoriesIdDictionary = {};
+    const categoriesNameDictionary = {};
     categories.forEach((child) => buildCategoryDictionary(
       child,
       categoriesKeyDictionary,
       categoriesIdDictionary,
+      categoriesNameDictionary,
     ));
 
     // Store categories in a hierarchy
@@ -85,6 +96,7 @@ async function fetchCategories() {
     // Store categories in a dictionary
     window.categoriesKeyDictionary = categoriesKeyDictionary;
     window.categoriesIdDictionary = categoriesIdDictionary;
+    window.categoriesNameDictionary = categoriesNameDictionary;
   }
 }
 
@@ -98,6 +110,18 @@ export async function getCategories() {
   }
 
   return window.categories;
+}
+
+/**
+ * Returns a dictionary of fetched categories
+ * @returns {Object}
+ */
+export async function getCategoriesNameDictionary() {
+  if (!window.categoriesNameDictionary) {
+    await fetchCategories();
+  }
+
+  return window.categoriesNameDictionary;
 }
 
 /**
@@ -244,6 +268,36 @@ const PageTypes = [
   'category',
   'product',
 ];
+
+/**
+ * check if products are available in catalog
+ * @param {string[]} skus
+ * @param {Object} account
+ * @param {Object} hints
+ */
+export function checkProductsInCatalog(skus, account, hints) {
+  const nameLookup = window.categoriesNameDictionary;
+  if (account && account.config) {
+    const allowedCategs = account.config.Categories.map((categ) => (nameLookup[categ] ? nameLookup[categ].uid : ''));
+
+    return skus.map((sku, i) => {
+      const hint = hints[i];
+      return allowedCategs.some((categ) => hint.categories.includes(categ));
+    });
+  }
+  return skus.map(() => true);
+}
+
+/**
+ * check if categories are available in catalog
+ * @param {string[]} categories
+ * @param {Object} account
+ * @returns {boolean[]} catergoy is in catalog
+ */
+export function checkCategoriesInCatalog(categories, account) {
+  const allowedCategs = account.config.Categories;
+  return categories.map((cat) => allowedCategs.includes(cat));
+}
 
 /**
  * Sets the currently set accountId in localstorage

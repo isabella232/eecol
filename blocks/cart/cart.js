@@ -1,4 +1,6 @@
-import { formatCurrency } from '../../scripts/scripts.js';
+import {
+  checkProductsInCatalog, formatCurrency, getSelectedAccount,
+} from '../../scripts/scripts.js';
 import { fetchPlaceholders } from '../../scripts/helix-web-library.esm.js';
 
 class Cart {
@@ -19,6 +21,11 @@ class Cart {
   }
 
   canAdd(sku, details, price, quantity = 1) {
+    /* check for account */
+    const account = getSelectedAccount();
+    if (!checkProductsInCatalog([sku], account, [details])[0]) return false;
+
+    /* check for quantity */
     let total = quantity;
     const item = this.find(sku);
     if (item) total += item.quantity;
@@ -109,14 +116,14 @@ async function updateCartDisplay() {
   const ph = await fetchPlaceholders('/ca/en');
   const { cart } = window;
 
-  const createCartItem = (item) => {
+  const createCartItem = (item, inCatalog) => {
     const { details } = item;
-    console.log(item);
     const div = document.createElement('div');
 
     const createMods = (keys) => keys.map((key) => (details[key] ? `<p>${ph[key]} : ${details[key]}</p>` : '')).join('');
 
     div.className = 'cart-item';
+    if (!inCatalog) div.classList.add('cart-item-invalid');
     div.innerHTML = `
     <div class="cart-item-image"><img src="${details.image}">
     </div>
@@ -135,6 +142,16 @@ async function updateCartDisplay() {
   };
 
   const createMiniCart = () => {
+    /* check for account settings */
+    const account = getSelectedAccount();
+    const skus = cart.items.map((item) => item.sku);
+    const hints = cart.items.map((item) => item.details);
+    const inCatalog = checkProductsInCatalog(skus, account, hints);
+
+    let button = `<a class="button primary" href="/checkout">${ph.checkout}</a>`;
+    if (!account) button = `<a class="button primary disabled">${ph.signInToCheckOut}</a>`;
+    if (!inCatalog.every((e) => e)) button = `<a class="button primary disabled">${ph.invalidCart}</a>`;
+
     const div = document.createElement('div');
     div.className = 'cart-mini';
     div.innerHTML = `<div class="cart-header">
@@ -143,12 +160,12 @@ async function updateCartDisplay() {
     <div class="cart-items">
     </div>
     <div class="cart-controls">
-      <p><a class="button primary" href="/checkout">${ph.checkout}</a></p>
+      <p>${button}</p>
       <p><a class="button secondary" href="/cart">${ph.editShoppingBag}</a></p>
     </div>`;
     const cartItems = div.querySelector('.cart-items');
-    cart.items.forEach((item) => {
-      cartItems.append(createCartItem(item));
+    cart.items.forEach((item, i) => {
+      cartItems.append(createCartItem(item, inCatalog[i]));
     });
     return div;
   };
@@ -169,6 +186,7 @@ async function updateCartDisplay() {
 
 export default function decorate(block) {
   document.body.addEventListener('cart-update', updateCartDisplay);
+  document.body.addEventListener('account-change', updateCartDisplay);
   window.cart = window.cart || new Cart();
   const displayArea = document.createElement('div');
   displayArea.className = 'cart-display';
