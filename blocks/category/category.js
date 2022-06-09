@@ -1,6 +1,5 @@
 import {
   toCamelCase,
-  getMetadata,
   buildBlock,
   loadBlock,
 } from '../../scripts/helix-web-library.esm.js';
@@ -37,13 +36,6 @@ class CategoryFilterController {
     this.placeholders = placeholders;
 
     /**
-     * Category facets are the ones defined in metadata.json
-     * @type {Object}
-     * @public
-     */
-    this.categoryFacets = this.getCategoryFacets();
-
-    /**
      * The currently active filter
      * @type {Object}
      * @public
@@ -51,14 +43,7 @@ class CategoryFilterController {
     this.activeFilterConfig = {};
 
     // Check URL params for active filters
-    const usp = new URLSearchParams(window.location.search);
-    usp.forEach((value, key) => {
-      if (key === 'query') {
-        // fulltextElement.value = usp.get('query');
-      }
-      // TODO: Should be sanitized...
-      this.activeFilterConfig[key] = value;
-    });
+    this.applyURLParamFilters();
   }
 
   /**
@@ -81,6 +66,14 @@ class CategoryFilterController {
   };
 
   /**
+   * On Facet deselected callback
+   * @param {MouseEvent} event
+   */
+  onPageSelected = () => {
+    this.applyURLParamFilters();
+  };
+
+  /**
    * On facet selection cleared
    * @param {MouseEvent} event
    */
@@ -90,26 +83,19 @@ class CategoryFilterController {
     this.block.dispatchEvent(new CustomEvent('filterUpdated', { detail: this.activeFilterConfig }));
   };
 
-  getFilterQueryParamsString() {
-    return Object.keys(this.activeFilterConfig).map((key) => `${key}=${this.activeFilterConfig[key]}`).join('&');
+  applyURLParamFilters() {
+    const usp = new URLSearchParams(window.location.search);
+    usp.forEach((value, key) => {
+      if (key === 'query') {
+        // fulltextElement.value = usp.get('query');
+      }
+      // TODO: Should be sanitized...
+      this.activeFilterConfig[key] = value;
+    });
   }
 
-  /**
-   * Returns the facets for a category
-   * @returns {Object} Category facet options
-   */
-  getCategoryFacets() {
-    if (!this.categoryFacets) {
-      const facets = getMetadata('facets');
-      const facetsDictionary = {};
-      if (facets) {
-        facets.split(',').forEach((f) => {
-          facetsDictionary[f] = {};
-        });
-      }
-      return facetsDictionary;
-    }
-    return this.categoryFacets;
+  getFilterQueryParamsString() {
+    return Object.keys(this.activeFilterConfig).map((key) => `${key}=${this.activeFilterConfig[key]}`).join('&');
   }
 
   /**
@@ -214,7 +200,10 @@ class CategoryFilterController {
   }
 }
 
-class CategoryPagingController {
+/**
+ * The CategoryPaginationController manages the state and behavior of the category filter.
+ */
+class CategoryPaginationController {
   constructor(block, placeholders) {
     /**
      * Block HTMLElement
@@ -231,10 +220,16 @@ class CategoryPagingController {
     this.placeholders = placeholders;
   }
 
+  /**
+   * Given page info, calculate pagination values
+   * @param {number} totalCount
+   * @param {Object} pageInfo
+   * @returns
+   */
   getPageValues(totalCount, pageInfo) {
+    const { current_page: currentPage, page_size: pageSize, total_pages: totalPages } = pageInfo;
     const maxPagesDisplayed = 5;
     const maxPagesBeforeAfter = 3;
-    const { current_page: currentPage, page_size: pageSize, total_pages: totalPages } = pageInfo;
 
     let startPage;
     let endPage;
@@ -270,31 +265,58 @@ class CategoryPagingController {
     };
   }
 
-  range(start, end) {
-    const inc = (end - start) / Math.abs(end - start);
-    return Array.from(Array(Math.abs(end - start) + 1), (_, i) => start + i * inc);
-  }
-
+  /**
+   * Callback for when a page number is selected from the pagination display
+   * @param {MouseEvent} event
+   */
   onPageSelected = (event) => {
     const selectedPage = event.target.getAttribute('data-page');
     addQueryParam('page', selectedPage);
     this.block.dispatchEvent(new CustomEvent('pageSelected', { detail: selectedPage }));
   };
 
+  /**
+   * Callback for when the left disclosure arrow is clicked
+   * @param {MouseEvent} event
+   */
+  onPrevPage = (event) => {
+    const prevPage = event.currentTarget.getAttribute('data-page');
+    addQueryParam('page', prevPage);
+    this.block.dispatchEvent(new CustomEvent('pageSelected', { detail: prevPage }));
+  };
+
+  /**
+   * Callback for when the right disclosure arrow is clicked
+   * @param {MouseEvent} event
+   */
+  onNextPage = (event) => {
+    const nextPage = event.currentTarget.getAttribute('data-page');
+    addQueryParam('page', nextPage);
+    this.block.dispatchEvent(new CustomEvent('pageSelected', { detail: nextPage }));
+  };
+
+  /**
+   * Render the pagination element
+   * @param {number} totalCount
+   * @param {Object} pageInfo
+   */
   render(totalCount, pageInfo) {
     const pageValues = this.getPageValues(totalCount, pageInfo);
     const start = pageValues.currentPage === 1 ? 1 : pageValues.currentPage * pageValues.pageSize;
     const end = pageValues.currentPage === 1 ? pageValues.pageSize : start + pageValues.pageSize;
     const pagination = document.createElement('div');
+
+    let paginationText = `${pageValues.totalCount} results`;
+    if (pageValues.totalPages > 1) {
+      paginationText = `${start}-${end} out of ${paginationText}`;
+    }
     pagination.className = 'pagination-container';
     pagination.innerHTML = /* html */`
-      <div class="pagination-text">
-          ${start}-${end} out of ${pageValues.totalCount} results
-      </div>
+      <div class="pagination-text">${paginationText}</div>
       <div class="pagination">
         <div class="pagination-root">
-          <a class="pagination-navbutton inactive" aria-label="Show previous">
-              <span class="pagination-icon">
+          <a class="pagination-navbutton prev-page" aria-label="Show previous" data-page="${pageValues.currentPage - 1}">
+              <span class="pagination-icon ${pageValues.currentPage === 1 ? 'disabled' : ''}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
@@ -307,8 +329,8 @@ class CategoryPagingController {
                 </div>
             </a>
           `).join('')}
-          <a class="pagination-navbutton" aria-label="Show next" href="">
-              <span class="pagination-icon">
+          <a class="pagination-navbutton next-page" aria-label="Show next" data-page="${pageValues.currentPage + 1}">
+              <span class="pagination-icon ${pageValues.currentPage === pageValues.totalPages ? 'disabled' : ''}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="9 18 15 12 9 6"></polyline>
                 </svg>
@@ -319,7 +341,19 @@ class CategoryPagingController {
     `;
     const resultsBlock = this.block.querySelector('.products-results');
     resultsBlock.append(pagination);
+
+    // Listen for click events on page numbers
     addEventListeners([...this.block.querySelectorAll('.pagination-tilebutton')], 'click', this.onPageSelected);
+
+    // If we are not on the first page, enable the left disclosure arrow
+    if (pageValues.currentPage !== 1) {
+      resultsBlock.querySelector('.prev-page').addEventListener('click', this.onPrevPage);
+    }
+
+    // If we are not on the last page, enable the right disclosure arrow
+    if (pageValues.currentPage !== pageValues.totalPages) {
+      resultsBlock.querySelector('.next-page').addEventListener('click', this.onNextPage);
+    }
   }
 }
 
@@ -354,12 +388,15 @@ class CategoryResultsController {
     this.block.addEventListener('filterUpdated', this.onFilterUpdated);
 
     /**
-     * The CategoryPagingController is responsible for rendering the pagination element
+     * The CategoryPaginationController is responsible for rendering the pagination element
      * and notifying the CategoryResultsController when a page is selected
-     * @type {CategoryPagingController}
+     * @type {CategoryPaginationController}
      * @public
      */
-    this.categoryPagingController = new CategoryPagingController(this.block, this.placeholders);
+    this.categoryPaginationController = new CategoryPaginationController(
+      this.block,
+      this.placeholders,
+    );
 
     // Listen for page changes
     this.block.addEventListener('pageSelected', this.onPageSelected);
@@ -381,7 +418,10 @@ class CategoryResultsController {
     // Render the category page scafolding
     this.block.innerHTML = this.renderBlockScafolding();
     this.activeFilterConfig = this.categoryFilterController.activeFilterConfig;
-    this.categoryPagingController = new CategoryPagingController(this.block, this.placeholders);
+    this.categoryPaginationController = new CategoryPaginationController(
+      this.block,
+      this.placeholders,
+    );
 
     await this.fetchProducts();
 
@@ -489,7 +529,8 @@ class CategoryResultsController {
     await this.fetchProducts();
   };
 
-  onPageSelected = async (event) => {
+  onPageSelected = async () => {
+    this.categoryFilterController.onPageSelected();
     await this.fetchProducts();
   };
 
@@ -522,7 +563,7 @@ class CategoryResultsController {
     });
 
     this.categoryFilterController.render();
-    this.categoryPagingController.render(totalCount, pageInfo);
+    this.categoryPaginationController.render(totalCount, pageInfo);
   }
 }
 

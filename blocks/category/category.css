@@ -269,11 +269,19 @@ main .products-results .pagination-container .pagination .pagination-root {
 main .products-results .pagination-container .pagination .pagination-root .pagination-tilebutton {
     font-weight: 400;
     grid-row-start: 1;
+    line-height: 1.2;
+    cursor: pointer;
 }
 
 main .products-results .pagination-container .pagination .pagination-root .pagination-tilebutton.active {
     font-weight: 700;
-    grid-row-start: 1;
+}
+
+main .products-results .pagination-container .pagination .pagination-root .pagination-tilebutton.active:hover {
+    color:#000;
+    text-decoration: none;
+    pointer-events: none;
+    user-select: none;
 }
 
 main .products-results .pagination-container .pagination .pagination-root .pagination-navbutton {
@@ -286,7 +294,17 @@ main .products-results .pagination-container .pagination .pagination-root .pagin
     align-items: center;
     display: inline-flex;
     justify-content: center;
-    touch-action: manipulation;
+    color: #000;
+}
+
+main .products-results .pagination-container .pagination .pagination-root .pagination-navbutton .pagination-icon:hover {
+    color: var(--link-hover-color);
+}
+
+main .products-results .pagination-container .pagination .pagination-root .pagination-navbutton .pagination-icon.disabled {
+   color:#cccccc;
+   pointer-events: none;
+   user-select: none;
 }
 
 @media (min-width: 900px) {
