@@ -30,16 +30,23 @@ export default async function decorate(block) {
 
     // pop current page
     let segment = pathsArray.pop();
-    while (segment !== 'category') {
-      const { name, url_key: categoryUrlKey } = categories[segment];
-      breadcrumbs.push({
-        name,
-        path: `${pathsArray.join('/')}/${categoryUrlKey}`,
-      });
-      segment = pathsArray.pop();
-    }
+    if (segment !== 'search') {
+      while (segment !== 'category') {
+        const { name, url_key: categoryUrlKey } = categories[segment];
+        breadcrumbs.push({
+          name,
+          path: `${pathsArray.join('/')}/${categoryUrlKey}`,
+        });
+        segment = pathsArray.pop();
+      }
 
-    breadcrumbs.reverse();
+      breadcrumbs.reverse();
+    } else {
+      breadcrumbs.push({
+        name: 'Search',
+        path: `${pathsArray.join('/')}/search`,
+      });
+    }
     renderBreadcrumbs(block, breadcrumbs);
   } else if (pageType === 'product') {
     document.addEventListener('product-loaded', async () => {

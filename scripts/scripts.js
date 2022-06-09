@@ -160,14 +160,14 @@ export async function searchProducts(query) {
 
 /**
  * Returns an array of products for a category
- * @param {*} category
- * @param {*} categoryFacets
+ * @param {Object} category
+ * @param {string} categoryFacets
  * @returns
  */
-export async function lookupCategory(category, activeFilterConfig) {
+export async function lookupCategory(category, activeFilterUrlParams) {
   let products = [];
-  if (category) {
-    const req = await fetch(`https://wesco.experience-adobe.com/productLookup?category=${category.uid}${activeFilterConfig ? `&${activeFilterConfig}` : ''}`);
+  const req = await fetch(`https://wesco.experience-adobe.com/productLookup'?${category.uid ? `category=${category.uid}` : ''}${activeFilterUrlParams ? `&${activeFilterUrlParams}` : ''}`);
+  if (req.status === 200) {
     products = await req.json();
   }
   return products;

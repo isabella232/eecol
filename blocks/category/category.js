@@ -19,6 +19,57 @@ import {
 } from '../../scripts/scripts.js';
 
 /**
+ * Pagination Type
+ * @typedef {Object} Pagination
+ * @property {number} totalCount Total number of results
+ * @property {number} currentPage The active page
+ * @property {number} pageSize The number of items per page
+ * @property {number} totalPages The total number of pages
+ * @property {number} startPage The first page
+ * @property {number} endPage The last page
+ * @property {number} startIndex The index of the first item
+ * @property {number} endIndex The index of the last item
+ * @property {number[]} pages An array of page numbers
+ */
+
+/**
+ * Page Info Returned from the API
+ * @typedef {Object} PageInfo
+ * @property {number} currentPage Total number of results
+ * @property {number} pageSize The active page
+ * @property {number} totalPage The number of items per page
+ */
+
+/**
+ * Category Object
+ * @typedef {Object} Category
+ * @property {string} children_count The number of children in the category
+ * @property {number} level The hierarchy level of the category
+ * @property {string} name The name of the category
+ * @property {string} path The path of the category (in category ids)
+ * @property {string} uid The unique id of the category
+ * @property {string} url_key The url key of the category
+ * @property {string} url_path The url path of the category
+ */
+
+/**
+ * Product Object
+ * @typedef {Object} Product
+ * @property {string[]} categories An array of category ids
+ * @property {string} description The product description
+ * @property {number} discount_off The discount off the product
+ * @property {number} final_price The final price of the product
+ * @property {string} image The image url of the product
+ * @property {string} name The name of the product
+ * @property {string} path The path of the product
+ * @property {number} regular_price The regular price of the product
+ * @property {string} sku The sku of the product
+ * @property {string} stock_status The stock status of the product
+ */
+
+const ExcludedFilterKeys = ['fulltext', 'page', 'query'];
+
+/**
  * The CategoryFilterController manages the state and behavior of the category filter.
  */
 class CategoryFilterController {
@@ -156,22 +207,30 @@ class CategoryFilterController {
 
   /**
    * Render categories filter
-   * @param {Object[]} collection
+   * @param {Product[]} collection
    */
   render() {
     // Render facets
     const facetsElement = this.block.querySelector('.products-facets');
     facetsElement.innerHTML = this.renderFacetsScafolding();
 
-    // Render active facets
+    // Render active filters
     const selectedFiltersContainer = this.block.querySelector('.products-filters-selected');
     Object.keys(this.activeFilterConfig).forEach((key) => {
       const value = this.activeFilterConfig[key];
-      if (key !== 'fulltext' && key !== 'page') {
+      if (!ExcludedFilterKeys.includes(key)) {
+        let facetLabel = value;
+
+        // Try and pull out the facet label from the collection facets
+        const colFacet = this.collectionFacets.filter((facet) => facet.attribute_code === key);
+        if (colFacet.length > 0 && colFacet[0].options.length > 0) {
+          facetLabel = colFacet[0].options[0].label;
+        }
+
         const span = document.createElement('span');
         span.setAttribute('data-value', key);
         span.className = 'products-filters-tag';
-        span.textContent = `${this.placeholders[toCamelCase(key)]}: ${value}`;
+        span.textContent = `${this.placeholders[toCamelCase(key)]}: ${facetLabel}`;
         span.addEventListener('click', this.onFacetDeSelected);
         selectedFiltersContainer.append(span);
       }
@@ -218,11 +277,11 @@ class CategoryPaginationController {
   /**
    * Given page info, calculate pagination values
    * @param {number} totalCount
-   * @param {Object} pageInfo
-   * @returns
+   * @param {PageInfo} pageInfo
+   * @returns {Pagination}
    */
-  getPageValues(totalCount, pageInfo) {
-    const { current_page: currentPage, page_size: pageSize, total_pages: totalPages } = pageInfo;
+  getPagination(totalCount, pageInfo) {
+    const { currentPage, pageSize, totalPages } = pageInfo;
     const maxPagesDisplayed = 5;
     const maxPagesBeforeAfter = 3;
 
@@ -293,10 +352,10 @@ class CategoryPaginationController {
   /**
    * Render the pagination element
    * @param {number} totalCount
-   * @param {Object} pageInfo
+   * @param {PageInfo} pageInfo
    */
   render(totalCount, pageInfo) {
-    const pageValues = this.getPageValues(totalCount, pageInfo);
+    const pageValues = this.getPagination(totalCount, pageInfo);
     const start = pageValues.currentPage === 1 ? 1 : pageValues.currentPage * pageValues.pageSize;
     const end = pageValues.currentPage === 1 ? pageValues.pageSize : start + pageValues.pageSize;
     const pagination = document.createElement('div');
@@ -412,16 +471,24 @@ class CategoryResultsController {
   async load() {
     // Determine category to load based on last segment of url
     this.categoryId = window.location.pathname.split('/').pop();
+    this.activeFilterConfig = this.categoryFilterController.activeFilterConfig;
 
-    // Get the category dictionary for easy lookup
-    this.categoriesDictionary = await getCategoriesKeyDictionary();
+    if (this.categoryId !== 'search') {
+      // Get the category dictionary for easy lookup
+      this.categoriesDictionary = await getCategoriesKeyDictionary();
 
-    // Get the category
-    this.category = this.categoriesDictionary[this.categoryId];
+      // Get the category
+      this.category = this.categoriesDictionary[this.categoryId];
+    } else {
+      this.category = {
+        name: `Search Results for: ${this.activeFilterConfig.query}`,
+        url_key: 'search',
+        url_path: 'search',
+      };
+    }
 
     // Render the category page scafolding
     this.block.innerHTML = this.renderBlockScafolding();
-    this.activeFilterConfig = this.categoryFilterController.activeFilterConfig;
     this.categoryPaginationController = new CategoryPaginationController(
       this.block,
       this.placeholders,
@@ -447,7 +514,7 @@ class CategoryResultsController {
 
     // Use the facets returned from API to render the filter options
     this.categoryFilterController.collectionFacets = facets;
-    this.render(products, totalCount, pageInfo);
+    this.render(products ?? [], totalCount, pageInfo);
   }
 
   /**
@@ -480,38 +547,41 @@ class CategoryResultsController {
 
   /**
    * Creates the scafolding for the block
-   * @param {Object} category
+   * @param {Category} category
    * @param {Object} placeholders
    */
   renderBlockScafolding() {
     return /* html */`
-    <div class="category-title">
-      <h1>${this.category.name}</h1>
-      <p class="products-results-count"><span id="products-results-count"></span> ${this.placeholders.results}</p>
-    </div>
-    <div class="products-controls">
-      <input id="fulltext" placeholder="${this.placeholders.typeToSearch}" style="display:none">
-      <button class="products-filter-button secondary">${this.placeholders.filter}</button>
-      <button class="products-sort-button secondary">${this.placeholders.sort}</button>
-    </div>
-    <div class="products-facets">
-    </div>
-    <div class="products-sortby">
-      <p>${this.placeholders.sortBy} <span data-sort="best" id="products-sortby">${this.placeholders.bestMatch}</span></p>
-      <ul>
-        <li data-sort="best">${this.placeholders.bestMatch}</li>
-        <li data-sort="position">${this.placeholders.position}</li>
-        <li data-sort="price-desc">${this.placeholders.priceHighToLow}</li>
-        <li data-sort="price-asc">${this.placeholders.priceLowToHigh}</li>
-        <li data-sort="name">${this.placeholders.productName}</li>
-      </ul>
-    </div>
-    <div class="products-results"></div>`;
+      <div class="category-title">
+        <h1>${this.category.name}</h1>
+        <p class="products-results-count"><span id="products-results-count"></span> ${this.placeholders.results}</p>
+      </div>
+      <div class="results-container">
+        <div class="products-controls">
+          <input id="fulltext" placeholder="${this.placeholders.typeToSearch}" style="display:none">
+          <button class="products-filter-button secondary">${this.placeholders.filter}</button>
+          <button class="products-sort-button secondary">${this.placeholders.sort}</button>
+        </div>
+        <div class="products-facets">
+        </div>
+        <div class="products-sortby">
+          <p>${this.placeholders.sortBy} <span data-sort="best" id="products-sortby">${this.placeholders.bestMatch}</span></p>
+          <ul>
+            <li data-sort="best">${this.placeholders.bestMatch}</li>
+            <li data-sort="position">${this.placeholders.position}</li>
+            <li data-sort="price-desc">${this.placeholders.priceHighToLow}</li>
+            <li data-sort="price-asc">${this.placeholders.priceLowToHigh}</li>
+            <li data-sort="name">${this.placeholders.productName}</li>
+          </ul>
+        </div>
+        <div class="products-results"></div>
+      </div>
+    `;
   }
 
   /**
    * Renders a product card
-   * @param {Object} product
+   * @param {Product} product
    * @param {string} prefix
    * @returns The product card element
    */
@@ -536,6 +606,25 @@ class CategoryResultsController {
     return (card);
   }
 
+  renderNoResults() {
+    return /* html */`
+      <div class="no-results">
+        <h4 class="title">No results were found. Please try searching for another keyword, term, or part number.</h4>
+        <p class="description">Contact us today and we will help you get the products and parts that you need or return to our homepage to browse by category.</p>
+        <div class="actions">
+            <button class="button primary hasOutline">
+              <span>Contact Us</span>
+            </button>
+            <a href="/">
+              <button class="button primary">
+                <span>Return to Homepage</span>
+              </button>
+            </a>
+        </div>
+      </div>
+    `;
+  }
+
   onFilterUpdated = async (event) => {
     this.activeFilterConfig = event.detail;
     await this.fetchProducts();
@@ -553,7 +642,9 @@ class CategoryResultsController {
 
   /**
    * Block render function
-   * @param {Object[]} collection
+   * @param {Product[]} collection
+   * @param {number} totalCount
+   * @param {PageInfo} pageInfo
    */
   render(collection, totalCount, pageInfo) {
     window.scrollTo({ top: 0 });
@@ -561,26 +652,33 @@ class CategoryResultsController {
     // Update results cound
     document.querySelector('#products-results-count').textContent = totalCount;
 
-    // Render facets
-    const resultsElement = this.block.querySelector('.products-results');
+    if (collection.length > 0) {
+      // Render facets
+      const resultsElement = this.block.querySelector('.products-results');
 
-    // Sort and render the results
-    const sorts = {
-      name: (a, b) => a.name.localeCompare(b.name),
-      'price-asc': (a, b) => getNumber(a.final_price) - getNumber(b.final_price),
-      'price-desc': (a, b) => getNumber(b.final_price) - getNumber(a.final_price),
-    };
-    const sortBy = document.getElementById('products-sortby') ? document.getElementById('products-sortby').dataset.sort : 'best';
-    if (sortBy && sorts[sortBy]) collection.sort(sorts[sortBy]);
+      // Sort and render the results
+      const sorts = {
+        name: (a, b) => a.name.localeCompare(b.name),
+        'price-asc': (a, b) => getNumber(a.final_price) - getNumber(b.final_price),
+        'price-desc': (a, b) => getNumber(b.final_price) - getNumber(a.final_price),
+      };
+      const sortBy = document.getElementById('products-sortby') ? document.getElementById('products-sortby').dataset.sort : 'best';
+      if (sortBy && sorts[sortBy]) collection.sort(sorts[sortBy]);
 
-    // Clear the resultsElement and render the new results set
-    resultsElement.innerHTML = '';
-    collection.forEach((product) => {
-      resultsElement.append(this.renderProductCard(product, 'products'));
-    });
+      // Clear the resultsElement and render the new results set
+      resultsElement.innerHTML = '';
+      collection.forEach((product) => {
+        resultsElement.append(this.renderProductCard(product, 'products'));
+      });
 
-    this.categoryFilterController.render();
-    this.categoryPaginationController.render(totalCount, pageInfo);
+      this.categoryFilterController.render();
+      this.categoryPaginationController.render(totalCount, pageInfo);
+    } else {
+      // Render no results
+      const resultsContainer = this.block.querySelector('.results-container');
+      resultsContainer.style.display = 'block';
+      resultsContainer.innerHTML = this.renderNoResults();
+    }
   }
 }
 
