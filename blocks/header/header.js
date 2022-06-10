@@ -224,7 +224,7 @@ export default async function decorate(block) {
     const products = nav.querySelector('.nav-sections > ul:first-of-type > li:first-of-type > ul');
     products.replaceWith(categs);
 
-    document.body.addEventListener('account-change', () => {
+    const filterCategoriesByAccount = () => {
       /* adjust navigation based on account information */
       const account = getSelectedAccount();
       if (account) {
@@ -232,6 +232,11 @@ export default async function decorate(block) {
         const show = checkCategoriesInCatalog(topLevel.map((a) => a.textContent), account);
         topLevel.forEach((a, i) => { a.closest('li').className = show[i] ? '' : 'hidden'; });
       }
+    };
+
+    document.body.addEventListener('account-change', () => {
+      /* account switch */
+      filterCategoriesByAccount();
     });
 
     document.body.addEventListener('login-update', () => {
@@ -240,6 +245,7 @@ export default async function decorate(block) {
     });
 
     updateTopBar();
+    filterCategoriesByAccount();
 
     /* init cart */
     const cartIcon = block.querySelector('.icon-cart');
