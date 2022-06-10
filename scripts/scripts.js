@@ -77,7 +77,7 @@ function buildCategoryDictionary(
  */
 async function fetchCategories() {
   if (!window.categories) {
-    const response = await fetch('https://wesco.experience-adobe.com/categories');
+    const response = await fetch('https://main--eecol--hlxsites.hlx-orch.live/categories');
     const json = await response.json();
     const categories = json.categories?.items[0].children;
     const categoriesKeyDictionary = {};
@@ -166,7 +166,7 @@ export async function searchProducts(query) {
  */
 export async function lookupCategory(category, activeFilterUrlParams) {
   let products = [];
-  const req = await fetch(`https://wesco.experience-adobe.com/productLookup'?${category.uid ? `category=${category.uid}` : ''}${activeFilterUrlParams ? `&${activeFilterUrlParams}` : ''}`);
+  const req = await fetch(`https://main--eecol--hlxsites.hlx-orch.live/productLookup'?${category.uid ? `category=${category.uid}` : ''}${activeFilterUrlParams ? `&${activeFilterUrlParams}` : ''}`);
   if (req.status === 200) {
     products = await req.json();
   }
@@ -182,7 +182,7 @@ export async function lookupCategory(category, activeFilterUrlParams) {
 export async function lookupProduct(sku) {
   let product = {};
   if (sku) {
-    const req = await fetch(`https://wesco.experience-adobe.com/productLookup?sku=${sku}`);
+    const req = await fetch(`https://main--eecol--hlxsites.hlx-orch.live/productLookup?sku=${sku}`);
     const json = await req.json();
     product = json.data;
   }
