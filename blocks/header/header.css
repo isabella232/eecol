@@ -228,9 +228,18 @@ header .nav-search-suggestions {
   display: none;
 }
 
+header .nav-search-suggestions .light {
+  color: var(--highlight-background-color);
+}
+
 header .nav-search-suggestions .highlight {
   background-color: var(--link-color);
   font-weight: 600;
+  color: var(--background-color);
+}
+
+header .nav-search-suggestions .light .highlight {
+  background-color: var(--highlight-background-color);
   color: var(--background-color);
 }
 

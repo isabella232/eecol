@@ -170,7 +170,7 @@ export default async function decorate(block) {
     const filterNav = (query) => {
       const q = query.toLowerCase();
       const results = [...nav.querySelectorAll('a')].filter((e) => e.textContent.toLowerCase().includes(q)).slice(0, MAX_SUGGESTIONS);
-      return results.map((e) => ({ title: e.textContent, href: e.href }));
+      return results.map((e) => ({ title: e.textContent, href: e.href, hidden: !!e.closest('.hidden') }));
     };
 
     const fillSuggestions = async () => {
@@ -186,6 +186,7 @@ export default async function decorate(block) {
       }
       results.forEach((r) => {
         const option = document.createElement('div');
+        option.className = r.hidden ? 'light' : '';
         option.innerHTML = `<a href="${r.href}">${addHighlight(r.title, query)}</a>`;
         suggestions.append(option);
       });
