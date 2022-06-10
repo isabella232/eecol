@@ -87,12 +87,14 @@ function collapseAllNavSections(sections) {
 function createCategory(children) {
   const ul = document.createElement('ul');
   children.forEach((child) => {
-    const li = document.createElement('li');
-    li.innerHTML = `<a href="/ca/en/products/category/${child.url_path.split('.')[0]}">${child.name}</a>`;
-    if (child.children) {
-      li.append(createCategory(child.children));
+    if (child.url_path) {
+      const li = document.createElement('li');
+      li.innerHTML = `<a href="/ca/en/products/category/${child.url_path.split('.')[0]}">${child.name}</a>`;
+      if (child.children) {
+        li.append(createCategory(child.children));
+      }
+      ul.append(li);
     }
-    ul.append(li);
   });
   return (ul);
 }
