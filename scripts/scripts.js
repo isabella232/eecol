@@ -79,7 +79,7 @@ async function fetchCategories() {
   if (!window.categories) {
     const response = await fetch('https://main--eecol--hlxsites.hlx-orch.live/categories');
     const json = await response.json();
-    const categories = json.categories?.items[0].children;
+    const categories = json.data.categories?.items[0].children;
     const categoriesKeyDictionary = {};
     const categoriesIdDictionary = {};
     const categoriesNameDictionary = {};
@@ -166,7 +166,7 @@ export async function searchProducts(query) {
  */
 export async function lookupCategory(category, activeFilterUrlParams) {
   let products = [];
-  const req = await fetch(`https://main--eecol--hlxsites.hlx-orch.live/productLookup'?${category.uid ? `category=${category.uid}` : ''}${activeFilterUrlParams ? `&${activeFilterUrlParams}` : ''}`);
+  const req = await fetch(`https://main--eecol--hlxsites.hlx-orch.live/productLookup?${category.uid ? `category=${category.uid}` : ''}${activeFilterUrlParams ? `&${activeFilterUrlParams}` : ''}`);
   if (req.status === 200) {
     products = await req.json();
   }
