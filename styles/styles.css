@@ -65,7 +65,22 @@ img {
 
 header {
   height: var(--nav-height);
+  grid-area: header;
 }
+
+footer {
+  grid-area: footer;
+}
+
+main {
+  grid-area: main;
+}
+
+.account-nav {
+  grid-area: accountnav;
+}
+
+
 
 h1, h2, h3,
 h4, h5, h6 {
@@ -238,4 +253,12 @@ main .section[data-section-status='initialized'] {
 
 main .section.highlight {
   background-color: var(--highlight-background-color);
+}
+
+@media (min-width: 900px) {
+  body.account {
+    display: grid;
+    grid-template-areas: 'header header' 'accountnav main' 'footer footer';
+    grid-template-columns: 375px 1fr;
+  }  
 }

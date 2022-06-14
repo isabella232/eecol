@@ -1,0 +1,8 @@
+.account-nav {
+    margin: 32px;
+    background-color: var(--overlay-background-color);
+}
+
+.account-nav > div > div {
+    border-bottom: 1px solid black;
+}
