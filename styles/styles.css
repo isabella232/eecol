@@ -70,6 +70,10 @@ header {
   grid-area: header;
 }
 
+.breadcrumbs {
+  grid-area: breadcrumbs;
+}
+
 footer {
   grid-area: footer;
 }
@@ -315,7 +319,7 @@ main .section.highlight {
 @media (min-width: 900px) {
   body.account {
     display: grid;
-    grid-template-areas: 'header header' 'accountnav main' 'footer footer';
+    grid-template-areas: 'header header' 'breadcrumbs breadcrumbs' 'accountnav main' 'footer footer';
     grid-template-columns: 375px 1fr;
   }  
 }

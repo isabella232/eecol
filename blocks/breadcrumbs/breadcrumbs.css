@@ -1,18 +1,22 @@
-main .breadcrumbs ul {
+body > .breadcrumbs-wrapper {
+  margin: 12px 32px;
+}
+
+.breadcrumbs ul {
   list-style-type: none;
   padding-left: 0px;
 }
 
-main .breadcrumbs li {
+.breadcrumbs li {
     display: inline;
     font-size: var(--body-font-size-s);
 }
 
-main .breadcrumbs li:not(:last-child) {
+.breadcrumbs li:not(:last-child) {
   text-decoration: underline;
 }
 
-main .breadcrumbs li:not(:first-child)::before {
+.breadcrumbs li:not(:first-child)::before {
     content: "|";
     font-size: 12px;
     font-style: normal;
