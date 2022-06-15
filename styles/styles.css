@@ -15,29 +15,31 @@
   --link-color: #0099d8;
   --link-hover-color: #0099d8;
   --background-color: #fff;
-  --medium-background-color: #666;
-  --overlay-background-color: #eee;
-  --highlight-background-color: #ccc;
+  --medium-background-color: #092a42;
+  --overlay-background-color: #012139;
+  --highlight-background-color: #f4f6f5;
   --text-color: #000;
   --dark-background-color: #012139;
+  --border-color: #DDE3E3;
 
   /* fonts */
-  --body-font-family: 'helvetica neue', helvetica, ubuntu, roboto, noto, sans-serif;
+  --body-font-family: 'Source Sans Pro', helvetica, ubuntu, roboto, noto, sans-serif;
   --heading-font-family: var(--body-font-family);
   --fixed-font-family: 'Roboto Mono', menlo, consolas, 'Liberation Mono', monospace;
 
   /* body sizes */
-  --body-font-size-m: 22px;
-  --body-font-size-s: 18px;
+  --body-font-size-l: 18px;
+  --body-font-size-m: 16px;
+  --body-font-size-s: 14px;
   --body-font-size-xs: 12px;
 
   /* heading sizes */
-  --heading-font-size-xxl: 36px;
-  --heading-font-size-xl: 32px;
-  --heading-font-size-l: 28px;
+  --heading-font-size-xxl: 32px;
+  --heading-font-size-xl: 28px;
+  --heading-font-size-l: 27px;
   --heading-font-size-m: 24px;
-  --heading-font-size-s: 20px;
-  --heading-font-size-xs: 18px;
+  --heading-font-size-s: 18px;
+  --heading-font-size-xs: 16px;
 
   /* nav height */
   --nav-height: 133px;
@@ -69,19 +71,17 @@ header {
 
 h1, h2, h3,
 h4, h5, h6 {
-  font-weight: 600;
-  line-height: 1.25;
   margin-top: 1em;
   margin-bottom: .5em;
   scroll-margin: calc(var(--nav-height) + 1em);
 }
 
-h1 { font-size: var(--heading-font-size-xxl) }
-h2 { font-size: var(--heading-font-size-xl) }
-h3 { font-size: var(--heading-font-size-l) }
-h4 { font-size: var(--heading-font-size-m) }
-h5 { font-size: var(--heading-font-size-s) }
-h6 { font-size: var(--heading-font-size-xs) }
+h1 { font-size: var(--heading-font-size-xxl); line-height: 2.5em; font-weight: 700; }
+h2 { font-size: var(--heading-font-size-xl); line-height: 2em; font-weight: 600; }
+h3 { font-size: var(--heading-font-size-l); line-height: 1.6875em; font-weight: 600; }
+h4 { font-size: var(--heading-font-size-m); line-height: 1.2em; font-weight: 600; }
+h5 { font-size: var(--heading-font-size-s); line-height: 1.125em; font-weight: 400; }
+h6 { font-size: var(--heading-font-size-xs); line-height: 1.125em; font-weight: 400; }
 
 p, dl, ol, ul, pre, blockquote {
   margin-top: 1em;
@@ -126,11 +126,10 @@ a.button:any-link, button {
   cursor: pointer;
   color: var(--background-color);
   background-color: var(--link-color);
-  margin: 16px 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  border-radius: 30px;
+  border-radius: 3px;
 }
 
 a.button:hover, a.button:focus, button:hover, button:focus  {
@@ -209,15 +208,73 @@ main img {
   height: auto;
 }
 
+/* Loader */
+.dot-flashing {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background-color: var(--link-color);
+  color: var(--link-color);
+  animation: dotFlashing 1s infinite linear alternate;
+  animation-delay: .5s;
+}
+
+.dot-flashing::before, .dot-flashing::after {
+  content: '';
+  display: inline-block;
+  position: absolute;
+  top: 0;
+}
+
+.dot-flashing::before {
+  left: -15px;
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background-color: var(--link-color);
+  color: var(--link-color);
+  animation: dotFlashing 1s infinite alternate;
+  animation-delay: 0s;
+}
+
+.dot-flashing::after {
+  left: 15px;
+  width: 10px;
+  height: 10px;
+  border-radius: 5px;
+  background-color: var(--link-color);
+  color: var(--link-color);
+  animation: dotFlashing 1s infinite alternate;
+  animation-delay: 1s;
+}
+
+@keyframes dotFlashing {
+  0% {
+    background-color: var(--link-color);
+  }
+  50%,
+  100% {
+    background-color: #A1C4D3;
+  }
+}
+
 @media (min-width: 900px) {
   :root {
-    --heading-font-size-xxl: 60px;
-    --heading-font-size-xl: 48px;
+    --heading-font-size-xxl: 48px;
+    --heading-font-size-xl: 44px;
     --heading-font-size-l: 36px;
-    --heading-font-size-m: 30px;
+    --heading-font-size-m: 36px;
     --heading-font-size-s: 24px;
     --heading-font-size-xs: 22px;  
   }
+
+  h1 { line-height: 60px; }
+  h2 { line-height: 44px; }
+  h3 { line-height: 38px; }
+  h4 { line-height: 34px;}
+  h5 { line-height: 30px; font-weight: 600; }
+  h6 { line-height: 28px; }
   
   .section > div {
     max-width: 1200px;

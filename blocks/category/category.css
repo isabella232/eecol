@@ -45,7 +45,6 @@ main .results-container .products-facets  {
 
 main .results-container .products-facets > div {
     padding: 0;
-    overflow-y: scroll;
     width: 360px;
     background-color: var(--background-color);
     height: 100vh;
@@ -80,6 +79,16 @@ main .results-container .products-facets .products-filters {
     overflow-y: scroll;
 }
 
+main .results-container .products-facets .products-filters h2 {
+    margin-bottom: 5px;
+}
+
+main .results-container .products-facets .products-filters img {
+    width: 12px;
+    padding-right: 5px;
+}
+
+
 main .results-container .products-facets .products-apply-filters {
     flex: 0;
     height: 200px;
@@ -103,9 +112,26 @@ main .results-container .products-filters-selected span {
 }
 
 main .results-container .products-facet {
-    border-top: 2px solid #ccc;
-    padding-bottom: 14px;
-    margin: 20px 0;
+    cursor: pointer;
+    border-top: 1px solid #ccc;
+    padding: 10px;
+}
+
+main .results-container .products-facet h3 {
+    display: flex;
+    justify-content: space-between;
+}
+
+main .results-container .products-facet img {
+    width: 10px;
+}
+
+main .results-container .products-facet[aria-expanded="true"] img {
+    transform: rotate(90deg);
+}
+
+main .results-container .products-facet .products-facet-options {
+    display: none;
 }
 
 main .results-container .products-filters-selected:empty + p {
@@ -130,7 +156,7 @@ main .results-container .products-facets h3 {
     font-family: var(--body-font-family);
     font-size: var(--body-font-size-m);
     font-weight: 400;
-    margin: 17px 0;
+    margin: 0px 0;
 }
 
 
@@ -203,9 +229,10 @@ main .results-container .products-results {
 
 main .results-container .products-results .products-card {
     display: flex;
-    border: 1px solid var(--highlight-background-color);
+    border: 1px solid var(--border-color);
     margin: 10px 0;
-    box-shadow: 0 2px 5px 0 var(--overlay-background-color);
+    padding: 10px;
+    padding-top: 0px;
 }
 
 main .results-container .products-results .products-card > a {
@@ -214,13 +241,22 @@ main .results-container .products-results .products-card > a {
     margin-right: 16px;
 }
 
-main .results-container .products-results .products-card-detail {
+main .results-container .products-results .products-card .products-card-details {
     flex: 1;
+    padding-top: 10px;
 }
 
 main .results-container .products-results .products-card-details p {
     margin: 0;
     font-size: var(--body-font-size-s);
+}
+
+main .results-container .products-results .products-card-details h4 {
+   margin-top: 0px;
+}
+
+main .results-container .products-results .products-card-details a {
+   color: var(--text-color);
 }
 
 main .results-container .products-results img {
@@ -229,17 +265,10 @@ main .results-container .products-results img {
     object-fit: contain;
 }
 
-
 main .results-container .products-results a.button:any-link {
     font-size: var(--body-font-size-xs);
     padding: 4px 15px;
     text-transform: uppercase;
-}
-
-
-main .results-container .products-results h4 {
-    font-size: var(--body-font-size-s);
-    font-family: var(--body-font-family);
 }
 
 main .results-container .products-results .highlight {
@@ -313,7 +342,6 @@ main .results-container .products-results .pagination-container .pagination .pag
         align-items: flex-end;
     }
 
-
     main .results-container {
         display: grid;
         grid-template-areas:
@@ -322,6 +350,10 @@ main .results-container .products-results .pagination-container .pagination .pag
             'controls controls sortby'
             'facets results results';
         grid-template-columns: 376px 1fr;
+    }
+
+    main .results-container .products-results .products-card-details h4 {
+        font-size: var(--heading-font-size-s);
     }
 
     main .results-container .products-facets > div::after {
@@ -378,7 +410,6 @@ main .results-container .products-results .pagination-container .pagination .pag
         font-size: var(--body-font-size-m);
         background: url('./chevron-down.svg') center right 10px no-repeat;
     }
-
 
     main .results-container .products-sortby ul {
         top: 40px;

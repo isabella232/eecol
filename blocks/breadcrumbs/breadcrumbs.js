@@ -1,5 +1,5 @@
 import { getMetadata } from '../../scripts/helix-web-library.esm.js';
-import { getCategoriesKeyDictionary, getCategoriesIdDictionary } from '../../scripts/scripts.js';
+import { getCategoriesKeyDictionary, getCategoriesIdDictionary, store } from '../../scripts/scripts.js';
 
 function renderBreadcrumbs(block, breadcrumbs) {
   breadcrumbs.unshift({
@@ -50,11 +50,13 @@ export default async function decorate(block) {
     renderBreadcrumbs(block, breadcrumbs);
   } else if (pageType === 'product') {
     document.addEventListener('product-loaded', async () => {
+      console.log('product loaded', store.product);
       const categoryIdDictionary = await getCategoriesIdDictionary();
       const {
         categories: productCategories,
-        details: { title: productName, url_key: productUrlKey },
-      } = window.wesco.product;
+        name: productName,
+        url_key: productUrlKey,
+      } = store.product;
       pathsArray.pop();
       pathsArray.push('category');
       productCategories.forEach((productCategoryId) => {

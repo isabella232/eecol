@@ -370,7 +370,7 @@ header nav[aria-expanded='true'] .nav-tools li {
 
   header nav .nav-sections > ul > li > ul {
     color: var(--text-color);
-    margin-top: 20px;
+    margin-top: 14px;
     display: none;
     position: relative;
   }
@@ -378,19 +378,6 @@ header nav[aria-expanded='true'] .nav-tools li {
   header nav .nav-sections > ul > li > ul:any-link {
     font-size: var(--body-font-size-m);
   }
-
-  header nav .nav-sections > ul > li > ul::before {
-    content: '';
-    width: 0;
-    height: 0;
-    position: absolute;
-    border-left: 15px solid transparent;
-    border-right: 15px solid transparent;    
-    border-bottom: 15px solid var(--highlight-background-color);
-    top: -15px;
-    left: 20px;
-  }
-
 
   header nav .nav-sections > ul > li > ul > li {
     font-size: 18px;
@@ -418,7 +405,7 @@ header nav[aria-expanded='true'] .nav-tools li {
     left: 331px;
     width: calc(100vw - 331px);
     height: 100%;
-    background-color: var(--overlay-background-color);
+    background-color: #fff;
     columns: 2;
   }
 

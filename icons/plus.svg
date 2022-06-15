@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="350" height="350" viewBox="0 0 350 350">
+  <g transform="translate(-175 -105)">
+    <path id="Path_2" data-name="Path 2" fill="#ccc" d="M332.5,105h35c19.328,0,35,19.328,35,35V420a35,35,0,0,1-35,35h-35c-19.328,0-35-19.328-35-35V140A35,35,0,0,1,332.5,105Z" fill-rule="evenodd"/>
+    <path id="Path_3" data-name="Path 3" fill="#ccc" d="M210,227.5H490c19.328,0,35,19.328,35,35v35a35,35,0,0,1-35,35H210c-19.328,0-35-19.328-35-35v-35A35,35,0,0,1,210,227.5Z" fill-rule="evenodd"/>
+  </g>
+</svg>

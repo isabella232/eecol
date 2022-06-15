@@ -73,6 +73,19 @@ function buildCategoryDictionary(
 }
 
 /**
+ * Captilies the first letter of every word in a string
+ * @param {string} string
+ * @returns {string} A string with the first letter of every word capitalized
+ */
+export function titleCase(string) {
+  return string
+    .toLowerCase()
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+/**
  * Fetches a hierarchy of categories from the server
  */
 async function fetchCategories() {
@@ -175,18 +188,51 @@ export async function lookupCategory(category, activeFilterUrlParams) {
 
 /**
  * Returns an array of products for a category
- * @param {*} category
- * @param {*} categoryFacets
- * @returns
+ * @param {string} sku The product sku
+ * @returns {import('../blocks/category/category.js').Product[]} An array of products
  */
 export async function lookupProduct(sku) {
   let product = {};
   if (sku) {
     const req = await fetch(`https://main--eecol--hlxsites.hlx-orch.live/productLookup?sku=${sku}`);
     const json = await req.json();
-    product = json.data;
+    [product] = json.data;
   }
   return product;
+}
+
+/**
+ * Fetches the inventory for a product
+ * @param {string} customerId Customer Account Code
+ * @param {string} productId Manufacturer part number
+ * @param {string} productLine Manufacturer code from EECOL
+ * @returns
+ */
+export async function lookupProductInventory(customerId, productId, productLine) {
+  let inventoryData = {};
+  if (customerId && productId && productLine) {
+    const req = await fetch(`https://main--eecol--hlxsites.hlx-orch.live/inventory?customerId=${customerId}&productId=${productId}&productLine=${productLine}`);
+    const json = await req.json();
+    inventoryData = json.data;
+  }
+  return inventoryData;
+}
+
+/**
+ * Fetches the pricing for a product
+ * @param {string} customerId Customer Account Code
+ * @param {string} productId Manufacturer part number
+ * @param {string} productLine Manufacturer code from EECOL
+ * @returns
+ */
+export async function lookupProductPricing(customerId, productId, productLine) {
+  let inventoryData = {};
+  if (customerId && productId && productLine) {
+    const req = await fetch(`https://main--eecol--hlxsites.hlx-orch.live/pricing?customerId=${customerId}&productId=${productId}&productLine=${productLine}`);
+    const json = await req.json();
+    inventoryData = json.data;
+  }
+  return inventoryData;
 }
 
 /**
@@ -328,6 +374,38 @@ export function getSelectedAccount() {
 }
 
 /**
+ * Fetch the logged in user
+ * @returns {import('./auth.js').Authentication}
+ */
+export function getUserAccount() {
+  return sessionStorage.getItem('account') ? JSON.parse(sessionStorage.getItem('account')) : undefined;
+}
+
+/**
+ * Initiates the login process
+ */
+export function signIn() {
+  const updateEvent = new Event('login');
+  document.body.dispatchEvent(updateEvent);
+}
+
+/**
+ * Application Store
+ * @typedef {Object} Store
+ */
+export const store = {
+  /**
+   * @type {import('../blocks/category/category.js').Product}
+   */
+  product: undefined,
+
+  /**
+   * @type {import('../blocks/cart/cart.js').Cart}
+   */
+  cart: undefined,
+};
+
+/**
  *
  * Start the Helix Decoration Flow
  *
@@ -336,6 +414,7 @@ HelixApp.init({
   lcpBlocks: ['hero'],
   rumGeneration: ['project-1'],
   productionDomains: ['poc-staging.eecol.com'],
+  lazyStyles: true,
 })
   .withLoadEager(async () => {
     await fetchCategories();

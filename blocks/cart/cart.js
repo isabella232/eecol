@@ -1,5 +1,5 @@
 import {
-  checkProductsInCatalog, formatCurrency, getSelectedAccount,
+  checkProductsInCatalog, formatCurrency, getSelectedAccount, store,
 } from '../../scripts/scripts.js';
 import { fetchPlaceholders } from '../../scripts/helix-web-library.esm.js';
 
@@ -187,7 +187,7 @@ async function updateCartDisplay() {
 export default function decorate(block) {
   document.body.addEventListener('cart-update', updateCartDisplay);
   document.body.addEventListener('account-change', updateCartDisplay);
-  window.cart = window.cart || new Cart();
+  store.cart = store.cart || new Cart();
   const displayArea = document.createElement('div');
   displayArea.className = 'cart-display';
   block.append(displayArea);

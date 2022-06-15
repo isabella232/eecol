@@ -6,7 +6,7 @@ import {
 
 import {
   getPlaceholders,
-  formatCurrency,
+  titleCase,
   getCategoriesKeyDictionary,
   getNumber,
   addEventListeners,
@@ -108,6 +108,20 @@ class CategoryFilterController {
   };
 
   /**
+   * On Facet container clicked
+   */
+  onFacetContainerClicked = (event) => {
+    const { currentTarget } = event;
+    if (currentTarget.getAttribute('aria-expanded') === 'false') {
+      currentTarget.querySelector('.products-facet-options').style.display = 'block';
+      currentTarget.setAttribute('aria-expanded', 'true');
+    } else {
+      currentTarget.querySelector('.products-facet-options').style.display = 'none';
+      currentTarget.setAttribute('aria-expanded', 'false');
+    }
+  };
+
+  /**
    * On Facet deselected callback
    * @param {MouseEvent} event
    */
@@ -175,7 +189,7 @@ class CategoryFilterController {
     return /* html */`
     <div>
       <div class="products-filters">
-        <h2>${this.placeholders.filters}</h2>
+        <h2><img src='/icons/filter.svg'/>${this.placeholders.filters}</h2>
         <div class="products-filters-selected"></div>
         <p><button class="products-filters-clear secondary">${this.placeholders.clearAll}</button></p>
         <div class="products-filters-facetlist"></div>
@@ -196,11 +210,13 @@ class CategoryFilterController {
     //  const values = Object.keys(facet);
     const { label, attribute_code: attributeCode, options } = facet;
     return /* html */`
-      <div class="products-facet">
-        <h3>${label}</h3>
-        ${options.map((option) =>/* html */`
-            <input type="checkbox" value="${option.value}" id="products-filter-${option.value}" name="${attributeCode}">
-            <label for="products-filter-${option.value}">${option.label} (${option.count})</label>`).join('')}
+      <div class="products-facet" aria-expanded="false">
+        <h3>${label} (${options.length})<img src='/icons/disclosure.svg'></h3>
+        <div class="products-facet-options">
+          ${options.map((option) =>/* html */`
+              <input type="checkbox" value="${option.value}" id="products-filter-${option.value}" name="${attributeCode}">
+              <label for="products-filter-${option.value}">${option.label} (${option.count})</label>`).join('')}
+        </div>
       </div>
     `;
   }
@@ -230,7 +246,7 @@ class CategoryFilterController {
         const span = document.createElement('span');
         span.setAttribute('data-value', key);
         span.className = 'products-filters-tag';
-        span.textContent = `${this.placeholders[toCamelCase(key)]}: ${facetLabel}`;
+        span.textContent = `${colFacet[0].label}: ${titleCase(facetLabel)}`;
         span.addEventListener('click', this.onFacetDeSelected);
         selectedFiltersContainer.append(span);
       }
@@ -250,6 +266,7 @@ class CategoryFilterController {
     facetsList.innerHTML = facetsHTML;
 
     addEventListeners([...facetsList.querySelectorAll('input')], 'change', this.onFacetSelected.bind(this));
+    addEventListeners([...facetsList.querySelectorAll('.products-facet')], 'click', this.onFacetContainerClicked.bind(this));
     facetsElement.querySelector('.products-filters-clear').addEventListener('click', this.onClearFacetSelection);
   }
 }
@@ -593,15 +610,20 @@ class CategoryResultsController {
       [productInCatalog] = matches;
     }
 
-    const button = productInCatalog ? `<a class="button" href=${product.path}>${this.placeholders.addToCart}</a>` : `<a class="button disabled">${this.placeholders.notInCatalog}</a>`;
     const card = document.createElement('div');
     card.className = `${prefix}-card`;
     card.innerHTML = /* html */`
-      <a><img src="${product.image}" alt="${product.name}" width="150" height="150"/></a>
+      <a>
+        <img src="${product.image}" alt="${product.name}" width="150" height="150"/>
+      </a>
       <div class="${prefix}-card-details">
+        <div class="manufacturer">${titleCase(product.manufacturer)}</div>
         <h4><a href="${product.path}">${product.name}</a></h4>
-        <p>${formatCurrency(product.final_price, this.placeholders.currency || 'USD')}</p>
-        <p>${button}</p>
+        <div class="catalog">
+          <div>Manufacturer #: ${product.manufacturer_part_number_brand}</div>
+          <div>SKU #: ${product.sku}</div>
+          <div>Customer Part #: ${product.sku}</div>
+        </div>
       </div>`;
     return (card);
   }

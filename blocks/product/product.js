@@ -1,180 +1,202 @@
-import { toClassName } from '../../scripts/helix-web-library.esm.js';
-
 import {
   getPlaceholders,
   lookupProduct,
-  formatCurrency,
+  titleCase,
+  lookupProductPricing,
+  getUserAccount,
+  signIn,
+  store,
 } from '../../scripts/scripts.js';
 
-export default async function decorateProduct(block) {
-  const ph = await getPlaceholders('/ca/en');
-  const selectedModifiers = {};
+/**
+ * Mulesoft Inventory Object
+ * @typedef {Object} ProductPricing
+ * @property {string} productId The product id, manufacturer_part_number_brand in CIF?
+ * @property {string} productLine Manufacturer code from EECOL
+ * @property {string} qty Available quantity
+ * @property {string} sellprice The sellprice for the given uom
+ * @property {string} uom Unit of measure, numeric value representing the pricing unit.
+ * @property {string} branch Alphanumeric branch code
+ * @property {string} blank Discounts???
+ * @property {string} sellunit Alphanumeric field representing the selling unit of measure.
+ * @property {string} numericuom Numeric value representing the selling unit of measure.
+ * @property {string} basismeasurecode The stock status of the product
+ * @property {string} description Customer friendly description of basismeasurecode
+ * @property {boolean} instock Is the product instock
+ */
 
-  const getProduct = async () => {
-    if (window.wesco && window.wesco.currentProduct) return window.wesco.currentProduct;
+class ProductView {
+  constructor(block) {
+    this.block = block;
+  }
+
+  async load() {
     const sku = window.location.pathname.split('/').pop();
-    const [product] = await lookupProduct(sku);
-    const {
-      final_price, name, image, description, categories,
-    } = product;
+    this.userAccount = getUserAccount();
+    try {
+      const product = await lookupProduct(sku);
+      store.product = product;
+      document.dispatchEvent(new CustomEvent('product-loaded'));
 
-    const details = {};
-    details.title = name;
-    details.image = image;
-    details.description = description;
-    details.categories = categories;
-    window.wesco = {
-      product: {
-        sku, details, final_price, categories,
-      },
-    };
-    return { sku, details, final_price };
-  };
+      this.ph = await getPlaceholders('/ca/en');
+      this.render();
+    } catch (error) {
+      this.render404();
+    }
 
-  const enableAddToCart = async () => {
-    const addToButton = block.querySelector('.product-addto button');
-    const quantity = +block.querySelector('.product-quantity input').value;
-    const modkeys = Object.keys(selectedModifiers);
-    if (modkeys.every((key) => selectedModifiers[key])) {
-      const product = await getProduct();
-      if (window.cart
-        && window.cart.canAdd(product.sku, product.details, product.price, quantity)) {
-        addToButton.disabled = false;
-        return;
-      }
+    document.body.addEventListener('cart-update', this.enableAddToCart);
+    document.body.addEventListener('account-change', this.enableAddToCart);
+  }
+
+  /**
+   * Determines if the can add the product to the cart
+   */
+  enableAddToCart() {
+    const addToButton = this.block.querySelector('.cart .action .add-to-cart');
+    const quantityInput = this.block.querySelector('.cart .action input');
+    if (store.cart
+      && store.cart.canAdd(
+        store.product.sku,
+        store.product,
+        store.product.final_price,
+        quantityInput.value,
+      )
+    ) {
+      addToButton.disabled = false;
+      quantityInput.disabled = false;
+      return;
     }
     addToButton.disabled = true;
-  };
+    quantityInput.disabled = true;
+  }
 
-  const selectImage = (picture) => {
-    const images = picture.closest('.product-images');
-    const wrapper = images.parentElement;
-    const selectedImage = wrapper.querySelector('.product-selected-image');
-    const buttons = wrapper.querySelector('.product-images-buttons');
-    const index = [...images.children].indexOf(picture);
-    const button = [...buttons.children][index];
-    images.scrollTo({ top: 0, left: picture.offsetLeft - images.offsetLeft, behavior: 'smooth' });
+  /**
+   * Render a 404 if we were unable to load the product
+   */
+  render404() {
+    this.block.innerHTML = /* html */`
+      <div class="product-heading">
+          <h1>Uh-oh.... we were unable to find this product</h1>
+      </div>
+    `;
+  }
 
-    [...images.children].forEach((r) => r.classList.remove('selected'));
-    picture.classList.add('selected');
+  /**
+   * Render the core scaffold of the product page
+   */
+  renderProductScaffolding() {
+    this.block.innerHTML = /* html */`
+      <div class="product-block">
+        <picture><img src="${store.product.image}"></picture>
+        <div class="details">
+          <div class="manufacturer">${titleCase(store.product.manufacturer)}</div>
+          <div class="name"><h3>${store.product.name}</h3></div>
+          <div class="catalog">
+            <div>Manufacturer #: ${store.product.manufacturer_part_number_brand}</div>
+            <div>SKU #: ${store.product.sku}</div>
+            <div>Customer Part #: ${store.product.sku}</div>
+          </div>
+        </div>
+      </div>
+      <div class="product-config">
+        <div class="cart"></div>
+      </div>
+    `;
+  }
 
-    [...buttons.children].forEach((r) => r.classList.remove('selected'));
-    button.classList.add('selected');
-
-    selectedImage.textContent = '';
-    selectedImage.append(picture.cloneNode(true));
-  };
-
-  const createQuantity = () => {
+  /**
+   * Render the product overview block
+   */
+  renderProductOverview() {
     const div = document.createElement('div');
-    div.className = 'product-quantity';
-    div.innerHTML = `<h3>${ph.quantity}</h3><div><button class="product-quantity-minus"></button>
-    <input type="number" min="1" value="1" max="20">
-    <button class="product-quantity-plus"></button></div>`;
-    const [minus, input, plus] = [...div.querySelectorAll('button, input')];
-    minus.addEventListener('click', () => {
-      if (input.value !== input.getAttribute('min')) {
-        input.value = +input.value - 1;
-        enableAddToCart();
-      }
-    });
-    input.addEventListener('input', () => {
-      enableAddToCart();
-    });
-    plus.addEventListener('click', () => {
-      if (input.value !== input.getAttribute('max')) {
-        input.value = +input.value + 1;
-        enableAddToCart();
-      }
-    });
-    return div;
-  };
+    div.className = 'product-overview';
+    div.innerHTML = /* html */`
+        <h3>Product Overview</h3>
+        <div class="description">${store.product.description}</div>
+    `;
+    this.block.appendChild(div);
+  }
 
-  // eslint-disable-next-line no-unused-vars
-  const createPickList = (values, prefix, title) => {
-    selectedModifiers[prefix] = '';
-    const div = document.createElement('div');
-    div.className = `product-${prefix}s`;
-    div.innerHTML = `<h3>${title}</h3>`;
-    const options = document.createElement('div');
-    options.className = 'product-option-radios';
-    values.forEach((c) => {
-      const radio = document.createElement('input');
-      radio.type = 'radio';
-      radio.name = prefix;
-      radio.id = `product-${prefix}-${toClassName(c)}`;
-      radio.value = c;
-      radio.addEventListener('change', () => {
-        document.getElementById(`product-${prefix}`).textContent = c;
-        const picture = [...document.querySelectorAll('.product-images picture')].find((p) => p.dataset.hints.includes(c));
-        if (picture) {
-          selectImage(picture);
-          selectedModifierImage = picture.querySelector('img').currentSrc;
+  /**
+   * Render the loading animation while we are loading the pricing
+   */
+  renderPricingLoading() {
+    const cartElement = this.block.querySelector('.product-config .cart');
+    cartElement.innerHTML = /* html */`
+      <div class="cart-loader">
+        <div class="dot-flashing"></div>
+      </div>`;
+  }
+
+  /**
+   * Render the sign in block in place of pricing
+   */
+  renderPricingSignin() {
+    const cartElement = this.block.querySelector('.product-config .cart');
+    cartElement.innerHTML = /* html */`
+      <a class="signin">Sign in for Price</a>
+    `;
+    cartElement.querySelector('a').addEventListener('click', () => {
+      signIn();
+    });
+  }
+
+  /**
+   * Renders the add to cart block
+   * @param {ProductPricing} pricing
+   * @returns {string}
+   */
+  renderAddToCartBlock(pricing, currency) {
+    return /* html */`
+      <div class="cost">
+        <div class="numericuom">${currency} ${pricing.sellprice}</div><span>/</span><div class="basismeasure">${pricing.description}</div>
+      </div>
+      <div class="stock">
+        <div class="status">
+          <img class="icon icon-search" src="${pricing.instock ? '/icons/circle-check.svg' : '/icons/circle-x.svg'}">
+          <span>${pricing.instock ? 'In Stock' : 'Out of Stock'}<span>
+        </div>
+        <a>View Inventory</a>
+      </div>
+      ${pricing.instock ? /* html */`
+        <div class="action">
+          <input class="quantity" value="1"></input><button class='add-to-cart'>ADD TO CART</button>
+        </div>
+      ` : ''}
+      <div class="requirements">
+        <div class="minQuantity">Min. Qty: ${pricing.sellunit}</div><div class="increments">Increments of: ${pricing.sellunit}</div>
+      </div>`;
+  }
+
+  /**
+   * Renders the product block
+   */
+  render() {
+    this.renderProductScaffolding();
+
+    if (this.userAccount) {
+      this.renderPricingLoading();
+      lookupProductPricing('123', Math.random().toString(), 'abc').then((result) => {
+        if (result.products && result.products.length > 0) {
+          const [inventory] = result.products;
+          inventory.instock = inventory.qty > 0;
+
+          const productCartElement = this.block.querySelector('.product-config .cart');
+          productCartElement.innerHTML = this.renderAddToCartBlock(inventory, result.currency);
+          this.enableAddToCart();
         }
-        selectedModifiers[prefix] = c;
-        enableAddToCart();
       });
-      options.append(radio);
-      const label = document.createElement('label');
-      label.setAttribute('for', radio.id);
-      label.textContent = c;
-      options.append(label);
-    });
-    div.append(options);
-    const selected = document.createElement('div');
-    selected.className = `product-${prefix}-selected`;
-    selected.innerHTML = `Selected ${title}: <span id="product-${prefix}">${ph.none}</span>`;
-    div.append(selected);
-    return (div);
-  };
+    } else {
+      this.renderPricingSignin();
+    }
 
-  const addToCart = async () => {
-    const quantity = +block.querySelector('.product-quantity input').value;
-    const product = await getProduct();
-    if (window.cart) window.cart.add(product.sku, product.details, product.final_price, quantity);
-    enableAddToCart();
-  };
+    if (store.product.description) {
+      this.renderProductOverview();
+    }
+  }
+}
 
-  const createAddToButtons = () => {
-    const div = document.createElement('div');
-    div.className = 'product-addto';
-    div.innerHTML = `<p class="button-container"><button>${ph.addToCart}</button></p>`;
-    div.querySelector('button').addEventListener('click', () => {
-      addToCart();
-    });
-    return div;
-  };
-
-  const createHeading = (h1, price) => {
-    const div = document.createElement('div');
-    div.className = 'product-heading';
-    div.innerHTML = `<div class="product-price">${formatCurrency(price, ph.currency)}</div>`;
-    div.prepend(h1);
-    return (div);
-  };
-
-  const product = await getProduct();
-  document.dispatchEvent(new CustomEvent('product-loaded'));
-  const { final_price, details, sku } = product;
-  const { image, title, description } = details;
-  block.textContent = '';
-
-  const picture = document.createElement('picture');
-  picture.innerHTML = `<img src="${image}">`;
-
-  const h1 = document.createElement('h1');
-  h1.textContent = title;
-
-  const p = document.createElement('p');
-  p.textContent = description;
-
-  const config = document.createElement('div');
-  config.className = 'product-config';
-  config.append(createQuantity(), createAddToButtons());
-  block.append(createHeading(h1, final_price), picture, config);
-  block.append(p);
-  enableAddToCart();
-
-  document.body.addEventListener('cart-update', enableAddToCart);
-  document.body.addEventListener('account-change', enableAddToCart);
+export default async function decorateProduct(block) {
+  const productView = new ProductView(block);
+  await productView.load();
 }

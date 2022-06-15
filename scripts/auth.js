@@ -3,6 +3,30 @@
 const { protocol, host } = new URL(window.location.href);
 const redirectUri = `${protocol}//${host}/login.html`;
 
+/**
+ * Authentication Type
+ * @typedef {Object} Authentication
+ * @property {string} homeAccountId Home account Id
+ * @property {string} environment Auth environment
+ * @property {string} tenantId The tenant ID of the Azure AD tenant
+ * @property {string} username email of the user
+ * @property {string} localAccountId Local account id
+ * @property {string} name Display name
+ * @property {Object} idTokenClaims The claims in the ID token
+ * @property {Account[]} accounts Other accounts associated with the user
+ * @property {Object} accountsById Dictionary of user accounts
+ */
+
+/**
+ * Account Type
+ * @typedef {Object} Account
+ * @property {string} email
+ * @property {string} accountId
+ * @property {string} accountName
+ * @property {string} config
+ * @property {string[]} config.Categories
+ */
+
 const msalConfig = {
   auth: {
     clientId: '83a36355-ad17-4ed0-8701-e99a3020f86a',

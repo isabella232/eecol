@@ -2,13 +2,21 @@ div.product-wrapper {
     max-width: 1200px;
 }
 
-.product .product-heading {
-    grid-area: heading;
+.product .product-block {
+    grid-area: details;
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    padding-right: 20px;
 }
 
-.product .product-heading h1 {
-    font-size: var(--heading-font-size-l);
+.product .product-block h3 {
     margin: 0;
+}
+
+.product .product-block .details .catalog {
+    margin-top: 15px;
+    font-size: var(--body-font-size-s);
 }
 
 /* images */
@@ -31,9 +39,9 @@ div.product-wrapper {
     position: relative;
   }
   
-.product img {
+.product picture img {
     min-width: 274px;
-    min-height: 274px;
+    padding-right: 30px;
 }
 
 .product .product-images::-webkit-scrollbar {
@@ -66,13 +74,12 @@ div.product-wrapper {
 }
 
 .product .product-config {
-    grid-area: config;
+    grid-area: cart;
 }
 
 .product .product-config > div {
     padding: 32px 0;
     width: 100%;
-    border-bottom: 1px solid #ccc;
 }
 
 .product-option-radios {
@@ -110,136 +117,100 @@ div.product-wrapper {
     color: var(--background-color);
 }
 
-.product .product-config .product-colors input[type='radio'] + label {
-    color: #0000;
-    width: 48px;
-    position: relative;
-    background: var(--venia-swatch-bg);
-    border-color: rgba(0, 0, 0, 0.1);
-    width: 3rem;
-    border: 1px solid rgb(var(--venia-swatch-bg));
-    border-radius: 2px;
-    height: 3rem;
-    min-width: 3rem;
-    padding: 0 0.5rem;
+.product .product-config .cart {
+    border-left: none;
+    padding: 16px 0;
+    min-height: 130px;
 }
 
-.product .product-config .product-colors input[type='radio']:checked + label {
-    background: linear-gradient(-45deg, rgba(0, 0, 0, 0.2), transparent), var(--venia-swatch-bg);
-}
-
-.product .product-config .product-colors input[type='radio']:checked + label::before {
-    content: '\2713';
-    color: var(--text-color);
-    position: absolute;
-}
-
-.product-colors #product-color-peach + label {
-    --venia-swatch-bg: #fee1d2;
-}
-
-.product-colors #product-color-khaki + label {
-    --venia-swatch-bg: #fee1d2;
-} 
-
-.product-colors #product-color-lilac + label {
-    --venia-swatch-bg: #dcd5e1;
-} 
-
-.product-colors #product-color-rain + label {
-    --venia-swatch-bg: #d4e3ec;
-} 
-
-.product-colors {
-    --venia-swatch-bg: #ccc;
-}
-
-.product-quantity > div {
+.product .product-config .cart .cart-loader {
+    min-height: 130px;
     display: flex;
     align-items: center;
-    padding: 12px 0;
+    justify-content: center;
 }
 
-.product-quantity button {
-    box-sizing: border-box;
-    position: relative;
-    display: inline-block;
-    width: 44px;
-    height: 44px;
-    border: 1px solid;
-    border-radius: 44px;
-    line-height: 0;
-    transform: scale(1);
-    background-color: unset;
-    color: var(--text-color);
-    margin: 0px;
-    margin-right: 20px;
+.product .product-config .cart .cost .numericuom{
+    font-weight: 700;
 }
 
-.product-quantity button:hover {
-    background-color: unset;
+.product .product-config .cart > div{
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
 }
 
-.product-quantity button::after,
-.product-quantity button::before {
-    content: "";
-    display: block;
-    box-sizing: border-box;
-    position: absolute;
-    width: 21px;
-    height: 1px;
-    background: currentColor;
-    border-radius: 5px;
-    top: 21px;
-    left: 11px;
+.product .product-config .cart .signin{
+   font-size: var(--body-font-size-m);
+   color: var(--link-color);
+   text-decoration: underline;
+   cursor: pointer;
 }
 
-.product-quantity button.product-quantity-plus::after {
-    width: 1px;
-    height: 20px;
-    top: 11px;
-    left: 21px;
+.product .product-config .cart .stock {
+    gap: 20px;
 }
 
+.product .product-config .cart .stock .status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
 
-.product-quantity input {
-    display: inline-block;
-    width: 70px;
-    margin-right: 20px;
+.product .product-config .cart .stock a {
+    font-weight: 600;
+    font-size: var(--body-font-size-s);
+    text-decoration: underline;
+    line-height: 35px;
+}
+
+.product .product-config .cart .stock .status .icon {
+    width: 20px;
+}
+
+.product .product-config .cart .action .quantity {
+    width: 80px;
     text-align: center;
     margin-bottom: 0;
-    font-family: var(--body-font-family);
-    font-size: var(--body-font-size-m);
-    text-align: center;
 }
 
-.product-addto {
-    text-align: center;
+.product .product-config .cart .action .quantity:disabled {
+    opacity: 0.1;
 }
 
-.product-addto-favorites {
-    display: inline-block;
+.product .product-config .cart .action button {
+    width: 200px;
 }
 
-.product-addto-favorites::before {
-    content: ' ';
-    display: inline-block;
-    height: 1em;
-    width: 1em;
-    background-image: url('/styles/heart.svg');
-    background-size: contain;
-    background-repeat: no-repeat;
-    padding-right: 4px;
+.product .product-config .cart .action button:disabled {
+    opacity: 0.1;
 }
 
+.product .product-config .cart .requirements {
+    margin-top: 20px;
+    font-weight: 300;
+    font-size: var(--body-font-size-s);
+}
+
+.product .product-overview {
+    grid-area: overview;
+    margin-top: 50px;
+    padding-bottom: 40px;
+    border-top: 2px solid var(--border-color);
+}
 
 @media (min-width: 900px) {
     .product {
         display: grid;
         grid-template-areas: 
-            'heading heading'
-            'images config';
-        grid-template-columns: 1fr 300px;
+            'details cart' 'overview overview';
+        grid-template-columns: 1fr 350px;
+        padding-top: 50px;
+    }
+
+
+    .product .product-block {
+        flex-direction: row;
     }
 
     .product .product-heading {
@@ -272,8 +243,18 @@ div.product-wrapper {
         flex-shrink: 1;
     }
 
+    .product picture img {
+        max-width: 274px;
+        padding-right: 20px;
+    }
+
     .product .product-images > picture.selected img {
         box-shadow: 0 0 5px 2px var(--link-color);
     }
 
+    .product .product-config .cart {
+        border: 2px solid var(--border-color);
+        padding: 20px;
+        box-sizing: border-box;
+    }
 }
