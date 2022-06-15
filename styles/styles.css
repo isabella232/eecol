@@ -42,8 +42,14 @@
   --heading-font-size-xs: 16px;
 
   /* nav height */
-  --nav-height: 133px;
+  --nav-height: 116px;
 
+}
+
+@media (min-width: 1000px) {
+  :root {
+    --nav-height: 151px;
+  }
 }
 
 body {
@@ -91,12 +97,41 @@ h4, h5, h6 {
   scroll-margin: calc(var(--nav-height) + 1em);
 }
 
-h1 { font-size: var(--heading-font-size-xxl); line-height: 2.5em; font-weight: 700; }
-h2 { font-size: var(--heading-font-size-xl); line-height: 2em; font-weight: 600; }
-h3 { font-size: var(--heading-font-size-l); line-height: 1.6875em; font-weight: 600; }
-h4 { font-size: var(--heading-font-size-m); line-height: 1.2em; font-weight: 600; }
-h5 { font-size: var(--heading-font-size-s); line-height: 1.125em; font-weight: 400; }
-h6 { font-size: var(--heading-font-size-xs); line-height: 1.125em; font-weight: 400; }
+h1 { 
+  font-size: var(--heading-font-size-xxl); 
+  line-height: 2.5em; 
+  font-weight: 700; 
+}
+
+h2 { 
+  font-size: var(--heading-font-size-xl); 
+  line-height: 2em; 
+  font-weight: 600; 
+}
+
+h3 {
+  font-size: var(--heading-font-size-l); 
+  line-height: 1.6875em; 
+  font-weight: 600; 
+}
+
+h4 { 
+  font-size: var(--heading-font-size-m); 
+  line-height: 1.2em; 
+  font-weight: 600; 
+}
+
+h5 { 
+  font-size: var(--heading-font-size-s); 
+  line-height: 1.125em; 
+  font-weight: 400; 
+}
+
+h6 { 
+  font-size: var(--heading-font-size-xs); 
+  line-height: 1.125em; 
+  font-weight: 400; 
+}
 
 p, dl, ol, ul, pre, blockquote {
   margin-top: 1em;
@@ -264,12 +299,12 @@ main img {
   animation-delay: 1s;
 }
 
-@keyframes dotFlashing {
+@keyframes dot-flashing {
   0% {
     background-color: var(--link-color);
   }
-  50%,
-  100% {
+
+  50%, 100% {
     background-color: #A1C4D3;
   }
 }
@@ -288,7 +323,12 @@ main img {
   h2 { line-height: 44px; }
   h3 { line-height: 38px; }
   h4 { line-height: 34px;}
-  h5 { line-height: 30px; font-weight: 600; }
+  
+  h5 { 
+    line-height: 30px; 
+    font-weight: 600; 
+  }
+  
   h6 { line-height: 28px; }
   
   .section > div {
