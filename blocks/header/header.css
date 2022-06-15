@@ -46,6 +46,10 @@ header .nav-topbar p {
   margin: 0;
 }
 
+header .nav-topbar .account-selector {
+  margin: 0 1rem;
+}
+
 
 /* brand */
 header .nav-brand {
@@ -254,6 +258,8 @@ header .nav-search-suggestions > div {
   font-size: var(--body-font-size-xs)
 }
 
+ 
+
 
 header nav .nav-search p {
   display: inline;
@@ -273,7 +279,7 @@ header nav[aria-expanded='true'] .nav-tools ul {
 
 header nav[aria-expanded='true'] .nav-tools li {
   padding: 0;
-}
+} 
 
 
 /* desktop nav styles */
@@ -313,7 +319,7 @@ header nav[aria-expanded='true'] .nav-tools li {
   }
 
   header nav .nav-sections {
-    background-color: #dde4e4;
+    background-color: var(--nav-background-color);
     display: unset;
   }
 

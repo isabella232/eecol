@@ -92,8 +92,9 @@ export default async function decorate(block) {
 
     renderBreadcrumbs(block, breadcrumbs);
     const header = document.querySelector('body > header');
-    const wrapper = block.parentElement;
+    let wrapper = block.parentElement;
     if(header) {
+      wrapper.parentElement.classList.remove('breadcrumbs-container');
       wrapper.parentElement.removeChild(wrapper);
       header.insertAdjacentElement('afterend', wrapper);
     }

@@ -1,6 +1,6 @@
 .account-nav {
     margin: 20px 32px 32px;
-    background-color: var(--overlay-background-color);
+    background-color: var(--nav-background-color);
 }
 
 .account-nav > div > div {
