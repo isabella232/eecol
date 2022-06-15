@@ -11,7 +11,14 @@
  */
 
 import {
-  HelixApp, buildBlock, getMetadata, fetchPlaceholders,
+  HelixApp,
+  buildBlock,
+  getMetadata,
+  fetchPlaceholders,
+  loadHeader,
+  decorateBlock,
+  loadBlock,
+  makeLinksRelative,
 } from './helix-web-library.esm.js';
 
 /**
@@ -431,7 +438,21 @@ HelixApp.init({
       // eslint-disable-next-line no-console
       console.error('Auto Blocking failed', error);
     }
-  }).withLoadDelayed(() => {
+  })
+  .withLoadHeader(async (header) => {
+    loadHeader(header);
+    const template = getMetadata('template');
+    if (template === 'account') {
+      const main = document.querySelector('main');
+      const accountNav = buildBlock('account-nav', '');
+      header.append(accountNav);
+      decorateBlock(accountNav);
+      await loadBlock(accountNav);
+      main.parentElement.insertBefore(accountNav, main);
+      makeLinksRelative(accountNav);
+    }
+  })
+  .withLoadDelayed(() => {
     window.setTimeout(() => import('./delayed.js'), 100);
   })
   .decorate();
