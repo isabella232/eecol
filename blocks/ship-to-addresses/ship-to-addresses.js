@@ -4,34 +4,64 @@ import {
   retrieveUserData,
   storeUserData
 } from "../../scripts/scripts.js";
-import { retrieve } from '../account-summary/account-summary.js'; // used for mock data on initialization
+import { retrieve, addressTile } from '../account-summary/account-summary.js'; // used for mock data on initialization
 
 const ACCOUNT_CHANGE_EVT = 'account-change';
 
 const FORM_DATA = [{
-  Label: 'Email',
-  Field: 'email',
-  Type: 'text',
-  Editable: false,
-  Placeholder: 'name@company.com'
-}, {
-  Label: 'Company',
-  Field: 'company',
-  Type: 'text',
-  Editable: false,
-  Placeholder: 'ACME Industries'
-}, {
-  Label: 'Name',
+  // Label: 'Name',
   Field: 'name',
   Type: 'text',
   Mandatory: true,
-  Placeholder: 'First McLast'
+  Placeholder: 'Name'
+}, 
+// {
+//   // Label: 'Company',
+//   Field: 'company',
+//   Type: 'text',
+//   Editable: false,
+//   Placeholder: 'Company'
+// }, 
+{
+  // Label: 'Street',
+  Field: 'street',
+  Type: 'text',
+  Mandatory: true,
+  Placeholder: 'Street'
 }, {
-  Label: 'Phone',
+  // Label: 'City',
+  Field: 'city',
+  Type: 'text',
+  Mandatory: true,
+  Placeholder: 'City'
+}, {
+  // Label: 'State',
+  Field: 'state',
+  Type: 'text',
+  Mandatory: true,
+  Placeholder: 'State'
+}, {
+  // Label: 'Zip/Postal Code',
+  Field: 'zip',
+  Type: 'text',
+  Mandatory: true,
+  Placeholder: 'Zip/Postal Code'
+}, {
+  // Label: 'Country',
+  Field: 'country',
+  Type: 'text',
+  Mandatory: true,
+  Placeholder: 'Country'
+}, {
+  // Label: 'Phone',
   Field: 'phone',
   Type: 'text',
   Mandatory: true,
-  Placeholder: '555-123-1234'
+  Placeholder: 'Phone Number'
+}, {
+  Label: 'Set as Default',
+  Field: 'is_default',
+  Type: 'checkbox'
 }];
 
 /**
@@ -40,9 +70,6 @@ const FORM_DATA = [{
  * @typedef {import('../account-summary/account-summary.js').Address} Address
  * @typedef {import('../account-summary/account-summary.js').ContactInfo} ContactInfo
  */
-
-/** @type {Record<string, ContactInfo>} */
-const editSessionByAccountId = {};
 
 function createLabel(fd) {
   const label = document.createElement('label');
@@ -66,7 +93,11 @@ function createInput(fd) {
     input.setAttribute('disabled', true);
   }
   if(typeof fd.Value !== 'undefined') {
-    input.value = fd.Value;
+    if(input.type === 'checkbox') {
+      input.checked = fd.Value;
+    } else {
+      input.value = fd.Value;
+    }
   }
   return input;
 }
@@ -77,25 +108,27 @@ function createField(fd) {
   const fieldId = `form-${fd.Field}-wrapper${style}`;
   fieldWrapper.className = fieldId;
   fieldWrapper.classList.add('field-wrapper');
-  fieldWrapper.append(createLabel(fd));
+  if(fd.Label) {
+    fieldWrapper.append(createLabel(fd));
+  }
   fieldWrapper.append(createInput(fd));
   return fieldWrapper;
 }
 
 /**
- * Create account info form
- * @param {ContactInfo} info
+ * Create address form
+ * @param {Address} address
  * @param {boolean} [editing=false]
  * @returns {HTMLFormElement}
  */
-function accountInfoForm(info, editing = false) {
+function addressForm(address, editing = false) {
   const form = document.createElement('form');
   const data = JSON.parse(JSON.stringify(FORM_DATA));
   for(const fd of data) {
     if(!editing) {
       fd.Editable = false;
     }
-    fd.Value = info[fd.Field];
+    fd.Value = address[fd.Field];
     const field = createField(fd);
     form.append(field);
   }
@@ -110,47 +143,126 @@ function accountInfoForm(info, editing = false) {
 function getFormData(form) {
   const data = {};
   [...form.elements].forEach((input) => {
-    data[input.id] = input.value;
+    if(input.type === 'checkbox') {
+      data[input.id] = input.checked;
+    } else {
+      data[input.id] = input.value;
+    }
   });
   return data;
 }
 
 /**
- * Create account info form
+ * Create address form
  * @param {HTMLElement} wrapper
  * @param {Account} account 
- * @param {ContactInfo} info
- * @param {boolean} [editing=false]
+ * @param {boolean} editing
+ * @param {Address} address
+ * @param {number} index
+ * @param {Address[]} addresses
  * @returns {HTMLElement}
  */
-function accountInfoView(wrapper, account, info, editing = false) {
+function addressView(wrapper, account, editing, address, index, addresses) {
   const container = document.createElement('div');
-  const form = accountInfoForm(info, editing);
-  container.appendChild(form);
+  container.classList.add('address-view');
 
-  const action = document.createElement('button');
+  const actionContainer = document.createElement('div');
+  actionContainer.classList.add('actions');
+
   if(editing) {
+    const form = addressForm(address, editing);
+    container.appendChild(form);
+
+    const action = document.createElement('button');
     action.innerText = 'Save';
     action.onclick = () => {
       const data = getFormData(form);
-      editSessionByAccountId[account.accountId] = data;
-      storeUserData('contactInfo', data);
-      window.location.hash = window.location.hash.replace('#edit', '');
+      let newData;
+      if(data.is_default) {
+        newData = [...addresses.slice(0, index).map(a => {
+          a.is_default = false;
+          return a;
+        }), 
+        data, 
+        ...addresses.slice(index+1).map(a => {
+          a.is_default = false;
+          return a;
+        })];
+      } else {
+        newData = [...addresses.slice(0, index), data, ...addresses.slice(index+1)];
+      }
+      storeUserData('addresses', newData);
+      window.location.hash = window.location.hash.replace(/#edit=[^\?|&]*/, '');
       update(wrapper);
     }
+    actionContainer.appendChild(action);
 
-    form.onchange = () => {
-      const data = getFormData(form);
-      editSessionByAccountId[account.accountId] = data;
-    }
   } else {
+    const tile = document.createElement('div');
+    tile.innerHTML = addressTile(address);
+    container.appendChild(tile.firstElementChild);
+
+    let action = document.createElement('button');
+    action.classList.add('secondary');
     action.innerText = 'Edit';
     action.onclick = () => {
-      window.location.hash = '#edit';
+      window.location.hash = `#edit=${index}`;
       update(wrapper);
     }
+    actionContainer.appendChild(action);
+
+    if(!address.is_default) {
+      action = document.createElement('button');
+      action.classList.add('negative');
+      action.innerText = 'Delete';
+      action.onclick = () => {
+        const newData = [...addresses.slice(0, index), ...addresses.slice(index+1)];
+        storeUserData('addresses', newData);
+        update(wrapper);
+      }
+      actionContainer.appendChild(action);
+    }
   }
-  container.appendChild(action);
+
+  container.appendChild(actionContainer);
+  return container;
+}
+
+/**
+ * Create address list view
+ * @param {HTMLElement} wrapper
+ * @param {Account} account 
+ * @param {Address[]} addresses
+ * @returns {HTMLElement}
+ */
+function addressListView(wrapper, account, addresses) {
+  const container = document.createElement('div');
+  container.classList.add('address-list');
+
+  let editIndex;
+  const match = window.location.hash.match(/#edit=([^\?|&]*)/, '');
+  if(match?.length > 0){
+    editIndex = parseInt(match[1]);
+  }
+
+  addresses.forEach((addr, index) => {
+    const view = addressView(wrapper, account, editIndex === index, addr, index, addresses);
+    container.appendChild(view);
+  });
+
+  if(editIndex === addresses.length) {
+    // adding an address
+    const view = addressView(wrapper, account, true, {}, addresses.length, addresses);
+    container.appendChild(view);
+  }
+
+  const addButton = document.createElement('button');
+  addButton.innerText = 'New Address';
+  addButton.onclick = () => {
+    window.location.hash = `#edit=${addresses.length}`;
+    update(wrapper);
+  }
+  container.appendChild(addButton);
 
   return container;
 }
@@ -167,15 +279,11 @@ function update(wrapper) {
     return;
   }
 
-  /** @type {ContactInfo} */
-  let info = editSessionByAccountId[account.accountId];
-  if(!info) {
-    const raw = retrieve(account, 'contactInfo');
-    info = JSON.parse(JSON.stringify(raw));
-    editSessionByAccountId[account.accountId] = info;
-  }
+  /** @type {Address[]} */
+  const raw = retrieve(account, 'addresses');
+  const addresses = JSON.parse(JSON.stringify(raw));
 
-  const view = accountInfoView(wrapper, account, info, window.location.hash === '#edit');
+  const view = addressListView(wrapper, account, addresses, window.location.hash === '#edit');
   if(wrapper.firstChild) {
     wrapper.replaceChild(view, wrapper.firstChild);
   } else {

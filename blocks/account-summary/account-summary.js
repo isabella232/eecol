@@ -162,7 +162,7 @@ function createContactInfo(account) {
  * Make address tile
  * @param {Address} address 
  */
-function addressTile(address) {
+export function addressTile(address) {
   return `
   <div class="address-tile">
     ${address.is_default ?

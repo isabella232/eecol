@@ -23,6 +23,7 @@
   --dark-background-color: #012139;
   --border-color: #DDE3E3;
   --nav-background-color: #dde4e4;
+  --negative-color: rgb(180, 26, 26);
 
   /* fonts */
   --body-font-family: 'Source Sans Pro', helvetica, ubuntu, roboto, noto, sans-serif;
@@ -204,6 +205,11 @@ a.button.secondary, button.secondary {
   color: var(--text-color)
 } 
 
+a.button.negative, button.negative {
+  background-color: var(--negative-color);
+  color: var(--highlight-background-color);
+} 
+
 
 main input {
   font-size: 1.25rem;
@@ -225,7 +231,11 @@ main input:hover {
 
 main input:disabled {
   border: 1px solid var(--border-color);
+}
 
+main input[type=checkbox] {
+  display: inline-block;
+  width: 3rem;
 }
 
 main .section {
