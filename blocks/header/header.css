@@ -40,10 +40,36 @@ header .nav-topbar {
   height: 34px;
   padding: 10px 14px;
   box-sizing: border-box;
+  align-items: center;
 }
 
 header .nav-topbar p {
   margin: 0;
+}
+
+header .nav-topbar .language-switcher .canada-flag {
+  width: 11px;
+  height: auto;
+  margin-left: 5px;
+}
+
+header .nav-topbar .language-switcher svg {
+  width: 7px;
+  height: auto;
+  margin-left: 10px;
+  color: #fff;
+  transform: rotate(90deg);
+}
+
+
+
+header .nav-topbar select {
+  background-color: #374f61;
+  border-radius: 4px;
+  padding-left: 10px;
+  border: 1px solid #092a42;
+  margin-right: 10px;
+  color: #fff;
 }
 
 
