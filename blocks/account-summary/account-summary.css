@@ -1,0 +1,29 @@
+.account-summary-container h1#my-account {
+    margin: 0 0 1.5rem;
+}
+
+.account-summary-container h1 {
+    font-size: var(--heading-font-size-l);
+}
+
+.account-summary-container>div {
+    margin: 0;
+}
+
+.summary-section {
+    margin: 1rem 1rem 4rem;
+}
+
+.summary-section>span {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 2px solid rgba(0, 0, 0, 0.05);
+    margin-bottom: 1rem;
+    padding-bottom: 0.4rem;
+}
+
+.summary-section>span h2 {
+    margin: 0;
+    font-size: var(--heading-font-size-m);
+}
