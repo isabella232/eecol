@@ -36,6 +36,7 @@ async function updateTopBar() {
         select.append(option);
       });
       select.addEventListener(('change'), () => {
+        console.log('set select from header: ', select.value, account.accountsById[select.value]);
         setSelectedAccount(select.value, account.accountsById[select.value]);
       });
       authNavi.append(select);

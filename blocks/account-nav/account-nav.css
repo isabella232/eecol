@@ -3,6 +3,49 @@
     background-color: var(--nav-background-color);
 }
 
-.account-nav > div > div {
-    border-bottom: 1px solid black;
+.nav-group {
+    font-size: var(--body-font-size-m);
+    margin: var(--gap);
+    padding-bottom: var(--gap);
+}
+
+.nav-group:not(:last-child) {
+    border-bottom: 2px solid rgba(0, 0, 0, 0.3);
+}
+
+.nav-group ul {
+    margin-top: 0px;
+    margin-bottom: 0px;
+    list-style-type: none;
+    padding-inline-start: 0px;
+}
+
+.nav-group.account {
+    font-size: var(--body-font-size-s);
+}
+
+.nav-group.account .account-wrapper {
+    padding: var(--gap) var(--gap) 0;
+    margin: calc(var(--gap)*-1) calc(var(--gap)*-1) 0;
+    position: relative;
+}
+
+.nav-group.account .account-wrapper::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    z-index: 999;
+    width: 4px;
+    height: 35%;
+    background: var(--brand-color);
+    top: 25%;
+}
+
+.nav-group.account p {
+    margin: 0px;
+    font-weight: 600;
+}
+
+:root {
+    --gap: 1.3rem;
 }
