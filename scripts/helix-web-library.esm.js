@@ -1036,8 +1036,10 @@ class HelixApp {
 
     const { hash } = window.location;
     if (hash) {
-      const element = main.querySelector(hash);
-      if (hash && element) element.scrollIntoView();
+      try {
+        const element = main.querySelector(hash);
+        if (hash && element) element.scrollIntoView();
+      } catch {};
     }
 
     this.loadHeader(doc.querySelector('header'));

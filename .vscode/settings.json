@@ -2,5 +2,11 @@
     "editor.codeActionsOnSave": {
         "source.fixAll.eslint": true
     },
-    "eslint.validate": ["javascript"]
+    "eslint.validate": [
+        "javascript"
+    ],
+    "stylelint.enable": true,
+    "[css]": {
+        "editor.defaultFormatter": "stylelint.vscode-stylelint"
+    },
 }

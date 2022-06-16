@@ -13,6 +13,7 @@
  :root {
   /* colors */
   --link-color: #0099d8;
+  --brand-color: #0099d8;
   --link-hover-color: #0099d8;
   --background-color: #fff;
   --medium-background-color: #092a42;
@@ -21,6 +22,8 @@
   --text-color: #000;
   --dark-background-color: #012139;
   --border-color: #DDE3E3;
+  --nav-background-color: #dde4e4;
+  --negative-color: rgb(180, 26, 26);
 
   /* fonts */
   --body-font-family: 'Source Sans Pro', helvetica, ubuntu, roboto, noto, sans-serif;
@@ -74,6 +77,10 @@ img {
 header {
   height: var(--nav-height);
   grid-area: header;
+}
+
+.breadcrumbs {
+  grid-area: breadcrumbs;
 }
 
 footer {
@@ -198,6 +205,11 @@ a.button.secondary, button.secondary {
   color: var(--text-color)
 } 
 
+a.button.negative, button.negative {
+  background-color: var(--negative-color);
+  color: var(--highlight-background-color);
+} 
+
 
 main input {
   font-size: 1.25rem;
@@ -215,6 +227,15 @@ main input {
 
 main input:hover {
   border: 1px solid var(--text-color);
+}
+
+main input:disabled {
+  border: 1px solid var(--border-color);
+}
+
+main input[type=checkbox] {
+  display: inline-block;
+  width: 3rem;
 }
 
 main .section {
@@ -355,7 +376,7 @@ main .section.highlight {
 @media (min-width: 900px) {
   body.account {
     display: grid;
-    grid-template-areas: 'header header' 'accountnav main' 'footer footer';
+    grid-template-areas: 'header header' 'breadcrumbs breadcrumbs' 'accountnav main' 'footer footer';
     grid-template-columns: 375px 1fr;
   }  
 }

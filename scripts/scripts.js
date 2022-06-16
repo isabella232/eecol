@@ -381,6 +381,47 @@ export function getSelectedAccount() {
 }
 
 /**
+ * Set key/value, scoped to selected account
+ * @param {string} key 
+ * @param {Object|string|number|boolean} val 
+ */
+export function storeUserData(key, val) {
+  const id = localStorage.getItem('selectedAccount');
+  if(!id) {
+    console.warn('storeUserData() No account selected');
+    return;
+  }
+
+  const scopedKey = `account/${id}/${key}`;
+  localStorage.setItem(scopedKey, typeof val === 'object' ? JSON.stringify(val) : val);
+}
+
+/**
+ * Get value for key, scoped to selected account
+ * @param {string} key 
+ */
+export function retrieveUserData(key) {
+  const id = localStorage.getItem('selectedAccount');
+  if(!id) {
+    console.warn('retrieveUserData() No account selected');
+    return;
+  }
+
+  const scopedKey = `account/${id}/${key}`;
+  const data = localStorage.getItem(scopedKey);
+  if(!data) {
+    return;
+  }
+
+  try {
+    return JSON.parse(data);
+  } catch {
+    return data;
+  }
+}
+
+
+/**
  * Fetch the logged in user
  * @returns {import('./auth.js').Authentication}
  */

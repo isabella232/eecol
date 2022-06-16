@@ -1,3 +1,98 @@
-.ship-to-addresses {
-    background-color: aqua;
+.ship-to-addresses-container h1 {
+    margin: 0 0 1.5rem;
+    font-size: var(--heading-font-size-l);
+}
+
+.ship-to-addresses-container>div {
+    margin: 0;
+}
+
+.ship-to-addresses-container form {
+    min-width: 20rem;
+}
+
+.ship-to-addresses-container form input:not([type='checkbox']) {
+    font-size: 1rem;
+    width: 100%;
+    max-width: 25rem;
+    display: block;
+    margin-bottom: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    box-sizing: border-box;
+}
+
+.address-list {
+    display: flex;
+    flex-direction: column;
+}
+
+.address-view {
+    display: flex;
+}
+
+.address-view .actions {
+    margin: 1rem 0 auto 4rem;
+    display: flex;
+    flex-direction: column;
+}
+
+.address-view .actions > * {
+    margin: 0 0 1rem;
+}
+
+.address-tile {
+    align-self: flex-end;
+    min-width: 20rem;
+}
+
+.address-list > div {
+    margin: 0.5rem;
+    padding: 1rem 0 2rem 0;
+    position: relative;
+}
+
+.address-list > div:not(:nth-last-child(2))::after {
+    content: ' ';
+    position: absolute;
+    bottom: 0;
+    width: 90%;
+    border-bottom: solid rgba(0, 0, 0, 0.3) 1px;
+}
+
+.address-list > *:last-child {
+    margin-top: 2rem;
+}
+
+.address-tile p {
+    font-size: var(--body-font-size-s);
+    margin-top: 0rem;
+    margin-bottom: 0rem;
+}
+
+.address-tile .is-default {
+    display: flex;
+    align-items: center;
+    margin: 0 0 4px;
+    color: green;
+}
+
+.address-tile .is-default p {
+    font-weight: 600;
+}
+
+.address-tile .is-default .icon {
+    position: relative;
+    display: inline-block;
+    background: green;
+    height: 19px;
+    width: 19px;
+    margin-right: 0.3rem;
+    border-radius: 50%;
+}
+
+.address-tile .is-default .icon img {
+    position: relative;
+    top: 0px;
+    filter: invert(100%);
 }

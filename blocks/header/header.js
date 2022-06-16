@@ -27,6 +27,7 @@ async function updateTopBar() {
     if (accounts.length) {
       const selectedAccount = getSelectedAccount();
       const select = document.createElement('select');
+      // select.classList.add('account-selector');
       accounts.forEach((acct) => {
         const option = document.createElement('option');
         option.value = acct.accountId;
@@ -35,6 +36,7 @@ async function updateTopBar() {
         select.append(option);
       });
       select.addEventListener(('change'), () => {
+        console.log('set select from header: ', select.value, account.accountsById[select.value]);
         setSelectedAccount(select.value, account.accountsById[select.value]);
       });
       authNavi.append(select);
@@ -44,7 +46,9 @@ async function updateTopBar() {
     const btnProfile = document.createElement('a');
     authNavi.appendChild(btnProfile);
     btnProfile.innerText = account.name;
-    btnProfile.href = '/profile.html';
+    // btnProfile.href = '/profile.html';
+    btnProfile.href = '/my-account/';
+
     authNavi.appendChild(document.createTextNode(' | '));
 
     const btnSignOut = document.createElement('a');
