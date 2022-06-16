@@ -46,7 +46,9 @@ async function updateTopBar() {
     const btnProfile = document.createElement('a');
     authNavi.appendChild(btnProfile);
     btnProfile.innerText = account.name;
-    btnProfile.href = '/profile.html';
+    // btnProfile.href = '/profile.html';
+    btnProfile.href = '/my-account/';
+
     authNavi.appendChild(document.createTextNode(' | '));
 
     const btnSignOut = document.createElement('a');
