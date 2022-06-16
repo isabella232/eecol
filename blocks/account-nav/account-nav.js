@@ -17,7 +17,7 @@ function updateAccount(block) {
   }
 
   const group = document.createElement('div');
-  group.classList.add('nav-group', 'account')
+  group.classList.add('nav-group', 'account');
   group.innerHTML = `
   <div class="account-wrapper">
     <p>My Account</p>

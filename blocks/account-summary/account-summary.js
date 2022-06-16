@@ -42,6 +42,7 @@ const ACCOUNT_CHANGE_EVT = 'account-change';
  * @property {string} state
  * @property {string} zip
  * @property {string} country
+ * @property {string} phone
  * @property {boolean} is_default
  */
 
@@ -77,6 +78,7 @@ function defaultAddresses(account) {
     state: 'CA',
     zip: '90210',
     country: 'USA',
+    phone: '555-123-1234',
     is_default: true
   }];
   storeUserData('addresses', data);
@@ -157,15 +159,50 @@ function createContactInfo(account) {
 }
 
 /**
+ * Make address tile
+ * @param {Address} address 
+ */
+function addressTile(address) {
+  return `
+  <div class="address-tile">
+    ${address.is_default ?
+      `<span class="is-default">
+        <span class="icon">
+          <img src="/icons/circle-check.svg" />
+        </span>
+        <p>Default address</p>
+      </span>`
+      :
+      ''
+    }
+    <p><strong>${address.name ?? ''}</strong></p>
+    <p>${address.company ?? ''}</p>
+    <p>${address.street ?? ''}</p>
+    <p>${address.city ?? ''}, ${address.state ?? ''}, ${address.zip ?? ''}, ${address.country ?? ''}</p>
+    <p>${address.phone ?? ''}</p>
+  </div>
+  `;
+}
+
+/**
  * Addresses summary
  * 
  * @param {Account} account
  * @return {string} content
  */
  function createAddresses(account) {
+   /** @type {Address[]} */
+  let addresses = retrieve(account, 'addresses');
+  const defaultAddr = addresses.find(addr => addr.is_default);
+  addresses = addresses.filter(addr => addr !== defaultAddr).slice(0, 2);
+  
+  // for testing styles of multiple addresses
+  // addresses.push({...defaultAddr, is_default: false});
+
   return `
   <div class="addresses">
-  addresses section...
+    ${addressTile(defaultAddr)}
+    ${addresses.map(addressTile)}
   </div>`;
 }
 
