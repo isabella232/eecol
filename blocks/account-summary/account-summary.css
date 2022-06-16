@@ -1,8 +1,5 @@
-.account-summary-container h1#my-account {
-    margin: 0 0 1.5rem;
-}
-
 .account-summary-container h1 {
+    margin: 0 0 1.5rem;
     font-size: var(--heading-font-size-l);
 }
 
@@ -26,4 +23,9 @@
 .summary-section>span h2 {
     margin: 0;
     font-size: var(--heading-font-size-m);
+}
+
+.summary-section .contact-info p {
+    margin-top: 0.25rem;
+    margin-bottom: 0.25rem;
 }

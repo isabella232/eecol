@@ -2,13 +2,12 @@ import { getSelectedAccount } from "../../scripts/scripts.js";
 
 const ACCOUNT_CHANGE_EVT = 'account-change';
 
-
 /**
  * @param {HTMLElement} block
  */
 function updateAccount(block) {
   const account = getSelectedAccount();
-  const existing = block.querySelector('.nav-group.account');
+  const existing = block.querySelector(':scope > .nav-group.account');
 
   if(!account) {
     if(existing) {
@@ -27,7 +26,7 @@ function updateAccount(block) {
   `;
   
   if(existing) {
-    block.replaceChild(existing, group);
+    block.replaceChild(group, existing);
   } else {
     block.prepend(group);
   }

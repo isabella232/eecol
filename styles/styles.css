@@ -223,6 +223,11 @@ main input:hover {
   border: 1px solid var(--text-color);
 }
 
+main input:disabled {
+  border: 1px solid var(--border-color);
+
+}
+
 main .section {
   padding: 16px;
 }

@@ -7,7 +7,6 @@ import {
 
 const ACCOUNT_CHANGE_EVT = 'account-change';
 
-
 /**
  * @typedef {Object} AccountConfig
  * @property {string[]} Categories
@@ -52,7 +51,6 @@ const ACCOUNT_CHANGE_EVT = 'account-change';
  * @property {string} name
  * @property {string} company
  * @property {string} phone
- * @property {Address} address
  */
 
 /**
@@ -74,14 +72,14 @@ function defaultAddresses(account) {
     id: 0,
     name: user.name,
     company: account.accountName,
-    street: '',
-    city: '',
-    state: '',
-    zip: '',
-    country: '',
+    street: '1234 Example Rd.',
+    city: 'Los Angeles',
+    state: 'CA',
+    zip: '90210',
+    country: 'USA',
     is_default: true
   }];
-  // storeUserData('addresses', data);
+  storeUserData('addresses', data);
   return data;
 }
 
@@ -92,26 +90,23 @@ function defaultAddresses(account) {
 function defaultContactInfo(account) {
   /** @type {UserAccount} */
   const user = getUserAccount() ?? {};
-  console.log('user: ', user);
   const data = {
     email: user.username,
     name: user.name,
     company: account.accountName,
-    phone: '',
-    address: retrieve(account, 'addresses')[0]
+    phone: '555-123-1234',
   };
 
-  // storeUserData('contactInfo', data);
+  storeUserData('contactInfo', data);
   return data;
 }
 
 /**
  * @param {Account} account
  * @param {string} key
- * @returns {ContactInfo}
+ * @returns {ContactInfo|Address[]|undefined}
  */
-function retrieve(account, key) {
-  console.log('retrieve: ', account, key);
+export function retrieve(account, key) {
   const data = retrieveUserData(key);
   if(data) {
     return data;
@@ -132,20 +127,19 @@ function retrieve(account, key) {
  * @return {string} content
  */
 function createContactInfo(account) {
-  console.log('createContactInfo: ', account);
   /** @type {ContactInfo} */
   const data = retrieve(account, 'contactInfo');
-  console.log('data: ', data);
+  const address = retrieve(account, 'addresses').find(addr => addr.is_default) || {};
 
   return `
-  <div>
+  <div class="contact-info">
     <p>${data.email}</p>
     <p>${data.name}</p>
     <p>${data.company}</p>
     <p>${data.phone}</p>
-    <p>${data.address.street}</p>
-    <p>${data.address.city}, ${data.address.state}, ${data.address.zip}</p>
-    <p>${data.address.country}</p>
+    <p>${address.street}</p>
+    <p>${address.city}, ${address.state}, ${address.zip}</p>
+    <p>${address.country}</p>
   </div>`;
 }
 
@@ -157,7 +151,7 @@ function createContactInfo(account) {
  */
  function createNewsletters(account) {
   return `
-  <div>
+  <div class="newsletters">
     <p>You aren't subscribed to any newsletters</p>
   </div>`;
 }
@@ -170,7 +164,7 @@ function createContactInfo(account) {
  */
  function createAddresses(account) {
   return `
-  <div>
+  <div class="addresses">
   addresses section...
   </div>`;
 }
@@ -183,8 +177,8 @@ function createContactInfo(account) {
  */
  function createRecentOrders(account) {
   return `
-  <div>
-  recent orders section...
+  <div class="recent-orders">
+    <p>You don't have any recent orders.</p>
   </div>`;
 }
 
@@ -256,7 +250,6 @@ function updateAccount(wrapper, confs) {
   }
 
   const summary = createSummary(confs, account);
-  console.log('summary: ', summary.innerHTML);
   wrapper.innerHTML = summary.innerHTML;
 }
 
@@ -269,7 +262,6 @@ export default async function decorate(block) {
   /** @type {SummarySection[]} */
   const confs = [];
   block.querySelectorAll(':scope > div').forEach((node) => {
-    console.log('node: ', node);
     const name = node.firstElementChild?.innerText;
     if(!name) {
       return;
