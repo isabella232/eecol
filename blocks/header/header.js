@@ -27,7 +27,7 @@ async function updateTopBar() {
     if (accounts.length) {
       const selectedAccount = getSelectedAccount();
       const select = document.createElement('select');
-      select.classList.add('account-selector');
+      // select.classList.add('account-selector');
       accounts.forEach((acct) => {
         const option = document.createElement('option');
         option.value = acct.accountId;

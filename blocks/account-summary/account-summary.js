@@ -1,11 +1,58 @@
-import { getSelectedAccount } from "../../scripts/scripts.js";
+import { 
+  getSelectedAccount, 
+  getUserAccount, 
+  retrieveUserData,
+  storeUserData
+} from "../../scripts/scripts.js";
 
 const ACCOUNT_CHANGE_EVT = 'account-change';
 
+
+/**
+ * @typedef {Object} AccountConfig
+ * @property {string[]} Categories
+ */
+
 /**
  * @typedef {Object} Account
+ * @property {string} email
  * @property {string} accountId
  * @property {string} accountName
+ * @property {AccountConfig} config
+ */
+
+/**
+ * @typedef {Object} UserAccount
+ * @property {Account[]} accounts
+ * @property {Record<string, Account>} accountsById
+ * @property {string} environment
+ * @property {string} homeAccountId
+ * @property {string} localAccountId
+ * @property {string} name
+ * @property {string} tenantId
+ * @property {string} username
+ */
+
+/**
+ * @typedef {Object} Address
+ * @property {string} id
+ * @property {string} name
+ * @property {string} company
+ * @property {string} street
+ * @property {string} city
+ * @property {string} state
+ * @property {string} zip
+ * @property {string} country
+ * @property {boolean} is_default
+ */
+
+/**
+ * @typedef {Object} ContactInfo
+ * @property {string} email
+ * @property {string} name
+ * @property {string} company
+ * @property {string} phone
+ * @property {Address} address
  */
 
 /**
@@ -15,15 +62,90 @@ const ACCOUNT_CHANGE_EVT = 'account-change';
  */
 
 /**
+ * @param {Account} account
+ * @returns {Address[]}
+ */
+function defaultAddresses(account) {
+  /** @type {UserAccount} */
+  const user = getUserAccount() ?? {};
+
+  /** @type {Address[]} */
+  const data = [{
+    id: 0,
+    name: user.name,
+    company: account.accountName,
+    street: '',
+    city: '',
+    state: '',
+    zip: '',
+    country: '',
+    is_default: true
+  }];
+  // storeUserData('addresses', data);
+  return data;
+}
+
+/**
+ * @param {Account} account
+ * @returns {ContactInfo}
+ */
+function defaultContactInfo(account) {
+  /** @type {UserAccount} */
+  const user = getUserAccount() ?? {};
+  console.log('user: ', user);
+  const data = {
+    email: user.username,
+    name: user.name,
+    company: account.accountName,
+    phone: '',
+    address: retrieve(account, 'addresses')[0]
+  };
+
+  // storeUserData('contactInfo', data);
+  return data;
+}
+
+/**
+ * @param {Account} account
+ * @param {string} key
+ * @returns {ContactInfo}
+ */
+function retrieve(account, key) {
+  console.log('retrieve: ', account, key);
+  const data = retrieveUserData(key);
+  if(data) {
+    return data;
+  }
+
+  switch(key) {
+    case 'contactInfo':
+      return defaultContactInfo(account);
+    case 'addresses':
+      return defaultAddresses(account);
+  }
+}
+
+/**
  * Contact info summary
  * 
  * @param {Account} account
  * @return {string} content
  */
 function createContactInfo(account) {
+  console.log('createContactInfo: ', account);
+  /** @type {ContactInfo} */
+  const data = retrieve(account, 'contactInfo');
+  console.log('data: ', data);
+
   return `
   <div>
-  contact info section...
+    <p>${data.email}</p>
+    <p>${data.name}</p>
+    <p>${data.company}</p>
+    <p>${data.phone}</p>
+    <p>${data.address.street}</p>
+    <p>${data.address.city}, ${data.address.state}, ${data.address.zip}</p>
+    <p>${data.address.country}</p>
   </div>`;
 }
 
@@ -36,7 +158,7 @@ function createContactInfo(account) {
  function createNewsletters(account) {
   return `
   <div>
-  newsletters section...
+    <p>You aren't subscribed to any newsletters</p>
   </div>`;
 }
 
@@ -128,6 +250,7 @@ function createSummary(confs, account) {
  */
 function updateAccount(wrapper, confs) {
   const account = getSelectedAccount();
+
   if(!account) {
     return;
   }
