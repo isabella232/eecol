@@ -5,5 +5,8 @@
     "eslint.validate": [
         "javascript"
     ],
-    "stylelint.enable": true
+    "stylelint.enable": true,
+    "[css]": {
+        "editor.defaultFormatter": "stylelint.vscode-stylelint"
+    },
 }
