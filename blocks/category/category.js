@@ -103,6 +103,11 @@ class CategoryFilterController {
    * On Facet selected callback
    */
   onFacetSelected = () => {
+    // If a facet is selected, forget any page we were on.
+    if (this.activeFilterConfig.page) {
+      removeQueryParam('page');
+      delete this.activeFilterConfig.page;
+    }
     this.activeFilterConfig = this.getFilterConfig(this.block, this.activeFilterConfig);
     this.block.dispatchEvent(new CustomEvent('filterUpdated', { detail: this.activeFilterConfig }));
   };

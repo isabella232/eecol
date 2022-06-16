@@ -32,7 +32,6 @@ class ProductView {
 
   async load() {
     const sku = window.location.pathname.split('/').pop();
-    this.userAccount = getUserAccount();
     try {
       const product = await lookupProduct(sku);
       store.product = product;
@@ -44,8 +43,8 @@ class ProductView {
       this.render404();
     }
 
-    document.body.addEventListener('cart-update', this.enableAddToCart);
-    document.body.addEventListener('account-change', this.enableAddToCart);
+    document.body.addEventListener('cart-update', this.render.bind(this));
+    document.body.addEventListener('account-change', this.render.bind(this));
   }
 
   /**
@@ -174,6 +173,7 @@ class ProductView {
   render() {
     this.renderProductScaffolding();
 
+    this.userAccount = getUserAccount();
     if (this.userAccount) {
       this.renderPricingLoading();
       lookupProductPricing('123', Math.random().toString(), 'abc').then((result) => {
