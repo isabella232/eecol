@@ -88,14 +88,28 @@ function collapseAllNavSections(sections) {
   });
 }
 
-function createCategory(children) {
+function createCategory(title, children) {
   const ul = document.createElement('ul');
+
+  const firstChild = children[0];
+  if (firstChild) {
+    ul.classList.add(`level-${firstChild.level}`);
+  }
+  ul.classList.add('nav-group');
+
+  if (title) {
+    const li = document.createElement('li');
+    li.classList.add('nav-group-title');
+    li.innerText = title;
+    ul.appendChild(li);
+  }
+
   children.forEach((child) => {
     if (child.url_path) {
       const li = document.createElement('li');
-      li.innerHTML = `<a href="/ca/en/products/category/${child.url_path.split('.')[0]}">${child.name}</a>`;
+      li.innerHTML = `<a href="/ca/en/products/category/${child.url_path.split('.')[0]}">${child.name}</a>${child.level === 2 ? '<span><img class="disclosureArrow" src="/icons/disclosure-white.svg"></span>' : ''}`;
       if (child.children) {
-        li.append(createCategory(child.children));
+        li.append(createCategory(child.level !== 3 ? child.name : '', child.children));
       }
       ul.append(li);
     }
@@ -243,9 +257,15 @@ export default async function decorate(block) {
     decorateIcons(nav);
     block.append(nav);
 
-    const categs = createCategory(categories);
+    const categs = createCategory('Categories', categories);
     const products = nav.querySelector('.nav-sections > ul:first-of-type > li:first-of-type > ul');
     products.replaceWith(categs);
+    const level1 = document.querySelector('nav .nav-sections > ul');
+    level1.classList.add('level-1');
+    const productsHeading = document.querySelector('nav .nav-sections > ul > li:first-of-type');
+    const hamburgerIcon = document.createElement('div');
+    hamburgerIcon.classList.add('nav-hamburger-icon');
+    productsHeading.prepend(hamburgerIcon);
 
     const filterCategoriesByAccount = () => {
       /* adjust navigation based on account information */
