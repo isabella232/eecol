@@ -178,6 +178,13 @@ export async function searchProducts(query) {
   return query;
 }
 
+function replaceProductImages(data) {
+  return data.map((product) => {
+    product.image = `${product.image.replace('https://qa-store.eecol.com/', 'https://main--eecol--hlxsites.hlx-orch.live/')}?format=webply`;
+    return product;
+  });
+}
+
 /**
  * Returns an array of products for a category
  * @param {Object} category
@@ -189,6 +196,7 @@ export async function lookupCategory(category, activeFilterUrlParams) {
   const req = await fetch(`https://main--eecol--hlxsites.hlx-orch.live/productLookup?${category.uid ? `category=${category.uid}` : ''}${activeFilterUrlParams ? `&${activeFilterUrlParams}` : ''}`);
   if (req.status === 200) {
     products = await req.json();
+    products.data = replaceProductImages(products.data);
   }
   return products;
 }
@@ -203,7 +211,7 @@ export async function lookupProduct(sku) {
   if (sku) {
     const req = await fetch(`https://main--eecol--hlxsites.hlx-orch.live/productLookup?sku=${sku}`);
     const json = await req.json();
-    [product] = json.data;
+    [product] = replaceProductImages(json.data);
   }
   return product;
 }
@@ -382,12 +390,12 @@ export function getSelectedAccount() {
 
 /**
  * Set key/value, scoped to selected account
- * @param {string} key 
- * @param {Object|string|number|boolean} val 
+ * @param {string} key
+ * @param {Object|string|number|boolean} val
  */
 export function storeUserData(key, val) {
   const id = localStorage.getItem('selectedAccount');
-  if(!id) {
+  if (!id) {
     console.warn('storeUserData() No account selected');
     return;
   }
@@ -398,18 +406,18 @@ export function storeUserData(key, val) {
 
 /**
  * Get value for key, scoped to selected account
- * @param {string} key 
+ * @param {string} key
  */
 export function retrieveUserData(key) {
   const id = localStorage.getItem('selectedAccount');
-  if(!id) {
+  if (!id) {
     console.warn('retrieveUserData() No account selected');
     return;
   }
 
   const scopedKey = `account/${id}/${key}`;
   const data = localStorage.getItem(scopedKey);
-  if(!data) {
+  if (!data) {
     return;
   }
 
@@ -419,7 +427,6 @@ export function retrieveUserData(key) {
     return data;
   }
 }
-
 
 /**
  * Fetch the logged in user
