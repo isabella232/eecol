@@ -378,10 +378,15 @@ header nav[aria-expanded='true'] .nav-tools li {
     top: 38px;
   }
 
+  header nav .nav-sections .level-1 .nav-drop[aria-expanded='true'] .level-2 > li.hidden {
+    display: none; 
+  }
+
   /** Level 3 **/
   header nav .nav-sections .level-1 .nav-drop[aria-expanded='true'] .level-2 > li > .level-3 {
     display: none;
     list-style: none;
+    min-height: 640px;
   }
 
   header nav .nav-sections .level-1 .nav-drop[aria-expanded='true'] .level-2 > li:hover .level-3 {
