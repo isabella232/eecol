@@ -43,6 +43,7 @@ div.product-wrapper {
     min-width: 274px;
     padding-right: 30px;
     aspect-ratio: 1;
+    object-fit: contain;
 }
 
 .product .product-images::-webkit-scrollbar {
@@ -248,6 +249,7 @@ div.product-wrapper {
         max-width: 274px;
         padding-right: 20px;
         aspect-ratio: 1;
+        object-fit: contain;
     }
 
     .product .product-images > picture.selected img {
