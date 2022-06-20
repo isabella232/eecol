@@ -204,6 +204,13 @@ function readBlockConfig(block) {
           } else {
             value = as.map((a) => a.href);
           }
+        } else if (col.querySelector('img')) {
+          const imgs = [...col.querySelectorAll('img')];
+          if (imgs.length === 1) {
+            value = imgs[0].src;
+          } else {
+            value = imgs.map((img) => img.src);
+          }
         } else if (col.querySelector('p')) {
           const ps = [...col.querySelectorAll('p')];
           if (ps.length === 1) {
@@ -248,7 +255,7 @@ function decorateSections(main) {
       const keys = Object.keys(meta);
       keys.forEach((key) => {
         if (key === 'style') section.classList.add(toClassName(meta.style));
-        else section.dataset[key] = meta[key];
+        else section.dataset[toCamelCase(key)] = meta[key];
       });
       sectionMeta.remove();
     }
@@ -1039,7 +1046,9 @@ class HelixApp {
       try {
         const element = main.querySelector(hash);
         if (hash && element) element.scrollIntoView();
-      } catch {};
+      } catch {
+        /* do nothing */
+      }
     }
 
     this.loadHeader(doc.querySelector('header'));
@@ -1049,7 +1058,7 @@ class HelixApp {
       loadCSS(`${window.hlx.codeBasePath}/styles/lazy-styles.css`);
     }
 
-    addFavIcon(`${window.hlx.codeBasePath}/icon.svg`);
+    addFavIcon(`${window.hlx.codeBasePath}/styles/favicon.ico`);
     if (this.loadLazyHook) {
       this.loadLazyHook(doc);
     }
@@ -1065,7 +1074,7 @@ class HelixApp {
    * Builds all synthetic blocks in a container element.
    * @param {Element} main The container element
    */
-  buildAutoBlocks(_) { }
+  buildAutoBlocks() { }
 
   /**
    * Loads the header block.
@@ -1128,4 +1137,38 @@ class HelixApp {
   }
 }
 
-export { HelixApp, addFavIcon, addPublishDependencies, buildBlock, createOptimizedPicture, decorateBlock, decorateBlocks, decorateButtons, decorateIcons, decoratePictures, decorateSections, decorateTemplateAndTheme, fetchPlaceholders, getMetadata, getOptimizedImagePath, initHlx, loadBlock, loadBlocks, loadCSS, loadFooter, loadHeader, loadScript, makeLinksRelative, normalizeHeadings, readBlockConfig, registerPerformanceLogger, removeStylingFromImages, sampleRUM, stamp, toCamelCase, toClassName, updateSectionsStatus, waitForLCP };
+export {
+  HelixApp,
+  addFavIcon,
+  addPublishDependencies,
+  buildBlock,
+  createOptimizedPicture,
+  decorateBlock,
+  decorateBlocks,
+  decorateButtons,
+  decorateIcons,
+  decoratePictures,
+  decorateSections,
+  decorateTemplateAndTheme,
+  fetchPlaceholders,
+  getMetadata,
+  getOptimizedImagePath,
+  initHlx,
+  loadBlock,
+  loadBlocks,
+  loadCSS,
+  loadFooter,
+  loadHeader,
+  loadScript,
+  makeLinksRelative,
+  normalizeHeadings,
+  readBlockConfig,
+  registerPerformanceLogger,
+  removeStylingFromImages,
+  sampleRUM,
+  stamp,
+  toCamelCase,
+  toClassName,
+  updateSectionsStatus,
+  waitForLCP,
+};
