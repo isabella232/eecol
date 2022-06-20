@@ -180,7 +180,7 @@ export async function searchProducts(query) {
 
 function replaceProductImages(data) {
   return data.map((product) => {
-    product.image = `${product.image.replace('https://qa-store.eecol.com/', 'https://main--eecol--hlxsites.hlx-orch.live/')}?format=webply`;
+    product.image = `${product.image.replace('https://qa-store.eecol.com/', 'https://main--eecol--hlxsites.hlx-orch.live/')}?format=webplyhttps://main--eecol--hlxsites.hlx-orch.live/media/catalog/product/cache/6d59eebca7373f2b9debabbeed105ddb/f/f/ff1a6bd51074f80f2873e6e068ed59dcf658b2cd-large.png?format=webply&quality=medium&width=750`;
     return product;
   });
 }
@@ -466,7 +466,7 @@ export const store = {
  *
  */
 HelixApp.init({
-  lcpBlocks: ['hero'],
+  lcpBlocks: ['hero', 'product'],
   rumGeneration: ['project-1'],
   productionDomains: ['poc-staging.eecol.com'],
   lazyStyles: true,
