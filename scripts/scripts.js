@@ -501,6 +501,6 @@ HelixApp.init({
     }
   })
   .withLoadDelayed(() => {
-    window.setTimeout(() => import('./delayed.js'), 100);
+    window.setTimeout(() => import('./delayed.js'), 4000);
   })
   .decorate();
