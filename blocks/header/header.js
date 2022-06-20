@@ -173,7 +173,7 @@ export default async function decorate(block) {
     // Embedding svg using the img tag kills the ability to change the color via css.
     languageSwitcher.innerHTML = /* html */`
     <span>English</span>
-    <img class='canada-flag' src='/icons/canada-flag.svg'/>
+    <img class='canada-flag' src='/icons/canada-flag.svg' width="11" height="12"/>
     <svg xmlns="http://www.w3.org/2000/svg" width="237.201" height="348.328" viewBox="0 0 237.201 348.328"  fill="currentColor">
       <g transform="matrix(0.995, -0.105, 0.105, 0.995, -258.757, -67.721)" fill="currentColor">
         <path id="Path_4" data-name="Path 4" fill="currentColor" stroke="currentColor" d="M271.09,444.41,451.98,296.28l-23.062-28.164-.051.043L303.507,115.6l-28.125,23.1,125.33,152.51-152.68,125.03Z"/>
