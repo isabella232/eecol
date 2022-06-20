@@ -267,6 +267,10 @@ export default async function decorate(block) {
     hamburgerIcon.classList.add('nav-hamburger-icon');
     productsHeading.prepend(hamburgerIcon);
 
+    const solutions = document.querySelector('header nav .nav-sections .level-1 .nav-drop:nth-child(2) ul');
+    solutions.classList.add('level-2');
+    solutions.classList.add('nav-group');
+
     const filterCategoriesByAccount = () => {
       /* adjust navigation based on account information */
       const account = getSelectedAccount();

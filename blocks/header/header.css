@@ -367,12 +367,19 @@ header nav[aria-expanded='true'] .nav-tools li {
   }
 
   /** Solutions **/
-  header nav .nav-sections .level-1 .nav-drop:nth-child(2) ul {
+  /* header nav .nav-sections .level-1 .nav-drop:nth-child(2) ul {
     color: var(--text-color);
     margin-top: 14px;
     display: none;
     position: relative;
   }
+
+  header nav .nav-sections .level-1 .nav-drop:nth-child(2) ul {
+    color: var(--text-color);
+    margin-top: 14px;
+    display: none;
+    position: relative;
+  } */
 
   /** Level 2 **/  
   header nav .nav-sections .level-1 .nav-drop[aria-expanded='true'] .level-2 {
