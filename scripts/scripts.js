@@ -19,6 +19,8 @@ import {
   decorateBlock,
   loadBlock,
   makeLinksRelative,
+  createOptimizedPicture,
+  decorateSections,
 } from './helix-web-library.esm.js';
 
 /**
@@ -180,7 +182,7 @@ export async function searchProducts(query) {
 
 function replaceProductImages(data) {
   return data.map((product) => {
-    product.image = `${product.image.replace('https://qa-store.eecol.com/', 'https://main--eecol--hlxsites.hlx-orch.live/')}?format=webply&quality=medium&width=750`;    
+    product.image = `${product.image.replace('https://qa-store.eecol.com/', 'https://main--eecol--hlxsites.hlx-orch.live/')}?format=webply&quality=medium&width=750`;
     return product;
   });
 }
@@ -486,6 +488,18 @@ HelixApp.init({
       // eslint-disable-next-line no-console
       console.error('Auto Blocking failed', error);
     }
+  })
+  .withDecorateSections((main) => {
+    decorateSections(main);
+    const sections = [...main.querySelectorAll('.section')];
+    sections.forEach((section) => {
+      const bg = section.dataset.background;
+      if (bg) {
+        const picture = createOptimizedPicture(bg);
+        picture.classList.add('section-background');
+        section.prepend(picture);
+      }
+    });
   })
   .withLoadHeader(async (header) => {
     loadHeader(header);

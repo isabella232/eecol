@@ -240,6 +240,7 @@ main input[type=checkbox] {
 
 main .section {
   padding: 16px;
+  position: relative;
 }
 
 main pre {
@@ -379,4 +380,42 @@ main .section.highlight {
     grid-template-areas: 'header header' 'breadcrumbs breadcrumbs' 'accountnav main' 'footer footer';
     grid-template-columns: 375px 1fr;
   }  
+}
+
+
+main .section picture.section-background {
+  position: absolute;
+  z-index: -1;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  right: 0;
+}
+
+main .section picture.section-background img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+main .section.background-image .default-content-wrapper {
+  background-color: #fffc;
+  margin: 16px;
+  padding: 16px;
+}
+
+@media (min-width: 900px) {
+  main .section picture.section-background img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  main .section.background-image .default-content-wrapper {
+    width: 60%;
+    max-width: 600px;
+    margin: 32px;
+    padding: 32px;
+  }
+    
 }
