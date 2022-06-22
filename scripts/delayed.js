@@ -82,14 +82,4 @@ loadScript('https://alcdn.msauth.net/browser/2.24.0/js/msal-browser.min.js', asy
   }
 
   // ----< eof tripod's auth poc >-------------------
-
-  const pageType = getMetadata('pagetype');
-  if (PageTypes.includes(pageType)) {
-    const section = document.createElement('div');
-    document.querySelector('nav').append(section);
-    const breadcrumbsBlock = buildBlock('breadcrumbs', '');
-    section.append(breadcrumbsBlock);
-    decorateBlock(breadcrumbsBlock);
-    loadBlock(breadcrumbsBlock, false);
-  }
 });

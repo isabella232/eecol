@@ -344,6 +344,7 @@ header nav .breadcrumbs-wrapper {
 
   header .nav-toolbar .nav-toolbar-logo img {
     padding-left: 15px;
+    cursor: pointer;
   }
 
   header nav .nav-sections {

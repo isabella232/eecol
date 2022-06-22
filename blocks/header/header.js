@@ -5,6 +5,8 @@ import {
   fetchPlaceholders,
   loadBlock,
   decorateBlock,
+  getMetadata,
+  buildBlock,
 } from '../../scripts/helix-web-library.esm.js';
 import {
   searchProducts,
@@ -13,6 +15,7 @@ import {
   getSelectedAccount,
   checkCategoriesInCatalog,
   addEventListeners,
+  PageTypes,
 } from '../../scripts/scripts.js';
 
 async function updateTopBar() {
@@ -352,6 +355,11 @@ export default async function decorate(block) {
       }
     });
 
+    const logo = nav.querySelector('.nav-toolbar-logo');
+    logo.addEventListener('click', () => {
+      window.location = '/';
+    });
+
     // hamburger for mobile
     const hamburger = navToolbarContainer.querySelector('.hamburger');
     hamburger.addEventListener('click', () => {
@@ -408,5 +416,15 @@ export default async function decorate(block) {
     cart.classList.add('cart');
     decorateBlock(cart);
     loadBlock(cart);
+
+    const pageType = getMetadata('pagetype');
+    if (PageTypes.includes(pageType)) {
+      const section = document.createElement('div');
+      document.querySelector('nav').append(section);
+      const breadcrumbsBlock = buildBlock('breadcrumbs', '');
+      section.append(breadcrumbsBlock);
+      decorateBlock(breadcrumbsBlock);
+      loadBlock(breadcrumbsBlock, false);
+    }
   }
 }
