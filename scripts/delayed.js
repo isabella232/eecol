@@ -1,5 +1,8 @@
 // eslint-disable-next-line import/no-cycle
-import { sampleRUM } from './helix-web-library.esm.js';
+import {
+  sampleRUM, getMetadata, buildBlock, decorateBlock, loadBlock,
+} from './helix-web-library.esm.js';
+import { PageTypes } from './scripts.js';
 
 // Core Web Vitals RUM collection
 sampleRUM('cwv');
@@ -79,4 +82,14 @@ loadScript('https://alcdn.msauth.net/browser/2.24.0/js/msal-browser.min.js', asy
   }
 
   // ----< eof tripod's auth poc >-------------------
+
+  const pageType = getMetadata('pagetype');
+  if (PageTypes.includes(pageType)) {
+    const section = document.createElement('div');
+    document.querySelector('nav').append(section);
+    const breadcrumbsBlock = buildBlock('breadcrumbs', '');
+    section.append(breadcrumbsBlock);
+    decorateBlock(breadcrumbsBlock);
+    loadBlock(breadcrumbsBlock, false);
+  }
 });

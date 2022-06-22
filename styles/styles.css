@@ -45,13 +45,13 @@
   --heading-font-size-xs: 16px;
 
   /* nav height */
-  --nav-height: 141px;
+  --nav-height: 210px;
 
 }
 
 @media (min-width: 1000px) {
   :root {
-    --nav-height: 141px;
+    --nav-height: 210px;
   }
 }
 
@@ -77,10 +77,6 @@ img {
 header {
   height: var(--nav-height);
   grid-area: header;
-}
-
-.breadcrumbs {
-  grid-area: breadcrumbs;
 }
 
 footer {

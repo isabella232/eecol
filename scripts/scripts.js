@@ -334,7 +334,7 @@ export function clearQueryParams() {
   window.history.pushState(null, '', window.location.pathname);
 }
 
-const PageTypes = [
+export const PageTypes = [
   'category',
   'product',
 ];
@@ -521,17 +521,7 @@ HelixApp.init({
       makeLinksRelative(accountNav);
     }
   })
-  .withLoadDelayed(async (main) => {
+  .withLoadDelayed(() => {
     window.setTimeout(() => import('./delayed.js'), 4000);
-
-    const pageType = getMetadata('pagetype');
-    if (PageTypes.includes(pageType)) {
-      const section = document.createElement('div');
-      main.querySelector('main .section').prepend(section);
-      const breadcrumbsBlock = buildBlock('breadcrumbs', '');
-      section.append(breadcrumbsBlock);
-      decorateBlock(breadcrumbsBlock);
-      loadBlock(breadcrumbsBlock, false);
-    }
   })
   .decorate();

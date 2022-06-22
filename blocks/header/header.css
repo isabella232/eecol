@@ -6,7 +6,7 @@ header nav {
     'topbar topbar topbar'
     'toolbar toolbar toolbar'
     'search search search'
-    'sections sections sections';
+    'breadcrumbs breadcrumbs breadcrumbs';
   grid-template-columns: 200px 1fr 50px;
   grid-template-rows: 34px 1fr;
   align-items: center;
@@ -22,7 +22,7 @@ header nav a:any-link {
 }
 
 header nav[aria-expanded='true'] {
-  grid-template: 'topbar topbar''toolbar toolbar''sections sections''search search';
+  grid-template: 'topbar topbar''toolbar toolbar''sections sections''search search' 'breadcrumbs breadcrumbs';
   grid-template-columns: 1fr;
 }
 
@@ -198,7 +198,7 @@ header .nav-toolbar .nav-toolbar-logo img {
 header .nav-toolbar .nav-toolbar-actions {
   display: flex;
   align-items: center;
-  height: 100%;
+  height: 55px;
 }
 
 header .nav-toolbar .nav-toolbar-actions > div{
@@ -320,11 +320,18 @@ header .nav-sections .level-1 .nav-drop .nav-hamburger-icon {
   display: none;
 }
 
+header nav .breadcrumbs-wrapper {
+  grid-area: breadcrumbs;
+  height: 68px;
+  padding-left: 20px;
+  width: 100%;
+}
+
 /* desktop nav styles */
 @media (min-width: 1000px) {
   header nav {
     display: grid;
-    grid-template: 'topbar topbar topbar''toolbar toolbar toolbar''sections sections sections';
+    grid-template: 'topbar topbar topbar''toolbar toolbar toolbar''sections sections sections' 'breadcrumbs breadcrumbs breadcrumbs';
     justify-content: space-between;
     grid-template-columns: 150px 1fr 112px;
   }
