@@ -171,17 +171,16 @@ async function updateCartDisplay() {
     return div;
   };
 
-  const blocks = document.querySelectorAll('.cart-display');
-  blocks.forEach((display) => {
-    if (display.closest('header')) {
-      const badge = document.createElement('div');
-      badge.textContent = store.cart.totalItems ? store.cart.totalItems : '';
-      badge.className = 'cart-badge';
-      display.append(badge);
-      const miniCart = createMiniCart(ph);
-      display.append(miniCart);
-    }
-  });
+  const cartDisplay = document.querySelector('.cart-display');
+  if (cartDisplay.closest('header')) {
+    cartDisplay.innerHTML = 'Cart';
+    const badge = document.createElement('div');
+    badge.textContent = store.cart.totalItems ? store.cart.totalItems : '';
+    badge.className = 'cart-badge';
+    cartDisplay.append(badge);
+    const miniCart = createMiniCart(ph);
+    cartDisplay.append(miniCart);
+  }
 }
 
 export default function decorate(block) {

@@ -78,6 +78,15 @@ div.product-wrapper {
     grid-area: cart;
 }
 
+.product div.not-in-catalog {
+    display: none;
+    color: var(--negative-color);
+}
+
+.product div.not-in-catalog.visible {
+    display: block;
+}
+
 .product .product-config > div {
     padding: 32px 0;
     width: 100%;
@@ -135,7 +144,7 @@ div.product-wrapper {
     font-weight: 700;
 }
 
-.product .product-config .cart > div{
+.product .product-config .cart > div:not(.not-in-catalog){
     display: flex;
     gap: 10px;
     margin-bottom: 8px;
@@ -176,15 +185,11 @@ div.product-wrapper {
 }
 
 .product .product-config .cart .action .quantity:disabled {
-    opacity: 0.1;
+    opacity: 0.5;
 }
 
 .product .product-config .cart .action button {
     width: 200px;
-}
-
-.product .product-config .cart .action button:disabled {
-    opacity: 0.1;
 }
 
 .product .product-config .cart .requirements {

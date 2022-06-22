@@ -43,7 +43,6 @@ class ProductView {
       this.render404();
     }
 
-    document.body.addEventListener('cart-update', this.render.bind(this));
     document.body.addEventListener('account-change', this.render.bind(this));
   }
 
@@ -52,23 +51,28 @@ class ProductView {
    */
   enableAddToCart() {
     const addToButton = this.block.querySelector('.cart .action .add-to-cart');
+    const notInCatalogLabel = this.block.querySelector('.cart .not-in-catalog');
     const quantityInput = this.block.querySelector('.cart .action input');
-    const quantity = parseInt(quantityInput.value, 2);
-    if (store.cart
-      && quantityInput
-      && store.cart.canAdd(
-        store.product.sku,
-        store.product,
-        store.product.pricing.sellprice * quantity,
-        quantity,
-      )
-    ) {
-      addToButton.disabled = false;
-      quantityInput.disabled = false;
-      return;
+    if (quantityInput) {
+      const quantity = parseInt(quantityInput.value, 2);
+      if (store.cart
+        && quantityInput
+        && store.cart.canAdd(
+          store.product.sku,
+          store.product,
+          store.product.pricing.sellprice * quantity,
+          quantity,
+        )
+      ) {
+        addToButton.disabled = false;
+        quantityInput.disabled = false;
+        notInCatalogLabel.classList.remove('visible');
+        return;
+      }
+      addToButton.disabled = true;
+      quantityInput.disabled = true;
+      notInCatalogLabel.classList.add('visible');
     }
-    addToButton.disabled = true;
-    quantityInput.disabled = true;
   }
 
   addToCart() {
@@ -82,7 +86,6 @@ class ProductView {
         quantity,
       );
     }
-    this.enableAddToCart();
   }
 
   /**
@@ -163,6 +166,7 @@ class ProductView {
    */
   renderAddToCartBlock(pricing, currency) {
     return /* html */`
+      <div class="not-in-catalog">Item not in catalog</div>
       <div class="cost">
         <div class="numericuom">${currency} ${pricing.sellprice}</div><span>/</span><div class="basismeasure">${pricing.description}</div>
       </div>
