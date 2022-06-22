@@ -172,8 +172,7 @@ async function updateCartDisplay() {
   };
 
   const blocks = document.querySelectorAll('.cart-display');
-  blocks.forEach((display, index) => {
-    display.textContent = index === 0 ? 'Cart' : '';
+  blocks.forEach((display) => {
     if (display.closest('header')) {
       const badge = document.createElement('div');
       badge.textContent = store.cart.totalItems ? store.cart.totalItems : '';
