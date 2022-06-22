@@ -628,7 +628,6 @@ class CategoryResultsController {
         <div class="catalog">
           <div>Manufacturer #: ${product.manufacturer_part_number_brand}</div>
           <div>SKU #: ${product.sku}</div>
-          <div>Customer Part #: ${product.sku}</div>
         </div>
       </div>`;
     return (card);
@@ -719,9 +718,4 @@ export default async function decorate(block) {
 
   const categoryResultsView = new CategoryResultsController(block, placeholders);
   await categoryResultsView.load();
-
-  const section = document.createElement('div');
-  section.append(buildBlock('breadcrumbs', { elems: [] }));
-  await loadBlock(section, false);
-  block.prepend(section);
 }

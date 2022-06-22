@@ -233,7 +233,9 @@ main .results-container .products-sortby ul.visible {
 }
 
 main .results-container .products-results {
-    font-size: var(--body-font-size-m);
+    font-size: var(--body-font-size-s);
+    color: #646464;
+    line-height: 18px;
 }
 
 main .results-container .products-results .products-card {

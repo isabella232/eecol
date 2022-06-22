@@ -198,7 +198,7 @@ export default async function decorate(block) {
     // This is shared with the facets filter so can't change in the svg file.
     // Embedding svg using the img tag kills the ability to change the color via css.
     languageSwitcher.innerHTML = /* html */`
-    <span>English</span>
+    <span>EN</span>
     <img class='canada-flag' src='/icons/canada-flag.svg' width="11" height="12"/>
     <svg xmlns="http://www.w3.org/2000/svg" width="237.201" height="348.328" viewBox="0 0 237.201 348.328"  fill="currentColor">
       <g transform="matrix(0.995, -0.105, 0.105, 0.995, -258.757, -67.721)" fill="currentColor">

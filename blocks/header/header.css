@@ -70,7 +70,8 @@ header .nav-topbar .language-switcher svg {
 header .nav-topbar select {
   background-color: #374f61;
   border-radius: 4px;
-  padding-left: 10px;
+  padding-left: 5px;
+  padding-right: 5px;
   border: 1px solid #092a42;
   margin-right: 10px;
   color: #fff;
@@ -220,14 +221,17 @@ header .nav-toolbar .nav-toolbar-actions > div .icon{
 }
 
 header .nav-toolbar .nav-toolbar-actions .account .icon svg{
+  padding-top: 3px;
   width: 18px;
 }
 
 header .nav-toolbar .nav-toolbar-actions .cart .icon svg{
+  padding-top: 3px;
   width: 22px;
 }
 
 header .nav-toolbar .nav-toolbar-actions .hamburger .icon svg {
+  padding-top: 1px;
   width: 20px;
 }
 
