@@ -49,36 +49,33 @@ export default async function decorate(block) {
     }
     renderBreadcrumbs(block, breadcrumbs);
   } else if (pageType === 'product') {
-    document.addEventListener('product-loaded', async () => {
-      console.log('product loaded', store.product);
-      const categoryIdDictionary = await getCategoriesIdDictionary();
-      const {
-        categories: productCategories,
-        name: productName,
-        url_key: productUrlKey,
-      } = store.product;
-      pathsArray.pop();
-      pathsArray.push('category');
-      productCategories.forEach((productCategoryId) => {
-        const productCategory = categoryIdDictionary[productCategoryId];
-        if (productCategory) {
-          const { name: categoryName, url_key: categoryUrlKey } = productCategory;
-          breadcrumbs.push({
-            name: categoryName,
-            path: `${pathsArray.join('/')}/${categoryUrlKey}`,
-          });
+    const categoryIdDictionary = await getCategoriesIdDictionary();
+    const {
+      categories: productCategories,
+      name: productName,
+      url_key: productUrlKey,
+    } = store.product;
+    pathsArray.pop();
+    pathsArray.push('category');
+    productCategories.forEach((productCategoryId) => {
+      const productCategory = categoryIdDictionary[productCategoryId];
+      if (productCategory) {
+        const { name: categoryName, url_key: categoryUrlKey } = productCategory;
+        breadcrumbs.push({
+          name: categoryName,
+          path: `${pathsArray.join('/')}/${categoryUrlKey}`,
+        });
 
-          pathsArray.push(categoryUrlKey);
-        }
-      });
-
-      breadcrumbs.push({
-        name: productName,
-        path: `${pathsArray.join('/')}/${productUrlKey}`,
-      });
-
-      renderBreadcrumbs(block, breadcrumbs);
+        pathsArray.push(categoryUrlKey);
+      }
     });
+
+    breadcrumbs.push({
+      name: productName,
+      path: `${pathsArray.join('/')}/${productUrlKey}`,
+    });
+
+    renderBreadcrumbs(block, breadcrumbs);
   } else {
     block.querySelectorAll(':scope > div').forEach((row) => {
       const [name, path] = [...row.querySelectorAll(':scope > div')].map((n) => n.innerText);
