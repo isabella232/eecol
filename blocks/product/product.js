@@ -9,7 +9,7 @@ import {
 } from '../../scripts/scripts.js';
 
 /**
- * Mulesoft Inventory Object
+ * Mulesoft Pricing Object
  * @typedef {Object} ProductPricing
  * @property {string} productId The product id, manufacturer_part_number_brand in CIF?
  * @property {string} productLine Manufacturer code from EECOL
@@ -53,12 +53,14 @@ class ProductView {
   enableAddToCart() {
     const addToButton = this.block.querySelector('.cart .action .add-to-cart');
     const quantityInput = this.block.querySelector('.cart .action input');
+    const quantity = parseInt(quantityInput.value, 2);
     if (store.cart
+      && quantityInput
       && store.cart.canAdd(
         store.product.sku,
         store.product,
-        store.product.final_price,
-        quantityInput.value,
+        store.product.pricing.sellprice * quantity,
+        quantity,
       )
     ) {
       addToButton.disabled = false;
@@ -67,6 +69,20 @@ class ProductView {
     }
     addToButton.disabled = true;
     quantityInput.disabled = true;
+  }
+
+  addToCart() {
+    const quantityInput = this.block.querySelector('.cart .action input');
+    const quantity = parseInt(quantityInput.value, 2);
+    if (store.cart) {
+      store.cart.add(
+        store.product.sku,
+        store.product,
+        store.product.pricing.sellprice * quantity,
+        quantity,
+      );
+    }
+    this.enableAddToCart();
   }
 
   /**
@@ -178,12 +194,18 @@ class ProductView {
       this.renderPricingLoading();
       lookupProductPricing('123', Math.random().toString(), 'abc').then((result) => {
         if (result.products && result.products.length > 0) {
-          const [inventory] = result.products;
-          inventory.instock = inventory.qty > 0;
+          const [pricing] = result.products;
+          pricing.instock = pricing.qty > 0;
+          store.product.pricing = pricing;
 
           const productCartElement = this.block.querySelector('.product-config .cart');
-          productCartElement.innerHTML = this.renderAddToCartBlock(inventory, result.currency);
+          productCartElement.innerHTML = this.renderAddToCartBlock(pricing, result.currency);
           this.enableAddToCart();
+
+          const addToCartBtn = this.block.querySelector('.cart .action .add-to-cart');
+          addToCartBtn.addEventListener('click', () => {
+            this.addToCart();
+          });
         }
       });
     } else {

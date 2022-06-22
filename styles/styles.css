@@ -22,8 +22,8 @@
   --text-color: #000;
   --dark-background-color: #012139;
   --border-color: #DDE3E3;
-  --nav-background-color: #dde4e4;
-  --negative-color: rgb(180, 26, 26);
+  --nav-background-color: #F4F6F5;
+  --negative-color: #b41a1a;
 
   /* fonts */
   --body-font-family: 'Source Sans Pro', helvetica, ubuntu, roboto, noto, sans-serif;
@@ -51,7 +51,7 @@
 
 @media (min-width: 1000px) {
   :root {
-    --nav-height: 151px;
+    --nav-height: 141px;
   }
 }
 

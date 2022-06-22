@@ -81,19 +81,19 @@ export default async function decorate(block) {
     });
   } else {
     block.querySelectorAll(':scope > div').forEach((row) => {
-      const [name, path] = [...row.querySelectorAll(':scope > div')].map(n => n.innerText);
-      if(name && path) {
+      const [name, path] = [...row.querySelectorAll(':scope > div')].map((n) => n.innerText);
+      if (name && path) {
         breadcrumbs.push({
-          name, 
-          path
+          name,
+          path,
         });
       }
     });
 
     renderBreadcrumbs(block, breadcrumbs);
     const header = document.querySelector('body > header');
-    let wrapper = block.parentElement;
-    if(header) {
+    const wrapper = block.parentElement;
+    if (header) {
       wrapper.parentElement.classList.remove('breadcrumbs-container');
       wrapper.parentElement.removeChild(wrapper);
       header.insertAdjacentElement('afterend', wrapper);

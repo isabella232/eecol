@@ -234,11 +234,20 @@ export async function lookupProductInventory(customerId, productId, productLine)
 }
 
 /**
+ * Mulesoft Pricing Response Object
+ * @typedef {Object} ProductPricingResponse
+ * @property {string} brand The product id, manufacturer_part_number_brand in CIF?
+ * @property {string} currency Manufacturer code from EECOL
+ * @property {string} customerId Available quantity
+ * @property {import('../blocks/product/product.js').ProductPricing[]} products
+ */
+
+/**
  * Fetches the pricing for a product
  * @param {string} customerId Customer Account Code
  * @param {string} productId Manufacturer part number
  * @param {string} productLine Manufacturer code from EECOL
- * @returns
+ * @returns {Promise<ProductPricingResponse>} pricing
  */
 export async function lookupProductPricing(customerId, productId, productLine) {
   let inventoryData = {};
@@ -412,13 +421,13 @@ export function retrieveUserData(key) {
   const id = localStorage.getItem('selectedAccount');
   if (!id) {
     console.warn('retrieveUserData() No account selected');
-    return;
+    return null;
   }
 
   const scopedKey = `account/${id}/${key}`;
   const data = localStorage.getItem(scopedKey);
   if (!data) {
-    return;
+    return null;
   }
 
   try {

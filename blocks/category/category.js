@@ -1,5 +1,4 @@
 import {
-  toCamelCase,
   buildBlock,
   loadBlock,
 } from '../../scripts/helix-web-library.esm.js';
@@ -65,6 +64,7 @@ import {
  * @property {number} regular_price The regular price of the product
  * @property {string} sku The sku of the product
  * @property {string} stock_status The stock status of the product
+ * @property {import('../product/product.js').ProductPricing} pricing
  */
 
 const ExcludedFilterKeys = ['fulltext', 'page', 'query'];
@@ -612,6 +612,7 @@ class CategoryResultsController {
     let productInCatalog = true;
     if (account) {
       const matches = checkProductsInCatalog([product.sku], account, [product]);
+      // eslint-disable-next-line no-unused-vars
       [productInCatalog] = matches;
     }
 
