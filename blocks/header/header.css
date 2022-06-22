@@ -183,6 +183,11 @@ header .nav-toolbar {
   height: 55px;
 }
 
+header .nav-toolbar .nav-toolbar-logo {
+  max-width: 139px;
+  height: 57px;
+}
+
 header .nav-toolbar .nav-toolbar-logo img {
   max-width: 139px;
   height: auto;
