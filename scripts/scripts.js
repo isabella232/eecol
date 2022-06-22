@@ -488,6 +488,7 @@ HelixApp.init({
       const pageType = getMetadata('pagetype');
       if (PageTypes.includes(pageType)) {
         buildAutoBlock(main, pageType);
+        document.body.classList.add('commerce-page');
       } else {
         buildHeroBlock(main);
       }
@@ -522,6 +523,6 @@ HelixApp.init({
     }
   })
   .withLoadDelayed(() => {
-    window.setTimeout(() => import('./delayed.js'), 4000);
+    window.setTimeout(() => import('./delayed.js'), 1000);
   })
   .decorate();

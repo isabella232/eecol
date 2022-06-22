@@ -45,14 +45,8 @@
   --heading-font-size-xs: 16px;
 
   /* nav height */
-  --nav-height: 210px;
-
-}
-
-@media (min-width: 1000px) {
-  :root {
-    --nav-height: 210px;
-  }
+  --nav-height: 141px;
+  --breadcrumbs-height: 69px; 
 }
 
 body {
@@ -74,9 +68,13 @@ img {
   height: auto;
 }
 
-header {
+body header {
   height: var(--nav-height);
   grid-area: header;
+}
+
+body.commerce-page header {
+  height: calc(var(--nav-height) + var(--breadcrumbs-height));
 }
 
 footer {
