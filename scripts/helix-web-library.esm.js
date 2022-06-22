@@ -505,28 +505,30 @@ async function loadBlock(block, eager = false) {
   if (!(block.getAttribute('data-block-status') === 'loading' || block.getAttribute('data-block-status') === 'loaded')) {
     block.setAttribute('data-block-status', 'loading');
     const blockName = block.getAttribute('data-block-name');
-    try {
-      const cssLoaded = new Promise((resolve) => {
-        loadCSS(`/blocks/${blockName}/${blockName}.css`, resolve);
-      });
-      const decorationComplete = new Promise((resolve) => {
-        (async () => {
-          try {
-            const mod = await import(`${window.hlx.codeBasePath}/blocks/${blockName}/${blockName}.js`);
-            if (mod.default) {
-              await mod.default(block, blockName, document, eager);
-            }
-          } catch (err) {
+    if (blockName) {
+      try {
+        const cssLoaded = new Promise((resolve) => {
+          loadCSS(`/blocks/${blockName}/${blockName}.css`, resolve);
+        });
+        const decorationComplete = new Promise((resolve) => {
+          (async () => {
+            try {
+              const mod = await import(`${window.hlx.codeBasePath}/blocks/${blockName}/${blockName}.js`);
+              if (mod.default) {
+                await mod.default(block, blockName, document, eager);
+              }
+            } catch (err) {
             // eslint-disable-next-line no-console
-            console.log(`failed to load module for ${blockName}`, err);
-          }
-          resolve();
-        })();
-      });
-      await Promise.all([cssLoaded, decorationComplete]);
-    } catch (err) {
+              console.log(`failed to load module for ${blockName}`, err);
+            }
+            resolve();
+          })();
+        });
+        await Promise.all([cssLoaded, decorationComplete]);
+      } catch (err) {
       // eslint-disable-next-line no-console
-      console.log(`failed to load block ${blockName}`, err);
+        console.log(`failed to load block ${blockName}`, err);
+      }
     }
     block.setAttribute('data-block-status', 'loaded');
   }
@@ -1058,7 +1060,7 @@ class HelixApp {
       loadCSS(`${window.hlx.codeBasePath}/styles/lazy-styles.css`);
     }
 
-    addFavIcon(`${window.hlx.codeBasePath}/styles/favicon.ico`);
+    addFavIcon(`${window.hlx.codeBasePath}/styles/icon.svg`);
     if (this.loadLazyHook) {
       this.loadLazyHook(doc);
     }
@@ -1137,38 +1139,4 @@ class HelixApp {
   }
 }
 
-export {
-  HelixApp,
-  addFavIcon,
-  addPublishDependencies,
-  buildBlock,
-  createOptimizedPicture,
-  decorateBlock,
-  decorateBlocks,
-  decorateButtons,
-  decorateIcons,
-  decoratePictures,
-  decorateSections,
-  decorateTemplateAndTheme,
-  fetchPlaceholders,
-  getMetadata,
-  getOptimizedImagePath,
-  initHlx,
-  loadBlock,
-  loadBlocks,
-  loadCSS,
-  loadFooter,
-  loadHeader,
-  loadScript,
-  makeLinksRelative,
-  normalizeHeadings,
-  readBlockConfig,
-  registerPerformanceLogger,
-  removeStylingFromImages,
-  sampleRUM,
-  stamp,
-  toCamelCase,
-  toClassName,
-  updateSectionsStatus,
-  waitForLCP,
-};
+export { HelixApp, addFavIcon, addPublishDependencies, buildBlock, createOptimizedPicture, decorateBlock, decorateBlocks, decorateButtons, decorateIcons, decoratePictures, decorateSections, decorateTemplateAndTheme, fetchPlaceholders, getMetadata, getOptimizedImagePath, initHlx, loadBlock, loadBlocks, loadCSS, loadFooter, loadHeader, loadScript, makeLinksRelative, normalizeHeadings, readBlockConfig, registerPerformanceLogger, removeStylingFromImages, sampleRUM, stamp, toCamelCase, toClassName, updateSectionsStatus, waitForLCP };
