@@ -31,7 +31,7 @@
   --negative-color: #b41a1a;
 
   /* fonts */
-  --body-font-family: 'Source Sans Pro', helvetica, ubuntu, roboto, noto, sans-serif;
+  --body-font-family: 'Source Sans Pro', 'Source Sans Pro-fallback';
   --heading-font-family: var(--body-font-family);
   --fixed-font-family: 'Roboto Mono', menlo, consolas, 'Liberation Mono', monospace;
 
@@ -52,6 +52,13 @@
   /* nav height */
   --nav-height: 141px;
   --breadcrumbs-height: 69px; 
+}
+
+@font-face {
+  font-family: "Source Sans Pro-fallback";
+  size-adjust: 93.75%;
+  ascent-override: 110%;
+  src: local("Arial");
 }
 
 body {
