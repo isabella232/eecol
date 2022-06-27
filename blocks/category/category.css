@@ -90,6 +90,10 @@ main .results-container .products-facets  {
     background-color: #0008;
 }
 
+main .results-container .products-facets.open {
+    display: block;
+}
+
 main .results-container .products-facets > div {
     padding: 0;
     width: 360px;
@@ -102,13 +106,13 @@ main .results-container .products-facets > div {
     pointer-events: none;
 }
 
-main .results-container .products-facets > div::after {
+main .results-container .products-facets > div .products-filters-close-button {
     position: absolute;
     background-image: url('./close.svg');
     background-size: contain;
     content: ' ';
     right: 20px;
-    top: 20px;
+    top: 15px;
     width: 24px;
     height: 24px;
     display: block;
@@ -130,20 +134,14 @@ main .results-container .products-facets .products-filters {
 }
 
 main .results-container .products-facets .products-filters h2 {
-    margin-bottom: 5px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+    margin-left: 15px;
 }
 
 main .results-container .products-facets .products-filters img {
     width: 12px;
     padding-right: 5px;
-}
-
-
-main .results-container .products-facets .products-apply-filters {
-    flex: 0;
-    height: 200px;
-    padding: 16px 0;
-    text-align: center;
 }
 
 main .results-container .products-filters-selected span {
@@ -365,10 +363,6 @@ main .results-container .products-results .pagination-container .pagination .pag
         display: none;
     }
 
-    main .results-container .products-facets .products-apply-filters {
-        display: none;
-    }
-
     main .results-container .products-facets  {
         z-index: unset;
         height: unset;
@@ -386,6 +380,10 @@ main .results-container .products-results .pagination-container .pagination .pag
     main .results-container .products-facets .products-filters {
         overflow-y: unset;
         height: unset;
+    }
+
+    main .results-container .products-facets > div .products-filters-close-button {
+        display: none;
     }
 
     main .results-container .products-results {

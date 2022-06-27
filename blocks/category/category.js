@@ -105,6 +105,7 @@ class CategoryFilterController {
     }
     this.activeFilterConfig = this.getFilterConfig(this.block, this.activeFilterConfig);
     this.block.dispatchEvent(new CustomEvent('filterUpdated', { detail: this.activeFilterConfig }));
+    this.onToggleFacetsMobile();
   };
 
   /**
@@ -133,6 +134,14 @@ class CategoryFilterController {
     delete this.activeFilterConfig[value];
     removeQueryParam(value);
     this.block.dispatchEvent(new CustomEvent('filterUpdated', { detail: this.activeFilterConfig }));
+  };
+
+  /**
+   * Called when the filter button is selected in mobile view
+   */
+  onToggleFacetsMobile = () => {
+    const facetsElement = this.block.querySelector('.products-facets');
+    facetsElement.classList.toggle('open');
   };
 
   /**
@@ -201,9 +210,7 @@ class CategoryFilterController {
         <p><button class="products-filters-clear secondary">${this.placeholders.clearAll}</button></p>
         <div class="products-filters-facetlist"></div>
       </div>
-      <div class="products-apply-filters">
-        <button>See Results</button>
-      </div>
+      <div class="products-filters-close-button"></div>
     </div>`;
   }
 
@@ -278,8 +285,10 @@ class CategoryFilterController {
     // TODO: Should be sanitized...
     facetsList.innerHTML = facetsHTML;
 
-    addEventListeners([...facetsList.querySelectorAll('.products-facet h3')], 'click', this.onFacetContainerClicked.bind(this));
+    addEventListeners([...facetsList.querySelectorAll('.products-facet h3')], 'click', this.onFacetContainerClicked);
     facetsElement.querySelector('.products-filters-clear').addEventListener('click', this.onClearFacetSelection);
+    this.block.querySelector('.products-filter-button').addEventListener('click', this.onToggleFacetsMobile);
+    this.block.querySelector('.products-filters-close-button').addEventListener('click', this.onToggleFacetsMobile);
   }
 }
 
