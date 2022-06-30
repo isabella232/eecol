@@ -107,7 +107,7 @@ export function titleCase(string) {
  */
 async function fetchCategories() {
   if (!window.categories) {
-    const response = await fetch('https://main--eecol--hlxsites.hlx-orch.live/categories');
+    const response = await fetch('https://main--eecol--hlxsites.helix3.dev/categories');
     const json = await response.json();
     const categories = json.data.categories?.items[0].children;
     const categoriesKeyDictionary = {};
@@ -190,7 +190,7 @@ export async function searchProducts(query) {
 
 function replaceProductImages(data) {
   return data.map((product) => {
-    product.image = `${product.image.replace('https://qa-store.eecol.com/', 'https://main--eecol--hlxsites.hlx-orch.live/')}?format=webply&quality=medium&width=750`;
+    product.image = `${product.image.replace('https://qa-store.eecol.com/', 'https://main--eecol--hlxsites.helix3.dev/')}?format=webply&quality=medium&width=750`;
     return product;
   });
 }
@@ -203,7 +203,7 @@ function replaceProductImages(data) {
  */
 export async function lookupCategory(category, activeFilterUrlParams) {
   let products = [];
-  const req = await fetch(`https://main--eecol--hlxsites.hlx-orch.live/productLookup?${category.uid ? `category=${category.uid}` : ''}${activeFilterUrlParams ? `&${activeFilterUrlParams}` : ''}`);
+  const req = await fetch(`https://main--eecol--hlxsites.helix3.dev/productLookup?${category.uid ? `category=${category.uid}` : ''}${activeFilterUrlParams ? `&${activeFilterUrlParams}` : ''}`);
   if (req.status === 200) {
     products = await req.json();
     products.data = replaceProductImages(products.data);
@@ -219,7 +219,7 @@ export async function lookupCategory(category, activeFilterUrlParams) {
 export async function lookupProduct(sku) {
   let product = {};
   if (sku) {
-    const req = await fetch(`https://main--eecol--hlxsites.hlx-orch.live/productLookup?sku=${sku}`);
+    const req = await fetch(`https://main--eecol--hlxsites.helix3.dev/productLookup?sku=${sku}`);
     const json = await req.json();
     [product] = replaceProductImages(json.data);
   }
@@ -236,7 +236,7 @@ export async function lookupProduct(sku) {
 export async function lookupProductInventory(customerId, productId, productLine) {
   let inventoryData = {};
   if (customerId && productId && productLine) {
-    const req = await fetch(`https://main--eecol--hlxsites.hlx-orch.live/inventory?customerId=${customerId}&productId=${productId}&productLine=${productLine}`);
+    const req = await fetch(`https://main--eecol--hlxsites.helix3.dev/inventory?customerId=${customerId}&productId=${productId}&productLine=${productLine}`);
     const json = await req.json();
     inventoryData = json.data;
   }
@@ -262,7 +262,7 @@ export async function lookupProductInventory(customerId, productId, productLine)
 export async function lookupProductPricing(customerId, productId, productLine) {
   let inventoryData = {};
   if (customerId && productId && productLine) {
-    const req = await fetch(`https://main--eecol--hlxsites.hlx-orch.live/pricing?customerId=${customerId}&productId=${productId}&productLine=${productLine}`);
+    const req = await fetch(`https://main--eecol--hlxsites.helix3.dev/pricing?customerId=${customerId}&productId=${productId}&productLine=${productLine}`);
     const json = await req.json();
     inventoryData = json.data;
   }
