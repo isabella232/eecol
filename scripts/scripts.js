@@ -22,9 +22,10 @@ import {
   decorateSections,
 } from './helix-web-library.esm.js';
 
-const url = new URL(window.location.href);
-const upstreamURL = url.searchParams.get('upstream')
- || window.location.origin;
+const UPSTREAM_DEV = 'http://localhost:3000';
+const dev = window.location.origin === UPSTREAM_DEV
+  || new URL(window.location.href).searchParams.get('dev') === 'true';
+const upstreamURL = dev ? UPSTREAM_DEV : window.location.origin;
 
 const loggedIn = !!sessionStorage.getItem('account');
 const loginRedirect = sessionStorage.getItem('loginRedirect') === 'true';
