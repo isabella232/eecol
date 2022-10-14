@@ -549,8 +549,7 @@ HelixApp.init({
       }
     });
   })
-  .withLoadDelayed(async () => {
-    const header = document.querySelector('header');
+  .withLoadHeader(async (header) => {
     loadHeader(header);
     const template = getMetadata('template');
     if (template === 'account') {
@@ -562,6 +561,8 @@ HelixApp.init({
       main.parentElement.insertBefore(accountNav, main);
       makeLinksRelative(accountNav);
     }
+  })
+  .withLoadDelayed(() => {
     let delay = 4000;
     if (quickLoadAuth) {
       // quick load, since no chance to impact PSI
