@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 /* global WebImporter */
-/* eslint-disable no-console, class-methods-use-this */
+/* eslint-disable no-console, class-methods-use-this, no-nested-ternary */
 
 // eslint-disable-next-line no-unused-vars
 const cleanupName = (name) => {
@@ -65,7 +65,7 @@ const createMetadata = (main, document, url) => {
     if (sku) {
       const split = sku.textContent.split(':');
       if (split && split.length > 1) {
-        meta['SKU'] = split[1].trim();
+        meta.SKU = split[1].trim();
       }
     }
 
@@ -73,9 +73,8 @@ const createMetadata = (main, document, url) => {
     // if (qty) {
     //   meta['Quantity'] = qty.value;
     // }
-    meta['Quantity'] = 500;
+    meta.Quantity = 500;
   }
-
 
   // const img = document.querySelector('[property="og:image"]');
   // if (img) {
@@ -92,12 +91,12 @@ const createMetadata = (main, document, url) => {
 
 const cleanupHeadings = (main, document) => {
   main.querySelectorAll('.h1, .h2, .h3, .h4, .h5, .h6').forEach((h) => {
-    const level = h.classList.contains('h1') ? 'h1' : 
-      h.classList.contains('h2') ? 'h2' :
-      h.classList.contains('h3') ? 'h3' : 
-      h.classList.contains('h4') ? 'h4' : 
-      h.classList.contains('h5') ? 'h5' : 
-      h.classList.contains('h6') ? 'h6' : null;
+    const level = h.classList.contains('h1') ? 'h1'
+      : h.classList.contains('h2') ? 'h2'
+        : h.classList.contains('h3') ? 'h3'
+          : h.classList.contains('h4') ? 'h4'
+            : h.classList.contains('h5') ? 'h5'
+              : h.classList.contains('h6') ? 'h6' : null;
     if (level) {
       const heading = document.createElement(level);
       heading.innerHTML = h.textContent;
@@ -120,7 +119,7 @@ const cleanupHero = (main, document) => {
     hero = WebImporter.DOMUtils.replaceBackgroundByImg(hero, document);
     if (h1) h1.before(hero);
   }
-}
+};
 
 const downgradeSummary = (main, document) => {
   const h = main.querySelector('.productFullDetail__descriptionHeader');
@@ -129,7 +128,7 @@ const downgradeSummary = (main, document) => {
     h2.innerHTML = h.textContent;
     h.replaceWith(h2);
   }
-}
+};
 
 export default {
   /**
@@ -138,7 +137,7 @@ export default {
    * @param {HTMLDocument} document The document
    * @returns {HTMLElement} The root element
    */
-  transformDOM: ({ document, html, url }) => {
+  transformDOM: ({ document, url }) => {
     WebImporter.DOMUtils.remove(document, [
       '.header-fragment',
       '.footer-fragment',
@@ -151,13 +150,13 @@ export default {
     downgradeSummary(main, document);
 
     createMetadata(main, document, url);
- 
+
     WebImporter.DOMUtils.remove(document, [
       '.cmp-breadcrumb__list',
       '.productFullDetail__manufacturerDisplay',
       '.productFullDetail__supplierPartNumber',
       '.productFullDetail__sku',
-      '.pricingcontainer'
+      '.pricingcontainer',
     ]);
 
     return main;

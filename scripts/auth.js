@@ -1,32 +1,34 @@
 /* global msal */
 
-const { protocol, host } = new URL(window.location.href);
+// eslint-disable-next-line import/no-cycle
+import { loadScript } from './helix-web-library.esm.js';
+// eslint-disable-next-line import/no-cycle
+import { isLoginInProgress } from './scripts.js';
+
+const MSAL_URL = 'https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.min.js';
+
+const { protocol, host, hostname } = new URL(window.location.href);
 const redirectUri = `${protocol}//${host}/login.html`;
+const dev = hostname === 'localhost';
 
-/**
- * Authentication Type
- * @typedef {Object} Authentication
- * @property {string} homeAccountId Home account Id
- * @property {string} environment Auth environment
- * @property {string} tenantId The tenant ID of the Azure AD tenant
- * @property {string} username email of the user
- * @property {string} localAccountId Local account id
- * @property {string} name Display name
- * @property {Object} idTokenClaims The claims in the ID token
- * @property {Account[]} accounts Other accounts associated with the user
- * @property {Object} accountsById Dictionary of user accounts
- */
+let username = '';
+/** @type {import('@azure/msal-browser').PublicClientApplication} */
+let ms;
+/** @type {(res: AuthenticationResult) => void} */
+let resolveLogin;
+/** @type {(e: any) => void} */
+let rejectLogin;
+/** @type {Promise<AuthenticationResult|null>} */
+let loginPromise;
+/** @type {Promise<void>} */
+let msalPromise;
 
-/**
- * Account Type
- * @typedef {Object} Account
- * @property {string} email
- * @property {string} accountId
- * @property {string} accountName
- * @property {string} config
- * @property {string[]} config.Categories
- */
+/** @type {RedirectRequest} */
+const loginRequest = {
+  scopes: ['User.Read'],
+};
 
+/** @type {import('@azure/msal-browser').BrowserConfiguration} */
 const msalConfig = {
   auth: {
     clientId: '83a36355-ad17-4ed0-8701-e99a3020f86a',
@@ -41,7 +43,7 @@ const msalConfig = {
   system: {
     loggerOptions: {
       loggerCallback: (level, message, containsPii) => {
-        if (containsPii) {
+        if (containsPii && !dev) {
           return;
         }
         switch (level) {
@@ -65,21 +67,40 @@ const msalConfig = {
   },
 };
 
-const loginRequest = {
-  scopes: ['User.Read'],
-};
+export function loadMSAL() {
+  if (msalPromise) return msalPromise;
 
-const ms = new msal.PublicClientApplication(msalConfig);
+  msalPromise = new Promise((resolve) => {
+    loadScript(MSAL_URL, () => {
+      resolve();
+    });
+  });
+  return msalPromise;
+}
 
-let username = '';
+export async function signIn() {
+  console.debug('[auth] signIn()');
+  await ms.loginRedirect(loginRequest);
+}
+
+export async function signOut() {
+  console.debug('[auth] signOut()');
+  const logoutRequest = {
+    account: ms.getAccountByUsername(username),
+    postLogoutRedirectUri: msalConfig.auth.redirectUri,
+    // Return false if you would like to stop navigation after local logout
+    onRedirectNavigate: () => false,
+  };
+  await ms.logoutRedirect(logoutRequest);
+}
 
 async function selectAccount() {
   const currentAccounts = ms.getAllAccounts();
   if (currentAccounts.length === 0) {
-    console.warn('no accounts?');
+    console.warn('[auth] no accounts?');
   } else if (currentAccounts.length > 1) {
     // Add your account choosing logic here
-    console.warn('Multiple accounts detected.');
+    console.warn('[auth] multiple accounts detected');
   } else if (currentAccounts.length === 1) {
     username = currentAccounts[0].username;
     // await showWelcomeMessage(currentAccounts[0]);
@@ -88,26 +109,12 @@ async function selectAccount() {
   return null;
 }
 
-export function signIn() {
-  ms.loginRedirect(loginRequest);
-}
-
-export async function signOut() {
-  const logoutRequest = {
-    account: ms.getAccountByUsername(username),
-    postLogoutRedirectUri: msalConfig.auth.redirectUri,
-    // Return false if you would like to stop navigation after local logout
-    onRedirectNavigate: () => false,
-  };
-  ms.logoutRedirect(logoutRequest);
-}
-
 async function getTokenRedirect(request) {
   request.account = ms.getAccountByUsername(username);
   try {
     return await ms.acquireTokenSilent(request);
   } catch (e) {
-    console.warn('silent token acquisition fails. acquiring token using redirect');
+    console.warn('[auth] silent token acquisition fails. acquiring token using redirect');
     if (e instanceof msal.InteractionRequiredAuthError) {
       // fallback to interaction when silent call fails
       return ms.acquireTokenRedirect(request);
@@ -118,27 +125,125 @@ async function getTokenRedirect(request) {
 }
 
 export async function getToken() {
-  return getTokenRedirect(loginRequest);
+  const data = await getTokenRedirect(loginRequest);
+  return data;
 }
 
+/**
+ * @param {string} token - ActiveDirectory token
+ * @returns {Promise<APIAuthResult>}
+ */
+async function signInAPI(token) {
+  console.debug('[auth] signInAPI()');
+
+  if (!token) {
+    throw Error('cannot authenticate without a token');
+  }
+
+  const resp = await fetch('/api/auth/signin', {
+    method: 'POST',
+    body: JSON.stringify({
+      token,
+    }),
+  });
+
+  if (!resp.ok) {
+    console.error('[auth] failed to login to API: ', resp);
+    throw Error(`failed to authenticate (${resp.status})`);
+  }
+
+  return resp.json();
+}
+
+/**
+ * @param {string} [token] - optional ActiveDirectory token
+ */
+export async function getMulesoftToken(token) {
+  // eslint-disable-next-line no-param-reassign
+  token = token || await getToken();
+  const data = await signInAPI(token);
+  return data.mulesoftToken;
+}
+
+/**
+ * Called from delayed.js
+ * @returns {Promise<import('@azure/msal-browser').AccountInfo|null>}
+ */
 export async function getCurrentAccount() {
+  let account;
   try {
-    const response = await ms.handleRedirectPromise();
+    const response = await loginPromise || await ms.handleRedirectPromise();
+
     if (response) {
-      console.log('handle redirect response -> ', response);
+      console.debug('[auth] handle redirect response: ', response);
       username = response.account.username;
-      return response.account;
+      account = response.account;
+    } else {
+      account = await selectAccount();
     }
-    return await selectAccount();
   } catch (e) {
-    console.error(e);
+    console.error('[auth] failed to get current account: ', e);
   }
-  return null;
+  return account;
 }
 
-ms.addEventCallback((message) => {
-  // console.log('event', message);
-  if (message.eventType === msal.EventType.LOGOUT_SUCCESS) {
-    window.location.reload();
+/**
+ * Called from login.html
+ */
+export async function completeSignInRedirect() {
+  await ms.handleRedirectPromise();
+}
+
+/**
+ * Called from LOGIN_SUCCESS event
+ */
+export async function completeSignIn() {
+  const msData = await ms.handleRedirectPromise();
+
+  try {
+    // sets auth cookie for inventory & pricing
+    await signInAPI(msData.accessToken);
+  } catch (e) {
+    rejectLogin(e);
   }
+
+  resolveLogin(msData);
+}
+
+async function init() {
+  console.debug('[auth] init()');
+  if (typeof msal === 'undefined') {
+    await loadMSAL();
+  }
+
+  ms = new msal.PublicClientApplication(msalConfig);
+  await ms.initialize();
+
+  loginPromise = new Promise((resolve, reject) => {
+    resolveLogin = resolve;
+    rejectLogin = reject;
+  });
+  if (!isLoginInProgress()) {
+    resolveLogin();
+  }
+}
+
+await init().finally(() => {
+  ms.addEventCallback(async (message) => {
+    if (message.eventType === msal.EventType.LOGOUT_SUCCESS) {
+      window.location.reload();
+    }
+
+    if (message.eventType === msal.EventType.LOGIN_SUCCESS) {
+      await completeSignIn();
+    }
+  });
+
+  document.body.addEventListener('login', async () => {
+    await signIn();
+  });
+
+  document.body.addEventListener('logout', async () => {
+    await signOut();
+  });
 });

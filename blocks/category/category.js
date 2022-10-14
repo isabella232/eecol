@@ -591,6 +591,7 @@ class CategoryResultsController {
    * @param {Object} placeholders
    */
   renderBlockScafolding() {
+    console.log('this.placeholders: ', this.placeholders);
     return /* html */`
       <div class="category-title">
         <h1>${this.category.name}</h1>

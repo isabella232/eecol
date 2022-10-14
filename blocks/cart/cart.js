@@ -1,7 +1,7 @@
 import {
-  checkProductsInCatalog, formatCurrency, getSelectedAccount, store,
+  checkProductsInCatalog, formatCurrency, getSelectedAccount, store, getPlaceholders,
 } from '../../scripts/scripts.js';
-import { fetchPlaceholders } from '../../scripts/helix-web-library.esm.js';
+// import { fetchPlaceholders } from '../../scripts/helix-web-library.esm.js';
 
 class Cart {
   constructor() {
@@ -113,7 +113,7 @@ class Cart {
 }
 
 async function updateCartDisplay() {
-  const ph = await fetchPlaceholders('/ca/en');
+  const ph = await getPlaceholders();
 
   const createCartItem = (item, inCatalog) => {
     const { cart } = store;

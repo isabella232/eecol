@@ -1,9 +1,7 @@
-import { 
-  getSelectedAccount, 
-  getUserAccount, 
-  retrieveUserData,
-  storeUserData
-} from "../../scripts/scripts.js";
+import {
+  getSelectedAccount,
+  storeUserData,
+} from '../../scripts/scripts.js';
 import { retrieve, addressTile } from '../account-summary/account-summary.js'; // used for mock data on initialization
 
 const ACCOUNT_CHANGE_EVT = 'account-change';
@@ -13,55 +11,55 @@ const FORM_DATA = [{
   Field: 'name',
   Type: 'text',
   Mandatory: true,
-  Placeholder: 'Name'
-}, 
+  Placeholder: 'Name',
+},
 // {
 //   // Label: 'Company',
 //   Field: 'company',
 //   Type: 'text',
 //   Editable: false,
 //   Placeholder: 'Company'
-// }, 
+// },
 {
   // Label: 'Street',
   Field: 'street',
   Type: 'text',
   Mandatory: true,
-  Placeholder: 'Street'
+  Placeholder: 'Street',
 }, {
   // Label: 'City',
   Field: 'city',
   Type: 'text',
   Mandatory: true,
-  Placeholder: 'City'
+  Placeholder: 'City',
 }, {
   // Label: 'State',
   Field: 'state',
   Type: 'text',
   Mandatory: true,
-  Placeholder: 'State'
+  Placeholder: 'State',
 }, {
   // Label: 'Zip/Postal Code',
   Field: 'zip',
   Type: 'text',
   Mandatory: true,
-  Placeholder: 'Zip/Postal Code'
+  Placeholder: 'Zip/Postal Code',
 }, {
   // Label: 'Country',
   Field: 'country',
   Type: 'text',
   Mandatory: true,
-  Placeholder: 'Country'
+  Placeholder: 'Country',
 }, {
   // Label: 'Phone',
   Field: 'phone',
   Type: 'text',
   Mandatory: true,
-  Placeholder: 'Phone Number'
+  Placeholder: 'Phone Number',
 }, {
   Label: 'Set as Default',
   Field: 'is_default',
-  Type: 'checkbox'
+  Type: 'checkbox',
 }];
 
 /**
@@ -89,11 +87,11 @@ function createInput(fd) {
   if (fd.Mandatory === 'x') {
     input.setAttribute('required', 'required');
   }
-  if(fd.Editable === false) {
+  if (fd.Editable === false) {
     input.setAttribute('disabled', true);
   }
-  if(typeof fd.Value !== 'undefined') {
-    if(input.type === 'checkbox') {
+  if (typeof fd.Value !== 'undefined') {
+    if (input.type === 'checkbox') {
       input.checked = fd.Value;
     } else {
       input.value = fd.Value;
@@ -108,7 +106,7 @@ function createField(fd) {
   const fieldId = `form-${fd.Field}-wrapper${style}`;
   fieldWrapper.className = fieldId;
   fieldWrapper.classList.add('field-wrapper');
-  if(fd.Label) {
+  if (fd.Label) {
     fieldWrapper.append(createLabel(fd));
   }
   fieldWrapper.append(createInput(fd));
@@ -124,26 +122,26 @@ function createField(fd) {
 function addressForm(address, editing = false) {
   const form = document.createElement('form');
   const data = JSON.parse(JSON.stringify(FORM_DATA));
-  for(const fd of data) {
-    if(!editing) {
+  data.forEach((fd) => {
+    if (!editing) {
       fd.Editable = false;
     }
     fd.Value = address[fd.Field];
     const field = createField(fd);
     form.append(field);
-  }
+  });
 
   return form;
 }
 
 /**
  * Extract data from form
- * @param {HTMLFormElement} form 
+ * @param {HTMLFormElement} form
  */
 function getFormData(form) {
   const data = {};
   [...form.elements].forEach((input) => {
-    if(input.type === 'checkbox') {
+    if (input.type === 'checkbox') {
       data[input.id] = input.checked;
     } else {
       data[input.id] = input.value;
@@ -153,9 +151,34 @@ function getFormData(form) {
 }
 
 /**
+ * Update page with account or view change
+ * @param {HTMLElement} wrapper
+ */
+function update(wrapper) {
+  /** @type {Account} */
+  const account = getSelectedAccount();
+
+  if (!account) {
+    return;
+  }
+
+  /** @type {Address[]} */
+  const raw = retrieve(account, 'addresses');
+  const addresses = JSON.parse(JSON.stringify(raw));
+
+  // eslint-disable-next-line no-use-before-define
+  const view = addressListView(wrapper, account, addresses, window.location.hash === '#edit');
+  if (wrapper.firstChild) {
+    wrapper.replaceChild(view, wrapper.firstChild);
+  } else {
+    wrapper.appendChild(view);
+  }
+}
+
+/**
  * Create address form
  * @param {HTMLElement} wrapper
- * @param {Account} account 
+ * @param {Account} account
  * @param {boolean} editing
  * @param {Address} address
  * @param {number} index
@@ -169,7 +192,7 @@ function addressView(wrapper, account, editing, address, index, addresses) {
   const actionContainer = document.createElement('div');
   actionContainer.classList.add('actions');
 
-  if(editing) {
+  if (editing) {
     const form = addressForm(address, editing);
     container.appendChild(form);
 
@@ -178,25 +201,24 @@ function addressView(wrapper, account, editing, address, index, addresses) {
     action.onclick = () => {
       const data = getFormData(form);
       let newData;
-      if(data.is_default) {
-        newData = [...addresses.slice(0, index).map(a => {
+      if (data.is_default) {
+        newData = [...addresses.slice(0, index).map((a) => {
           a.is_default = false;
           return a;
-        }), 
-        data, 
-        ...addresses.slice(index+1).map(a => {
+        }),
+        data,
+        ...addresses.slice(index + 1).map((a) => {
           a.is_default = false;
           return a;
         })];
       } else {
-        newData = [...addresses.slice(0, index), data, ...addresses.slice(index+1)];
+        newData = [...addresses.slice(0, index), data, ...addresses.slice(index + 1)];
       }
       storeUserData('addresses', newData);
-      window.location.hash = window.location.hash.replace(/#edit=[^\?|&]*/, '');
+      window.location.hash = window.location.hash.replace(/#edit=[^?|&]*/, '');
       update(wrapper);
-    }
+    };
     actionContainer.appendChild(action);
-
   } else {
     const tile = document.createElement('div');
     tile.innerHTML = addressTile(address);
@@ -208,18 +230,18 @@ function addressView(wrapper, account, editing, address, index, addresses) {
     action.onclick = () => {
       window.location.hash = `#edit=${index}`;
       update(wrapper);
-    }
+    };
     actionContainer.appendChild(action);
 
-    if(!address.is_default) {
+    if (!address.is_default) {
       action = document.createElement('button');
       action.classList.add('negative');
       action.innerText = 'Delete';
       action.onclick = () => {
-        const newData = [...addresses.slice(0, index), ...addresses.slice(index+1)];
+        const newData = [...addresses.slice(0, index), ...addresses.slice(index + 1)];
         storeUserData('addresses', newData);
         update(wrapper);
-      }
+      };
       actionContainer.appendChild(action);
     }
   }
@@ -231,7 +253,7 @@ function addressView(wrapper, account, editing, address, index, addresses) {
 /**
  * Create address list view
  * @param {HTMLElement} wrapper
- * @param {Account} account 
+ * @param {Account} account
  * @param {Address[]} addresses
  * @returns {HTMLElement}
  */
@@ -240,9 +262,9 @@ function addressListView(wrapper, account, addresses) {
   container.classList.add('address-list');
 
   let editIndex;
-  const match = window.location.hash.match(/#edit=([^\?|&]*)/, '');
-  if(match?.length > 0){
-    editIndex = parseInt(match[1]);
+  const match = window.location.hash.match(/#edit=([^?|&]*)/, '');
+  if (match?.length > 0) {
+    editIndex = parseInt(match[1], 10);
   }
 
   addresses.forEach((addr, index) => {
@@ -250,7 +272,7 @@ function addressListView(wrapper, account, addresses) {
     container.appendChild(view);
   });
 
-  if(editIndex === addresses.length) {
+  if (editIndex === addresses.length) {
     // adding an address
     const view = addressView(wrapper, account, true, {}, addresses.length, addresses);
     container.appendChild(view);
@@ -261,36 +283,11 @@ function addressListView(wrapper, account, addresses) {
   addButton.onclick = () => {
     window.location.hash = `#edit=${addresses.length}`;
     update(wrapper);
-  }
+  };
   container.appendChild(addButton);
 
   return container;
 }
-
-/**
- * Update page with account or view change
- * @param {HTMLElement} wrapper
- */
-function update(wrapper) {
-  /** @type {Account} */
-  const account = getSelectedAccount();
-
-  if(!account) {
-    return;
-  }
-
-  /** @type {Address[]} */
-  const raw = retrieve(account, 'addresses');
-  const addresses = JSON.parse(JSON.stringify(raw));
-
-  const view = addressListView(wrapper, account, addresses, window.location.hash === '#edit');
-  if(wrapper.firstChild) {
-    wrapper.replaceChild(view, wrapper.firstChild);
-  } else {
-    wrapper.appendChild(view);
-  }
-}
-
 
 /**
  * loads and decorates the account information viewer/editor

@@ -1,4 +1,4 @@
-import { getSelectedAccount } from "../../scripts/scripts.js";
+import { getSelectedAccount } from '../../scripts/scripts.js';
 
 const ACCOUNT_CHANGE_EVT = 'account-change';
 
@@ -9,8 +9,8 @@ function updateAccount(block) {
   const account = getSelectedAccount();
   const existing = block.querySelector(':scope > .nav-group.account');
 
-  if(!account) {
-    if(existing) {
+  if (!account) {
+    if (existing) {
       block.removeChild(existing);
     }
     return;
@@ -24,14 +24,13 @@ function updateAccount(block) {
     <a href="./">${account.accountId} - ${account.accountName}</a>
   </div>
   `;
-  
-  if(existing) {
+
+  if (existing) {
     block.replaceChild(group, existing);
   } else {
     block.prepend(group);
   }
 }
-
 
 /**
  * loads and decorates the account side nav bar
