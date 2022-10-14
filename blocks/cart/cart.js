@@ -1,7 +1,10 @@
 import {
-  checkProductsInCatalog, formatCurrency, getSelectedAccount, store, getPlaceholders,
+  checkProductsInCatalog,
+  formatCurrency,
+  getSelectedAccount,
+  store,
+  getPlaceholders,
 } from '../../scripts/scripts.js';
-// import { fetchPlaceholders } from '../../scripts/helix-web-library.esm.js';
 
 class Cart {
   constructor() {
