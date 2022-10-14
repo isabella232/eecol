@@ -16,6 +16,8 @@ import {
   checkCategoriesInCatalog,
   addEventListeners,
   PageTypes,
+  signIn,
+  signOut,
 } from '../../scripts/scripts.js';
 
 async function updateTopBar() {
@@ -61,10 +63,7 @@ async function updateTopBar() {
     authNavi.appendChild(btnSignOut);
     btnSignOut.innerText = 'Sign out';
     btnSignOut.style.cursor = 'pointer';
-    btnSignOut.onclick = () => {
-      const updateEvent = new Event('logout');
-      document.body.dispatchEvent(updateEvent);
-    };
+    btnSignOut.onclick = signOut;
 
     const accountBtn = nav.querySelector('.nav-toolbar-actions .account');
     accountBtn.addEventListener('click', () => {
@@ -77,10 +76,8 @@ async function updateTopBar() {
     const btnSignIn = document.createElement('a');
     authNavi.appendChild(btnSignIn);
     btnSignIn.innerText = 'Sign in';
-    btnSignIn.onclick = () => {
-      const updateEvent = new Event('login');
-      document.body.dispatchEvent(updateEvent);
-    };
+    btnSignIn.onclick = signIn;
+
     btnSignIn.style.cursor = 'pointer';
     authNavi.appendChild(document.createTextNode(' or '));
     const btnRegister = document.createElement('a');
@@ -90,10 +87,7 @@ async function updateTopBar() {
     authNavi.appendChild(document.createTextNode(' CAD'));
 
     const accountBtn = nav.querySelector('.nav-toolbar-actions .account');
-    accountBtn.addEventListener('click', () => {
-      const updateEvent = new Event('login');
-      document.body.dispatchEvent(updateEvent);
-    });
+    accountBtn.onclick = signIn;
 
     const accountBtnText = nav.querySelector('.nav-toolbar-actions .account .icon span');
     accountBtnText.textContent = 'Login';

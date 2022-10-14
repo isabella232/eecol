@@ -1,13 +1,15 @@
 <html>
-<head>
-    <script type="text/javascript" src="https://alcdn.msauth.net/browser/2.24.0/js/msal-browser.min.js"></script>
-</head>
-<body>
-initiating login...
 
-<script type="module">
-  import { getCurrentAccount } from './scripts/auth.js';
-  await getCurrentAccount();
-</script>
+<body>
+  Logging in...
+
+  <script type="module">
+    import { completeSignInRedirect } from '/scripts/auth.js';
+    // set a key to indicate login is in progress
+    // this is cleared on every load of scripts.js
+    window.sessionStorage.setItem('loginRedirecting', 'true');
+    await completeSignInRedirect();
+  </script>
 </body>
+
 </html>

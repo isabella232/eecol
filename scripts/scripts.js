@@ -23,6 +23,25 @@ import {
   decorateSections,
 } from './helix-web-library.esm.js';
 
+const UPSTREAM_PROD = 'https://main--eecol--hlxsites.helix3.dev';
+const UPSTREAM_DEV = 'http://localhost:3000';
+const dev = window.location.origin === UPSTREAM_DEV
+  || new URL(window.location.href).searchParams.get('dev') === 'true';
+const upstreamURL = dev ? UPSTREAM_DEV : UPSTREAM_PROD;
+
+const loggedIn = !!sessionStorage.getItem('account');
+const loginRedirect = sessionStorage.getItem('loginRedirect') === 'true';
+let quickLoadAuth = loggedIn || loginRedirect;
+
+if (loginRedirect) {
+  console.debug('login in progress...');
+  sessionStorage.removeItem('loginRedirect');
+}
+
+export function isLoginInProgress() {
+  return loginRedirect;
+}
+
 /**
  * Builds the hero autoblock
  * @param {HTMLElement} main
@@ -107,7 +126,7 @@ export function titleCase(string) {
  */
 async function fetchCategories() {
   if (!window.categories) {
-    const response = await fetch('https://main--eecol--hlxsites.helix3.dev/categories');
+    const response = await fetch(`${upstreamURL}/categories`);
     const json = await response.json();
     const categories = json.data.categories?.items[0].children;
     const categoriesKeyDictionary = {};
@@ -190,7 +209,7 @@ export async function searchProducts(query) {
 
 function replaceProductImages(data) {
   return data.map((product) => {
-    product.image = `${product.image.replace('https://qa-store.eecol.com/', 'https://main--eecol--hlxsites.helix3.dev/')}?format=webply&quality=medium&width=750`;
+    product.image = `${product.image.replace('https://qa-store.eecol.com/', `${upstreamURL}/`)}?format=webply&quality=medium&width=750`;
     return product;
   });
 }
@@ -203,7 +222,7 @@ function replaceProductImages(data) {
  */
 export async function lookupCategory(category, activeFilterUrlParams) {
   let products = [];
-  const req = await fetch(`https://main--eecol--hlxsites.helix3.dev/productLookup?${category.uid ? `category=${category.uid}` : ''}${activeFilterUrlParams ? `&${activeFilterUrlParams}` : ''}`);
+  const req = await fetch(`${upstreamURL}/productLookup?${category.uid ? `category=${category.uid}` : ''}${activeFilterUrlParams ? `&${activeFilterUrlParams}` : ''}`);
   if (req.status === 200) {
     products = await req.json();
     products.data = replaceProductImages(products.data);
@@ -219,7 +238,7 @@ export async function lookupCategory(category, activeFilterUrlParams) {
 export async function lookupProduct(sku) {
   let product = {};
   if (sku) {
-    const req = await fetch(`https://main--eecol--hlxsites.helix3.dev/productLookup?sku=${sku}`);
+    const req = await fetch(`${upstreamURL}/productLookup?sku=${sku}`);
     const json = await req.json();
     [product] = replaceProductImages(json.data);
   }
@@ -236,7 +255,7 @@ export async function lookupProduct(sku) {
 export async function lookupProductInventory(customerId, productId, productLine) {
   let inventoryData = {};
   if (customerId && productId && productLine) {
-    const req = await fetch(`https://main--eecol--hlxsites.helix3.dev/inventory?customerId=${customerId}&productId=${productId}&productLine=${productLine}`);
+    const req = await fetch(`${upstreamURL}/inventory?customerId=${customerId}&productId=${productId}&productLine=${productLine}`);
     const json = await req.json();
     inventoryData = json.data;
   }
@@ -262,7 +281,7 @@ export async function lookupProductInventory(customerId, productId, productLine)
 export async function lookupProductPricing(customerId, productId, productLine) {
   let inventoryData = {};
   if (customerId && productId && productLine) {
-    const req = await fetch(`https://main--eecol--hlxsites.helix3.dev/pricing?customerId=${customerId}&productId=${productId}&productLine=${productLine}`);
+    const req = await fetch(`${upstreamURL}/pricing?customerId=${customerId}&productId=${productId}&productLine=${productLine}`);
     const json = await req.json();
     inventoryData = json.data;
   }
@@ -458,9 +477,19 @@ export function getUserAccount() {
 /**
  * Initiates the login process
  */
-export function signIn() {
-  const updateEvent = new Event('login');
-  document.body.dispatchEvent(updateEvent);
+export async function signIn() {
+  quickLoadAuth = true;
+  const ev = new Event('login');
+  document.body.dispatchEvent(ev);
+}
+
+/**
+ * Initiate logout
+ */
+export async function signOut() {
+  quickLoadAuth = true;
+  const ev = new Event('logout');
+  document.body.dispatchEvent(ev);
 }
 
 /**
@@ -534,7 +563,12 @@ HelixApp.init({
     }
   })
   .withLoadDelayed(() => {
-    // eslint-ignore-next-line import/no-cycle
-    window.setTimeout(() => import('./delayed.js'), 4000);
+    let delay = 4000;
+    if (quickLoadAuth) {
+      // quick load, since no chance to impact PSI
+      delay = 0;
+    }
+    // eslint-disable-next-line import/no-cycle
+    window.setTimeout(() => import('./delayed.js'), delay);
   })
   .decorate();
