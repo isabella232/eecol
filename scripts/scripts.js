@@ -23,9 +23,10 @@ import {
 } from './helix-web-library.esm.js';
 
 const UPSTREAM_DEV = 'http://localhost:3000';
+const UPSTREAM_PROD = 'https://main--eecol--hlxsites.helix3.dev';
 const dev = window.location.origin === UPSTREAM_DEV
   || new URL(window.location.href).searchParams.get('dev') === 'true';
-const upstreamURL = dev ? UPSTREAM_DEV : window.location.origin;
+const upstreamURL = dev ? UPSTREAM_DEV : UPSTREAM_PROD;
 
 const loggedIn = !!sessionStorage.getItem('account');
 const loginRedirect = sessionStorage.getItem('loginRedirect') === 'true';
