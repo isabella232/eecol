@@ -17,6 +17,7 @@ module.exports = {
     'import/extensions': ['error', {
       js: 'always',
     }],
+    'no-unused-vars': ['error', { args: 'after-used', argsIgnorePattern: '^_' }],
     'max-classes-per-file': 'off',
     'class-methods-use-this': 'off',
   },

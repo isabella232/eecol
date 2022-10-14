@@ -518,6 +518,7 @@ HelixApp.init({
   rumGeneration: ['project-1'],
   productionDomains: ['poc-staging.eecol.com'],
   lazyStyles: true,
+  eagerHeader: true,
   favIcon: '/styles/favicon.ico',
 })
   .withLoadEager(async () => {

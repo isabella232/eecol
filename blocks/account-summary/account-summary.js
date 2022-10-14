@@ -1,9 +1,9 @@
-import { 
-  getSelectedAccount, 
-  getUserAccount, 
+import {
+  getSelectedAccount,
+  getUserAccount,
   retrieveUserData,
-  storeUserData
-} from "../../scripts/scripts.js";
+  storeUserData,
+} from '../../scripts/scripts.js';
 
 const ACCOUNT_CHANGE_EVT = 'account-change';
 
@@ -79,7 +79,7 @@ function defaultAddresses(account) {
     zip: '90210',
     country: 'USA',
     phone: '555-123-1234',
-    is_default: true
+    is_default: true,
   }];
   storeUserData('addresses', data);
   return data;
@@ -110,28 +110,31 @@ function defaultContactInfo(account) {
  */
 export function retrieve(account, key) {
   const data = retrieveUserData(key);
-  if(data) {
+  if (data) {
     return data;
   }
 
-  switch(key) {
+  switch (key) {
     case 'contactInfo':
       return defaultContactInfo(account);
     case 'addresses':
       return defaultAddresses(account);
+    default:
+      console.error('unexpected account key: ', key);
+      return null;
   }
 }
 
 /**
  * Contact info summary
- * 
+ *
  * @param {Account} account
  * @return {string} content
  */
 function createContactInfo(account) {
   /** @type {ContactInfo} */
   const data = retrieve(account, 'contactInfo');
-  const address = retrieve(account, 'addresses').find(addr => addr.is_default) || {};
+  const address = retrieve(account, 'addresses').find((addr) => addr.is_default) || {};
 
   return `
   <div class="contact-info">
@@ -147,11 +150,11 @@ function createContactInfo(account) {
 
 /**
  * Newsletters summary
- * 
+ *
  * @param {Account} account
  * @return {string} content
  */
- function createNewsletters(account) {
+function createNewsletters(_account) {
   return `
   <div class="newsletters">
     <p>You aren't subscribed to any newsletters</p>
@@ -160,21 +163,20 @@ function createContactInfo(account) {
 
 /**
  * Make address tile
- * @param {Address} address 
+ * @param {Address} address
  */
 export function addressTile(address) {
   return `
   <div class="address-tile">
-    ${address.is_default ?
-      `<span class="is-default">
+    ${address.is_default
+    ? `<span class="is-default">
         <span class="icon">
           <img src="/icons/circle-check.svg" />
         </span>
         <p>Default address</p>
       </span>`
-      :
-      ''
-    }
+    : ''
+}
     <p><strong>${address.name ?? ''}</strong></p>
     <p>${address.company ?? ''}</p>
     <p>${address.street ?? ''}</p>
@@ -186,16 +188,16 @@ export function addressTile(address) {
 
 /**
  * Addresses summary
- * 
+ *
  * @param {Account} account
  * @return {string} content
  */
- function createAddresses(account) {
-   /** @type {Address[]} */
+function createAddresses(account) {
+  /** @type {Address[]} */
   let addresses = retrieve(account, 'addresses');
-  const defaultAddr = addresses.find(addr => addr.is_default);
-  addresses = addresses.filter(addr => addr !== defaultAddr).slice(0, 2);
-  
+  const defaultAddr = addresses.find((addr) => addr.is_default);
+  addresses = addresses.filter((addr) => addr !== defaultAddr).slice(0, 2);
+
   // for testing styles of multiple addresses
   // addresses.push({...defaultAddr, is_default: false});
 
@@ -208,11 +210,11 @@ export function addressTile(address) {
 
 /**
  * Recent orders summary
- * 
+ *
  * @param {Account} account
  * @return {string} content
  */
- function createRecentOrders(account) {
+function createRecentOrders(_account) {
   return `
   <div class="recent-orders">
     <p>You don't have any recent orders.</p>
@@ -221,16 +223,15 @@ export function addressTile(address) {
 
 /**
  * Summary section factory
- * @param {Account} account 
+ * @param {Account} account
  * @returns {(conf: SummarySection) => string | undefined}
  */
 function createSection(account) {
-  return function ({ name, action }) {
-
+  return ({ name, action }) => {
     /** @type {string} */
     let content;
 
-    switch(name.toLowerCase()) {
+    switch (name.toLowerCase()) {
       case 'contact information':
         content = createContactInfo(account);
         break;
@@ -245,30 +246,28 @@ function createSection(account) {
         break;
       default:
         console.warn('Unknown account summary section: ', name);
-        return;
+        return '';
     }
-
-
 
     return `
     <div class="summary-section">
       <span>
         <h2>${name}</h2>
-        ${action ? action : ''}
+        ${action || ''}
       </span>
       ${content}
     </div>`;
-  }
+  };
 }
 
 /**
  * Create all summary sections for each name
- * @param {SummarySection[]} confs 
- * @param {Account} account 
+ * @param {SummarySection[]} confs
+ * @param {Account} account
  * @returns {HTMLElement}
  */
 function createSummary(confs, account) {
-  const sections = confs.map(createSection(account)).filter(n => !!n);
+  const sections = confs.map(createSection(account)).filter((n) => !!n);
   const wrapper = document.createElement('div');
   wrapper.innerHTML = sections.join('\n');
   return wrapper;
@@ -282,14 +281,13 @@ function createSummary(confs, account) {
 function updateAccount(wrapper, confs) {
   const account = getSelectedAccount();
 
-  if(!account) {
+  if (!account) {
     return;
   }
 
   const summary = createSummary(confs, account);
   wrapper.innerHTML = summary.innerHTML;
 }
-
 
 /**
  * loads and decorates the account side nav bar
@@ -300,7 +298,7 @@ export default async function decorate(block) {
   const confs = [];
   block.querySelectorAll(':scope > div').forEach((node) => {
     const name = node.firstElementChild?.innerText;
-    if(!name) {
+    if (!name) {
       return;
     }
 

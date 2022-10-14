@@ -1,9 +1,7 @@
-import { 
-  getSelectedAccount, 
-  getUserAccount, 
-  retrieveUserData,
-  storeUserData
-} from "../../scripts/scripts.js";
+import {
+  getSelectedAccount,
+  storeUserData,
+} from '../../scripts/scripts.js';
 import { retrieve } from '../account-summary/account-summary.js'; // used for mock data on initialization
 
 const ACCOUNT_CHANGE_EVT = 'account-change';
@@ -13,25 +11,25 @@ const FORM_DATA = [{
   Field: 'email',
   Type: 'text',
   Editable: false,
-  Placeholder: 'name@company.com'
+  Placeholder: 'name@company.com',
 }, {
   Label: 'Company',
   Field: 'company',
   Type: 'text',
   Editable: false,
-  Placeholder: 'ACME Industries'
+  Placeholder: 'ACME Industries',
 }, {
   Label: 'Name',
   Field: 'name',
   Type: 'text',
   Mandatory: true,
-  Placeholder: 'First McLast'
+  Placeholder: 'First McLast',
 }, {
   Label: 'Phone',
   Field: 'phone',
   Type: 'text',
   Mandatory: true,
-  Placeholder: '555-123-1234'
+  Placeholder: '555-123-1234',
 }];
 
 /**
@@ -62,10 +60,10 @@ function createInput(fd) {
   if (fd.Mandatory === 'x') {
     input.setAttribute('required', 'required');
   }
-  if(fd.Editable === false) {
+  if (fd.Editable === false) {
     input.setAttribute('disabled', true);
   }
-  if(typeof fd.Value !== 'undefined') {
+  if (typeof fd.Value !== 'undefined') {
     input.value = fd.Value;
   }
   return input;
@@ -91,21 +89,21 @@ function createField(fd) {
 function accountInfoForm(info, editing = false) {
   const form = document.createElement('form');
   const data = JSON.parse(JSON.stringify(FORM_DATA));
-  for(const fd of data) {
-    if(!editing) {
+  data.forEach((fd) => {
+    if (!editing) {
       fd.Editable = false;
     }
     fd.Value = info[fd.Field];
     const field = createField(fd);
     form.append(field);
-  }
+  });
 
   return form;
 }
 
 /**
  * Extract data from form
- * @param {HTMLFormElement} form 
+ * @param {HTMLFormElement} form
  */
 function getFormData(form) {
   const data = {};
@@ -116,9 +114,38 @@ function getFormData(form) {
 }
 
 /**
+ * Update page with account or view change
+ * @param {HTMLElement} wrapper
+ */
+function update(wrapper) {
+  /** @type {Account} */
+  const account = getSelectedAccount();
+
+  if (!account) {
+    return;
+  }
+
+  /** @type {ContactInfo} */
+  let info = editSessionByAccountId[account.accountId];
+  if (!info) {
+    const raw = retrieve(account, 'contactInfo');
+    info = JSON.parse(JSON.stringify(raw));
+    editSessionByAccountId[account.accountId] = info;
+  }
+
+  // eslint-disable-next-line no-use-before-define
+  const view = accountInfoView(wrapper, account, info, window.location.hash === '#edit');
+  if (wrapper.firstChild) {
+    wrapper.replaceChild(view, wrapper.firstChild);
+  } else {
+    wrapper.appendChild(view);
+  }
+}
+
+/**
  * Create account info form
  * @param {HTMLElement} wrapper
- * @param {Account} account 
+ * @param {Account} account
  * @param {ContactInfo} info
  * @param {boolean} [editing=false]
  * @returns {HTMLElement}
@@ -129,7 +156,7 @@ function accountInfoView(wrapper, account, info, editing = false) {
   container.appendChild(form);
 
   const action = document.createElement('button');
-  if(editing) {
+  if (editing) {
     action.innerText = 'Save';
     action.onclick = () => {
       const data = getFormData(form);
@@ -137,52 +164,23 @@ function accountInfoView(wrapper, account, info, editing = false) {
       storeUserData('contactInfo', data);
       window.location.hash = window.location.hash.replace('#edit', '');
       update(wrapper);
-    }
+    };
 
     form.onchange = () => {
       const data = getFormData(form);
       editSessionByAccountId[account.accountId] = data;
-    }
+    };
   } else {
     action.innerText = 'Edit';
     action.onclick = () => {
       window.location.hash = '#edit';
       update(wrapper);
-    }
+    };
   }
   container.appendChild(action);
 
   return container;
 }
-
-/**
- * Update page with account or view change
- * @param {HTMLElement} wrapper
- */
-function update(wrapper) {
-  /** @type {Account} */
-  const account = getSelectedAccount();
-
-  if(!account) {
-    return;
-  }
-
-  /** @type {ContactInfo} */
-  let info = editSessionByAccountId[account.accountId];
-  if(!info) {
-    const raw = retrieve(account, 'contactInfo');
-    info = JSON.parse(JSON.stringify(raw));
-    editSessionByAccountId[account.accountId] = info;
-  }
-
-  const view = accountInfoView(wrapper, account, info, window.location.hash === '#edit');
-  if(wrapper.firstChild) {
-    wrapper.replaceChild(view, wrapper.firstChild);
-  } else {
-    wrapper.appendChild(view);
-  }
-}
-
 
 /**
  * loads and decorates the account information viewer/editor
