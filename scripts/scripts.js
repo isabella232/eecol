@@ -15,7 +15,6 @@ import {
   buildBlock,
   getMetadata,
   fetchPlaceholders,
-  loadHeader,
   decorateBlock,
   loadBlock,
   makeLinksRelative,
@@ -293,10 +292,7 @@ export async function lookupProductPricing(customerId, productId, productLine) {
  * @returns {Object} Site placeholders
  */
 export async function getPlaceholders() {
-  if (!window.placeholders) {
-    window.placeholders = await fetchPlaceholders('/ca/en');
-  }
-  return window.placeholders;
+  return fetchPlaceholders('/ca/en');
 }
 
 /**
@@ -550,8 +546,11 @@ HelixApp.init({
       }
     });
   })
-  .withLoadHeader(async (header) => {
-    loadHeader(header);
+  // .withLoadHeader(async (header) => {
+  //   loadHeader(header);
+  // })
+  .withLoadLazy(async () => {
+    const header = document.querySelector('header');
     const template = getMetadata('template');
     if (template === 'account') {
       const main = document.querySelector('main');

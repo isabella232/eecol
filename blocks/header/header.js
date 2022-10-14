@@ -2,7 +2,6 @@ import {
   readBlockConfig,
   decorateIcons,
   makeLinksRelative,
-  fetchPlaceholders,
   loadBlock,
   decorateBlock,
   getMetadata,
@@ -18,6 +17,7 @@ import {
   PageTypes,
   signIn,
   signOut,
+  getPlaceholders,
 } from '../../scripts/scripts.js';
 
 async function updateTopBar() {
@@ -144,7 +144,7 @@ export default async function decorate(block) {
   const cfg = readBlockConfig(block);
   block.textContent = '';
 
-  const ph = await fetchPlaceholders('/ca/en');
+  const ph = await getPlaceholders();
   const categories = await getCategories();
 
   // fetch nav content
