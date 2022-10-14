@@ -591,7 +591,6 @@ class CategoryResultsController {
    * @param {Object} placeholders
    */
   renderBlockScafolding() {
-    console.log('this.placeholders: ', this.placeholders);
     return /* html */`
       <div class="category-title">
         <h1>${this.category.name}</h1>
@@ -733,7 +732,7 @@ class CategoryResultsController {
  * @param {HTMLElement} block
  */
 export default async function decorate(block) {
-  const placeholders = await getPlaceholders('/ca/en');
+  const placeholders = await getPlaceholders();
 
   const categoryResultsView = new CategoryResultsController(block, placeholders);
   await categoryResultsView.load();
