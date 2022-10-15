@@ -272,19 +272,18 @@ export async function lookupProductInventory(customerId, productId, productLine)
 
 /**
  * Fetches the pricing for a product
- * @param {string} customerId Customer Account Code
- * @param {string} productId Manufacturer part number
- * @param {string} productLine Manufacturer code from EECOL
+ * @param {string[]} skus
  * @returns {Promise<ProductPricingResponse>} pricing
  */
-export async function lookupProductPricing(customerId, productId, productLine) {
-  let inventoryData = {};
-  if (customerId && productId && productLine) {
-    const req = await fetch(`${upstreamURL}/pricing?customerId=${customerId}&productId=${productId}&productLine=${productLine}`);
-    const json = await req.json();
-    inventoryData = json.data;
+export async function lookupProductPricing(skus) {
+  if (!skus || skus.length === 0) {
+    return {};
   }
-  return inventoryData;
+
+  const skusStr = encodeURIComponent(skus.join(';'));
+  const req = await fetch(`${upstreamURL}/pricing?skus=${skusStr}`);
+  const json = await req.json();
+  return json.data;
 }
 
 /**
@@ -546,9 +545,6 @@ HelixApp.init({
       }
     });
   })
-  // .withLoadHeader(async (header) => {
-  //   loadHeader(header);
-  // })
   .withLoadLazy(async () => {
     const header = document.querySelector('header');
     const template = getMetadata('template');
@@ -566,6 +562,7 @@ HelixApp.init({
     let delay = 4000;
     if (quickLoadAuth) {
       // quick load, since no chance to impact PSI
+      console.debug('quick load');
       delay = 0;
     }
     // eslint-disable-next-line import/no-cycle

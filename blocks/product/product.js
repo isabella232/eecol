@@ -31,9 +31,9 @@ class ProductView {
   }
 
   async load() {
-    const sku = window.location.pathname.split('/').pop();
     try {
-      const product = await lookupProduct(sku);
+      this.sku = window.location.pathname.split('/').pop();
+      const product = await lookupProduct(this.sku);
       store.product = product;
 
       document.title = store.product.name;
@@ -166,11 +166,15 @@ class ProductView {
    * @param {ProductPricing} pricing
    * @returns {string}
    */
-  renderAddToCartBlock(pricing, currency) {
+  renderAddToCartBlock(pricing, currency = 'CA') {
     return /* html */`
       <div class="not-in-catalog">Item not in catalog</div>
       <div class="cost">
-        <div class="numericuom">${currency} ${pricing.sellprice}</div><span>/</span><div class="basismeasure">${pricing.description}</div>
+        <div class="numericuom">
+          ${currency}$${pricing.unitSellPrice}
+        </div>
+        <span>/</span>
+        <div class="basismeasure">${pricing.uom}</div>
       </div>
       <div class="stock">
         <div class="status">
@@ -181,11 +185,16 @@ class ProductView {
       </div>
       ${pricing.instock ? /* html */`
         <div class="action">
-          <input class="quantity" value="1"></input><button class='add-to-cart'>ADD TO CART</button>
+          <input class="quantity" value="1"/><button class='add-to-cart'>ADD TO CART</button>
         </div>
       ` : ''}
       <div class="requirements">
-        <div class="minQuantity">Min. Qty: ${pricing.sellunit}</div><div class="increments">Increments of: ${pricing.sellunit}</div>
+        <div class="minQuantity">
+          Min. Qty: ${pricing.sellunit}
+        </div>
+        <div class="increments">
+          Increments of: ${pricing.sellunit}
+        </div>
       </div>`;
   }
 
@@ -198,10 +207,16 @@ class ProductView {
     this.userAccount = getUserAccount();
     if (this.userAccount) {
       this.renderPricingLoading();
-      lookupProductPricing('123', Math.random().toString(), 'abc').then((result) => {
+      // TODO: fetch inventory in parallel
+      lookupProductPricing([this.sku]).then((result) => {
         if (result.products && result.products.length > 0) {
           const [pricing] = result.products;
+
+          // KLUDGE?:
           pricing.instock = pricing.qty > 0;
+          if (pricing.sellunit === 'E') {
+            pricing.sellunit = 1;
+          }
           store.product.pricing = pricing;
 
           const productCartElement = this.block.querySelector('.product-config .cart');
