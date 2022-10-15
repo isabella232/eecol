@@ -3,9 +3,12 @@
 // eslint-disable-next-line import/no-cycle
 import { loadScript } from './helix-web-library.esm.js';
 // eslint-disable-next-line import/no-cycle
-import { isLoginInProgress } from './scripts.js';
+import { store } from './scripts.js';
 
 const MSAL_URL = 'https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.min.js';
+export const AUTH_COOKIE = 'eecol.auth';
+export const PROFILE_COOKIE = 'eecol.profile';
+export const AD_TOKEN_KEY = 'adToken';
 
 const { protocol, host, hostname } = new URL(window.location.href);
 const redirectUri = `${protocol}//${host}/login.html`;
@@ -22,6 +25,8 @@ let rejectLogin;
 let loginPromise;
 /** @type {Promise<void>} */
 let msalPromise;
+/** @type {AuthState} */
+let state = {};
 
 /** @type {RedirectRequest} */
 const loginRequest = {
@@ -124,9 +129,20 @@ async function getTokenRedirect(request) {
   }
 }
 
-export async function getToken() {
-  const data = await getTokenRedirect(loginRequest);
-  return data;
+export async function getADToken() {
+  console.debug('[auth] getADToken()');
+
+  const prevAdToken = state.adToken;
+  const { accessToken: adToken } = await getTokenRedirect(loginRequest);
+  // new AD token means we need a new MS token
+  if (!prevAdToken || adToken !== prevAdToken) {
+    console.info('[auth] invalidating api auth');
+    state.msToken = undefined;
+  }
+  state.adToken = adToken;
+  // save it for later
+  window.sessionStorage.setItem(AD_TOKEN_KEY, adToken);
+  return adToken;
 }
 
 /**
@@ -152,17 +168,46 @@ async function signInAPI(token) {
     throw Error(`failed to authenticate (${resp.status})`);
   }
 
-  return resp.json();
+  const data = await resp.json();
+  state.msToken = data.access_token;
+  return data;
+}
+
+function parseCookies() {
+  const cookieStr = document.cookie;
+  if (!cookieStr) {
+    return {};
+  }
+
+  const cookies = cookieStr.split(';').map((s) => s.trim());
+  const cookieObj = {};
+  cookies.forEach((c) => {
+    const [key, ...vals] = c.split('=');
+    cookieObj[key] = vals.join('=');
+  });
+
+  return cookieObj;
+}
+
+function getMSTokenFromCookie() {
+  const cookies = parseCookies();
+  return cookies[AUTH_COOKIE];
 }
 
 /**
- * @param {string} [token] - optional ActiveDirectory token
+ * Get a mulesoft token, refresh if AD token has changed
  */
-export async function getMulesoftToken(token) {
-  // eslint-disable-next-line no-param-reassign
-  token = token || await getToken();
-  const data = await signInAPI(token);
-  return data.mulesoftToken;
+async function getMulesoftToken() {
+  console.debug('[auth] getMulesoftToken()');
+  const adToken = await getADToken(); // revokes msToken if needed
+  if (!state.msToken) {
+    console.info('[auth] refreshing api auth');
+    const { access_token: msToken } = await signInAPI(adToken);
+    state.msToken = msToken;
+    return msToken;
+  }
+
+  return state.msToken;
 }
 
 /**
@@ -191,6 +236,7 @@ export async function getCurrentAccount() {
  * Called from login.html
  */
 export async function completeSignInRedirect() {
+  console.debug('[auth] completeSignInRedirect()');
   await ms.handleRedirectPromise();
 }
 
@@ -198,16 +244,20 @@ export async function completeSignInRedirect() {
  * Called from LOGIN_SUCCESS event
  */
 export async function completeSignIn() {
-  const msData = await ms.handleRedirectPromise();
+  console.debug('[auth] completeSignIn()');
+
+  const data = await ms.handleRedirectPromise();
 
   try {
+    state.adToken = data.accessToken;
     // sets auth cookie for inventory & pricing
-    await signInAPI(msData.accessToken);
+    state.msToken = await signInAPI(state.adToken);
   } catch (e) {
+    console.error('[auth] error signing in: ', e);
     rejectLogin(e);
   }
 
-  resolveLogin(msData);
+  resolveLogin(data);
 }
 
 async function init() {
@@ -223,9 +273,15 @@ async function init() {
     resolveLogin = resolve;
     rejectLogin = reject;
   });
-  if (!isLoginInProgress()) {
+  if (!store.isLoginInProgress()) {
     resolveLogin();
   }
+
+  // initialize state
+  state = {
+    msToken: getMSTokenFromCookie(),
+    adToken: window.sessionStorage.getItem(AD_TOKEN_KEY),
+  };
 }
 
 await init().finally(() => {
@@ -245,5 +301,12 @@ await init().finally(() => {
 
   document.body.addEventListener('logout', async () => {
     await signOut();
+  });
+
+  store.attachModule('auth', {
+    validate: async () => {
+      const muleToken = await getMulesoftToken();
+      return !!muleToken;
+    },
   });
 });

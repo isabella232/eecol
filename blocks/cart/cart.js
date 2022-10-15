@@ -6,11 +6,13 @@ import {
   getPlaceholders,
 } from '../../scripts/scripts.js';
 
-class Cart {
+export class Cart {
   constructor() {
     this.maxItem = 9;
     this.items = [];
     this.load();
+    const ready = new Event('module-ready', { name: 'cart' });
+    document.body.dispatchEvent(ready);
   }
 
   log() {

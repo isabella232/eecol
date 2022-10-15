@@ -12,56 +12,6 @@ import {
   checkProductsInCatalog,
 } from '../../scripts/scripts.js';
 
-/**
- * Pagination Type
- * @typedef {Object} Pagination
- * @property {number} totalCount Total number of results
- * @property {number} currentPage The active page
- * @property {number} pageSize The number of items per page
- * @property {number} totalPages The total number of pages
- * @property {number} startPage The first page
- * @property {number} endPage The last page
- * @property {number} startIndex The index of the first item
- * @property {number} endIndex The index of the last item
- * @property {number[]} pages An array of page numbers
- */
-
-/**
- * Page Info Returned from the API
- * @typedef {Object} PageInfo
- * @property {number} currentPage Total number of results
- * @property {number} pageSize The active page
- * @property {number} totalPage The number of items per page
- */
-
-/**
- * Category Object
- * @typedef {Object} Category
- * @property {string} children_count The number of children in the category
- * @property {number} level The hierarchy level of the category
- * @property {string} name The name of the category
- * @property {string} path The path of the category (in category ids)
- * @property {string} uid The unique id of the category
- * @property {string} url_key The url key of the category
- * @property {string} url_path The url path of the category
- */
-
-/**
- * Product Object
- * @typedef {Object} Product
- * @property {string[]} categories An array of category ids
- * @property {string} description The product description
- * @property {number} discount_off The discount off the product
- * @property {number} final_price The final price of the product
- * @property {string} image The image url of the product
- * @property {string} name The name of the product
- * @property {string} path The path of the product
- * @property {number} regular_price The regular price of the product
- * @property {string} sku The sku of the product
- * @property {string} stock_status The stock status of the product
- * @property {import('../product/product.js').ProductPricing} pricing
- */
-
 const ExcludedFilterKeys = ['fulltext', 'page', 'query'];
 
 /**

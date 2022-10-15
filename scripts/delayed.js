@@ -58,8 +58,5 @@ if (!account && loggedIn) {
   document.body.dispatchEvent(accountChange);
 }
 
-const ready = new Event('auth-ready');
-document.body.dispatchEvent(ready);
-
 //   // ----< eof tripod's auth poc >-------------------
 // });

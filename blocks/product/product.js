@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary */
 import {
   getPlaceholders,
   lookupProduct,
@@ -6,24 +7,27 @@ import {
   getUserAccount,
   signIn,
   store,
+  lookupProductInventory,
 } from '../../scripts/scripts.js';
 
 /**
- * Mulesoft Pricing Object
- * @typedef {Object} ProductPricing
- * @property {string} productId The product id, manufacturer_part_number_brand in CIF?
- * @property {string} productLine Manufacturer code from EECOL
- * @property {string} qty Available quantity
- * @property {string} sellprice The sellprice for the given uom
- * @property {string} uom Unit of measure, numeric value representing the pricing unit.
- * @property {string} branch Alphanumeric branch code
- * @property {string} blank Discounts???
- * @property {string} sellunit Alphanumeric field representing the selling unit of measure.
- * @property {string} numericuom Numeric value representing the selling unit of measure.
- * @property {string} basismeasurecode The stock status of the product
- * @property {string} description Customer friendly description of basismeasurecode
- * @property {boolean} instock Is the product instock
+ * @param {ProductInventory} inv
  */
+const stockStatus = (inv) => {
+  if (inv.cfa) {
+    return `<div class="status">
+              <span>Call for availability</span>
+            </div>`;
+  }
+  const icon = inv.isAvailable ? '/icons/circle-check.svg' : '/icons/circle-x.svg';
+  const msg = inv.isAvailable ? 'In Stock' : 'Out of Stock';
+  return `
+<div class="status">
+  <img class="icon inv-status" src="${icon}">
+    <span>${msg}</span>
+  <a>View Inventory</a>
+</div>`;
+};
 
 class ProductView {
   constructor(block) {
@@ -55,9 +59,20 @@ class ProductView {
     const addToButton = this.block.querySelector('.cart .action .add-to-cart');
     const notInCatalogLabel = this.block.querySelector('.cart .not-in-catalog');
     const quantityInput = this.block.querySelector('.cart .action input');
-    if (quantityInput) {
-      const quantity = parseInt(quantityInput.value, 2);
-      if (store.cart
+    if (!quantityInput) {
+      return;
+    }
+    const quantity = parseInt(quantityInput.value, 2);
+    console.log('store.cart: ', store.cart);
+    console.log('quantity: ', quantity);
+    console.log('store.canAdd: ', store.cart.canAdd(
+      store.product.sku,
+      store.product,
+      store.product.pricing.sellprice * quantity,
+      quantity,
+    ));
+
+    if (store.cart
         && quantityInput
         && store.cart.canAdd(
           store.product.sku,
@@ -65,12 +80,11 @@ class ProductView {
           store.product.pricing.sellprice * quantity,
           quantity,
         )
-      ) {
-        addToButton.disabled = false;
-        quantityInput.disabled = false;
-        notInCatalogLabel.classList.remove('visible');
-        return;
-      }
+    ) {
+      addToButton.disabled = false;
+      quantityInput.disabled = false;
+      notInCatalogLabel.classList.remove('visible');
+    } else {
       addToButton.disabled = true;
       quantityInput.disabled = true;
       notInCatalogLabel.classList.add('visible');
@@ -112,9 +126,8 @@ class ProductView {
           <div class="manufacturer">${titleCase(store.product.manufacturer)}</div>
           <div class="name"><h3>${store.product.name}</h3></div>
           <div class="catalog">
-            <div>Manufacturer #: ${store.product.manufacturer_part_number_brand}</div>
-            <div>SKU #: ${store.product.sku}</div>
-            <div>Customer Part #: ${store.product.sku}</div>
+            <div>MFR #: ${store.product.manufacturer_part_number_brand}</div>
+            <div>Part #: ${store.product.sku}</div>
           </div>
         </div>
       </div>
@@ -163,79 +176,131 @@ class ProductView {
 
   /**
    * Renders the add to cart block
+   * @param {ProductInventory} inventory
    * @param {ProductPricing} pricing
    * @returns {string}
    */
-  renderAddToCartBlock(pricing, currency = 'CA') {
+  renderAddToCartBlock(inventory, pricing) {
     return /* html */`
       <div class="not-in-catalog">Item not in catalog</div>
       <div class="cost">
         <div class="numericuom">
-          ${currency}$${pricing.unitSellPrice}
+          ${pricing.currency}$${pricing.unitSellPrice}
         </div>
         <span>/</span>
         <div class="basismeasure">${pricing.uom}</div>
       </div>
       <div class="stock">
-        <div class="status">
-          <img class="icon icon-search" src="${pricing.instock ? '/icons/circle-check.svg' : '/icons/circle-x.svg'}">
-          <span>${pricing.instock ? 'In Stock' : 'Out of Stock'}<span>
-        </div>
-        <a>View Inventory</a>
+        ${stockStatus(inventory)}
       </div>
-      ${pricing.instock ? /* html */`
+      ${pricing.isAvailable ? /* html */`
         <div class="action">
-          <input class="quantity" value="1"/><button class='add-to-cart'>ADD TO CART</button>
+          <input class="quantity" value="1"/>
+          <button class='add-to-cart'>ADD TO CART</button>
         </div>
       ` : ''}
       <div class="requirements">
         <div class="minQuantity">
-          Min. Qty: ${pricing.sellunit}
+          Min. Qty: ${pricing.numericuom}
         </div>
+        <span>|</span>
         <div class="increments">
-          Increments of: ${pricing.sellunit}
+          Increments of: ${pricing.numericuom}
         </div>
       </div>`;
+  }
+
+  /**
+   * @returns {Promise<ProductInventory>}
+   */
+  async fetchInventory() {
+    /** @type {ProductInventory} */
+    const inventory = {
+      isAvailable: false,
+      stock: [],
+    };
+    const res = await lookupProductInventory([this.sku]);
+    console.debug('[product] inventory: ', res);
+    if (!res.products || res.products.length === 0) {
+      return inventory;
+    }
+
+    inventory.stock = res.productInventory;
+    return inventory;
+  }
+
+  /**
+   * @returns {Promise<ProductPricing>}
+   */
+  async fetchPricing() {
+    const res = await lookupProductPricing([this.sku]);
+    console.debug('[product] pricing: ', res);
+
+    if (!res.products || res.products.length === 0) {
+      return {};
+    }
+
+    const [pricing] = res.products;
+
+    if (typeof pricing.numericuom === 'string') {
+      pricing.numericuom = parseInt(pricing.numericuom, 10);
+    }
+
+    if (pricing.qty > 0) {
+      pricing.isAvailable = true;
+    }
+
+    // TODO: pull currency from source of truth
+    if (!pricing.currency) {
+      pricing.currency = 'CA';
+    }
+
+    return pricing;
   }
 
   /**
    * Renders the product block
    */
   render() {
+    console.debug('[product] render() ', store.product);
     this.renderProductScaffolding();
-
-    this.userAccount = getUserAccount();
-    if (this.userAccount) {
-      this.renderPricingLoading();
-      // TODO: fetch inventory in parallel
-      lookupProductPricing([this.sku]).then((result) => {
-        if (result.products && result.products.length > 0) {
-          const [pricing] = result.products;
-
-          // KLUDGE?:
-          pricing.instock = pricing.qty > 0;
-          if (pricing.sellunit === 'E') {
-            pricing.sellunit = 1;
-          }
-          store.product.pricing = pricing;
-
-          const productCartElement = this.block.querySelector('.product-config .cart');
-          productCartElement.innerHTML = this.renderAddToCartBlock(pricing, result.currency);
-          this.enableAddToCart();
-
-          const addToCartBtn = this.block.querySelector('.cart .action .add-to-cart');
-          addToCartBtn.addEventListener('click', () => {
-            this.addToCart();
-          });
-        }
-      });
-    } else {
-      this.renderPricingSignin();
-    }
-
     if (store.product.description) {
       this.renderProductOverview();
     }
+
+    this.userAccount = getUserAccount();
+    if (!this.userAccount) {
+      this.renderPricingSignin();
+      return;
+    }
+    this.renderPricingLoading();
+
+    Promise.all([
+      this.fetchInventory(),
+      this.fetchPricing(),
+    ]).then(([inventory, pricing]) => {
+      // if pricing declares as in stock and there are no inventory locations
+      // mark the product as "call for availability"
+      if (pricing.isAvailable && !inventory.isAvailable) {
+        inventory.cfa = true;
+      }
+
+      store.product.inventory = inventory;
+      store.product.pricing = pricing;
+
+      const productCartElement = this.block.querySelector('.product-config .cart');
+      productCartElement.innerHTML = this.renderAddToCartBlock(
+        inventory,
+        pricing,
+        pricing.currency,
+      );
+      this.enableAddToCart();
+
+      const addToCartBtn = this.block.querySelector('.cart .action .add-to-cart');
+      addToCartBtn.addEventListener('click', () => {
+        this.addToCart();
+      });
+    });
   }
 }
 

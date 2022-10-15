@@ -28,7 +28,7 @@ const dev = window.location.origin === UPSTREAM_DEV
   || new URL(window.location.href).searchParams.get('dev') === 'true';
 const upstreamURL = dev ? UPSTREAM_DEV : UPSTREAM_PROD;
 
-const loggedIn = !!sessionStorage.getItem('account');
+const loggedIn = !!sessionStorage.getItem('account') || document.cookie.indexOf('eecolauth') > -1;
 const loginRedirect = sessionStorage.getItem('loginRedirect') === 'true';
 let quickLoadAuth = loggedIn || loginRedirect;
 
@@ -37,8 +37,64 @@ if (loginRedirect) {
   sessionStorage.removeItem('loginRedirect');
 }
 
-export function isLoginInProgress() {
-  return loginRedirect;
+/**
+ * Application Store
+ * @type {Store}
+ */
+/* eslint-disable no-underscore-dangle, no-use-before-define */
+export const store = {
+  _proms: {},
+  moduleReady(name) {
+    if (!this._proms[name]) {
+      this._proms[name] = [undefined, Promise.resolve()];
+    } else {
+      const [ready] = this._proms[name] || [];
+      if (ready) {
+        ready(name);
+        console.info(`[store] ${name} module ready`);
+      }
+    }
+  },
+  whenReady(name) {
+    if (!this._proms[name]) {
+      let ready;
+      const prom = new Promise((res) => {
+        ready = () => {
+          this._proms[name][0] = undefined;
+          res();
+        };
+      });
+      this._proms[name] = [ready, prom];
+    }
+    return this._proms[name][1];
+  },
+  attachModule(name, module) {
+    store[name] = module;
+    this.moduleReady(name);
+  },
+  isLoginInProgress: () => loginRedirect,
+  product: undefined,
+  cart: storeProxy('cart'),
+  auth: storeProxy('auth'),
+};
+/* eslint-enable no-underscore-dangle, no-use-before-define */
+
+function storeProxy(name) {
+  return new Proxy({}, {
+    get(_, prop) {
+      return async () => {
+        await store.whenReady(name);
+        return store[name][prop];
+      };
+    },
+    set(_, prop, val) {
+      (async () => {
+        await store.whenReady(name);
+        store[name][prop] = val;
+      })();
+      return false;
+    },
+  });
 }
 
 /**
@@ -232,7 +288,7 @@ export async function lookupCategory(category, activeFilterUrlParams) {
 /**
  * Returns an array of products for a category
  * @param {string} sku The product sku
- * @returns {import('../blocks/category/category.js').Product[]} An array of products
+ * @returns {Promise<Product[]>}
  */
 export async function lookupProduct(sku) {
   let product = {};
@@ -246,37 +302,37 @@ export async function lookupProduct(sku) {
 
 /**
  * Fetches the inventory for a product
- * @param {string} customerId Customer Account Code
- * @param {string} productId Manufacturer part number
- * @param {string} productLine Manufacturer code from EECOL
- * @returns
+ * @param {string[]} skus
+ * @returns {Promise<ProductInventoryResponse>}
  */
-export async function lookupProductInventory(customerId, productId, productLine) {
-  let inventoryData = {};
-  if (customerId && productId && productLine) {
-    const req = await fetch(`${upstreamURL}/inventory?customerId=${customerId}&productId=${productId}&productLine=${productLine}`);
-    const json = await req.json();
-    inventoryData = json.data;
+export async function lookupProductInventory(skus) {
+  if (!skus || skus.length === 0) {
+    return {};
   }
-  return inventoryData;
-}
 
-/**
- * Mulesoft Pricing Response Object
- * @typedef {Object} ProductPricingResponse
- * @property {string} brand The product id, manufacturer_part_number_brand in CIF?
- * @property {string} currency Manufacturer code from EECOL
- * @property {string} customerId Available quantity
- * @property {import('../blocks/product/product.js').ProductPricing[]} products
- */
+  const valid = await store.auth.validate();
+  if (!valid) {
+    return {};
+  }
+
+  const skusStr = encodeURIComponent(skus.join(';'));
+  const req = await fetch(`${upstreamURL}/inventory?skus=${skusStr}`);
+  const json = await req.json();
+  return json.data;
+}
 
 /**
  * Fetches the pricing for a product
  * @param {string[]} skus
- * @returns {Promise<ProductPricingResponse>} pricing
+ * @returns {Promise<ProductPricingResponse>}
  */
 export async function lookupProductPricing(skus) {
   if (!skus || skus.length === 0) {
+    return {};
+  }
+
+  const valid = await store.auth.validate();
+  if (!valid) {
     return {};
   }
 
@@ -486,22 +542,6 @@ export async function signOut() {
   const ev = new Event('logout');
   document.body.dispatchEvent(ev);
 }
-
-/**
- * Application Store
- * @typedef {Object} Store
- */
-export const store = {
-  /**
-   * @type {import('../blocks/category/category.js').Product}
-   */
-  product: undefined,
-
-  /**
-   * @type {import('../blocks/cart/cart.js').Cart}
-   */
-  cart: undefined,
-};
 
 /**
  *
