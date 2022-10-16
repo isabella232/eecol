@@ -26,9 +26,9 @@ const UPSTREAM_DEV = 'http://localhost:3000';
 const UPSTREAM_PROD = 'https://main--eecol--hlxsites.helix3.dev';
 const dev = window.location.origin === UPSTREAM_DEV
   || new URL(window.location.href).searchParams.get('dev') === 'true';
-const upstreamURL = dev ? UPSTREAM_DEV : UPSTREAM_PROD;
+export const upstreamURL = dev ? UPSTREAM_DEV : UPSTREAM_PROD;
 
-const loggedIn = !!sessionStorage.getItem('account');
+const loggedIn = !!sessionStorage.getItem('account') || document.cookie.indexOf('eecol.auth') > -1;
 const loginRedirect = sessionStorage.getItem('loginRedirect') === 'true';
 let quickLoadAuth = loggedIn || loginRedirect;
 
@@ -37,9 +37,123 @@ if (loginRedirect) {
   sessionStorage.removeItem('loginRedirect');
 }
 
-export function isLoginInProgress() {
-  return loginRedirect;
-}
+/**
+ * Application Store
+ * @type {Store}
+ */
+export const store = new (class {
+  constructor() {
+    this._p = {};
+
+    this.upstreamURL = upstreamURL;
+    this.dev = dev;
+    this.product = undefined;
+
+    this.autoLoad = [
+      // module
+      'Auth',
+      // module -> [deps]
+      ['Inventory', ['Auth']],
+    ];
+    this.autoLoad.forEach(this._proxy.bind(this));
+
+    // manually proxy non-module but lazy blocks
+    this._proxy('cart');
+  }
+
+  isLoginInProgress = () => loginRedirect;
+
+  _proxy(mod) {
+    let n = mod; // name
+    if (Array.isArray(n)) {
+      [n] = n;
+    }
+    this[n] = new Proxy({}, {
+      get: (_, prop) => async () => {
+        await this.whenReady(n);
+        return this[n][prop];
+      },
+      set: (_, prop, val) => {
+        (async () => {
+          await this.whenReady(n);
+          this[n][prop] = val;
+        })();
+        return true;
+      },
+    });
+  }
+
+  isReady(name) {
+    const p = this._p[name];
+    return this[name] && p && !p[0] && !p[2] && !(this[name] instanceof Proxy);
+  }
+
+  isLoading(name) {
+    const p = this._p[name];
+    return this[name] && p && p[0] && p[2];
+  }
+
+  moduleReady(name) {
+    if (!this._p[name]) {
+      this._p[name] = [undefined, Promise.resolve(), false];
+    } else {
+      const [ready] = this._p[name];
+      if (ready) {
+        ready();
+      }
+    }
+  }
+
+  initState(name) {
+    let ready;
+    const prom = new Promise((res) => {
+      ready = () => {
+        console.debug(`[store] ${name} module ready`);
+        this._p[name][0] = undefined; // remove resolver
+        this._p[name][2] = false; // done loading
+        res();
+      };
+    });
+    this._p[name] = [ready, prom, false];
+  }
+
+  setLoading(name) {
+    if (!this._p[name]) {
+      this.initState(name);
+    }
+    this._p[name][2] = true;
+  }
+
+  whenReady(name) {
+    if (!this._p[name]) {
+      this.initState(name);
+    }
+    return this._p[name][1];
+  }
+
+  registerModule(name, module) {
+    this[name] = module;
+    this.moduleReady(name);
+  }
+
+  async load(name) {
+    if (this.isReady(name) || this.isLoading(name)) {
+      console.debug(`[store] skip loading ${name}`);
+      return undefined;
+    }
+    this.setLoading(name);
+
+    const ready = this.whenReady(name);
+    const pkg = await import(`./modules/${name}.js`);
+
+    if (!pkg.default) {
+      throw Error(`Invalid module: ${name}`);
+    }
+    const module = await pkg.default(this);
+    this.registerModule(name, module);
+    return ready;
+  }
+})();
 
 /**
  * Builds the hero autoblock
@@ -221,69 +335,35 @@ function replaceProductImages(data) {
  */
 export async function lookupCategory(category, activeFilterUrlParams) {
   let products = [];
-  const req = await fetch(`${upstreamURL}/productLookup?${category.uid ? `category=${category.uid}` : ''}${activeFilterUrlParams ? `&${activeFilterUrlParams}` : ''}`);
-  if (req.status === 200) {
-    products = await req.json();
-    products.data = replaceProductImages(products.data);
+  const res = await fetch(`${upstreamURL}/productLookup?${category.uid ? `category=${category.uid}` : ''}${activeFilterUrlParams ? `&${activeFilterUrlParams}` : ''}`);
+  if (!res.ok) {
+    return products;
   }
+  products = await res.json();
+  products.data = replaceProductImages(products.data);
   return products;
 }
 
 /**
  * Returns an array of products for a category
  * @param {string} sku The product sku
- * @returns {import('../blocks/category/category.js').Product[]} An array of products
+ * @returns {Promise<Product[]>}
  */
 export async function lookupProduct(sku) {
   let product = {};
-  if (sku) {
-    const req = await fetch(`${upstreamURL}/productLookup?sku=${sku}`);
-    const json = await req.json();
-    [product] = replaceProductImages(json.data);
+  if (!sku) {
+    return product;
   }
+  const res = await fetch(`${upstreamURL}/productLookup?sku=${sku}`);
+  if (!res.ok) {
+    console.error('failed to lookup product: ', res);
+    throw Error('failed to lookup product');
+  }
+
+  const data = await res.json();
+  [product] = replaceProductImages(data.data);
+
   return product;
-}
-
-/**
- * Fetches the inventory for a product
- * @param {string} customerId Customer Account Code
- * @param {string} productId Manufacturer part number
- * @param {string} productLine Manufacturer code from EECOL
- * @returns
- */
-export async function lookupProductInventory(customerId, productId, productLine) {
-  let inventoryData = {};
-  if (customerId && productId && productLine) {
-    const req = await fetch(`${upstreamURL}/inventory?customerId=${customerId}&productId=${productId}&productLine=${productLine}`);
-    const json = await req.json();
-    inventoryData = json.data;
-  }
-  return inventoryData;
-}
-
-/**
- * Mulesoft Pricing Response Object
- * @typedef {Object} ProductPricingResponse
- * @property {string} brand The product id, manufacturer_part_number_brand in CIF?
- * @property {string} currency Manufacturer code from EECOL
- * @property {string} customerId Available quantity
- * @property {import('../blocks/product/product.js').ProductPricing[]} products
- */
-
-/**
- * Fetches the pricing for a product
- * @param {string[]} skus
- * @returns {Promise<ProductPricingResponse>} pricing
- */
-export async function lookupProductPricing(skus) {
-  if (!skus || skus.length === 0) {
-    return {};
-  }
-
-  const skusStr = encodeURIComponent(skus.join(';'));
-  const req = await fetch(`${upstreamURL}/pricing?skus=${skusStr}`);
-  const json = await req.json();
-  return json.data;
 }
 
 /**
@@ -486,22 +566,6 @@ export async function signOut() {
   const ev = new Event('logout');
   document.body.dispatchEvent(ev);
 }
-
-/**
- * Application Store
- * @typedef {Object} Store
- */
-export const store = {
-  /**
-   * @type {import('../blocks/category/category.js').Product}
-   */
-  product: undefined,
-
-  /**
-   * @type {import('../blocks/cart/cart.js').Cart}
-   */
-  cart: undefined,
-};
 
 /**
  *

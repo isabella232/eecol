@@ -10,57 +10,8 @@ import {
   clearQueryParams,
   getSelectedAccount,
   checkProductsInCatalog,
+  signIn,
 } from '../../scripts/scripts.js';
-
-/**
- * Pagination Type
- * @typedef {Object} Pagination
- * @property {number} totalCount Total number of results
- * @property {number} currentPage The active page
- * @property {number} pageSize The number of items per page
- * @property {number} totalPages The total number of pages
- * @property {number} startPage The first page
- * @property {number} endPage The last page
- * @property {number} startIndex The index of the first item
- * @property {number} endIndex The index of the last item
- * @property {number[]} pages An array of page numbers
- */
-
-/**
- * Page Info Returned from the API
- * @typedef {Object} PageInfo
- * @property {number} currentPage Total number of results
- * @property {number} pageSize The active page
- * @property {number} totalPage The number of items per page
- */
-
-/**
- * Category Object
- * @typedef {Object} Category
- * @property {string} children_count The number of children in the category
- * @property {number} level The hierarchy level of the category
- * @property {string} name The name of the category
- * @property {string} path The path of the category (in category ids)
- * @property {string} uid The unique id of the category
- * @property {string} url_key The url key of the category
- * @property {string} url_path The url path of the category
- */
-
-/**
- * Product Object
- * @typedef {Object} Product
- * @property {string[]} categories An array of category ids
- * @property {string} description The product description
- * @property {number} discount_off The discount off the product
- * @property {number} final_price The final price of the product
- * @property {string} image The image url of the product
- * @property {string} name The name of the product
- * @property {string} path The path of the product
- * @property {number} regular_price The regular price of the product
- * @property {string} sku The sku of the product
- * @property {string} stock_status The stock status of the product
- * @property {import('../product/product.js').ProductPricing} pricing
- */
 
 const ExcludedFilterKeys = ['fulltext', 'page', 'query'];
 
@@ -620,20 +571,31 @@ class CategoryResultsController {
   }
 
   /**
+   * Renders a product card pricing
+   * @param {Product} product
+   * @param {Object} account
+   * @param {string} prefix
+   * @returns {string}
+   */
+  renderProductPricing(product, account, prefix) {
+    return `<div class="${prefix}-card-pricing">
+    <div class="pricing-content">
+      ${!account
+    ? '<a class="signin">Sign in for Price</a>'
+    : `<div class="pricing-loader">
+        <div class="dot-flashing"></div>
+      </div>`}
+    </div>
+  </div>`;
+  }
+
+  /**
    * Renders a product card
    * @param {Product} product
    * @param {string} prefix
-   * @returns The product card element
+   * @returns {HTMLDivElement}
    */
-  renderProductCard(product, prefix) {
-    const account = getSelectedAccount();
-    let productInCatalog = true;
-    if (account) {
-      const matches = checkProductsInCatalog([product.sku], account, [product]);
-      // eslint-disable-next-line no-unused-vars
-      [productInCatalog] = matches;
-    }
-
+  renderProductCard(product, account, prefix) {
     const card = document.createElement('div');
     card.className = `${prefix}-card`;
     card.innerHTML = /* html */`
@@ -641,14 +603,23 @@ class CategoryResultsController {
         <img src="${product.image}" alt="${product.name}" width="150" height="150"/>
       </a>
       <div class="${prefix}-card-details">
-        <div class="manufacturer">${titleCase(product.manufacturer)}</div>
-        <h4><a href="${product.path}">${product.name}</a></h4>
-        <div class="catalog">
-          <div>Manufacturer #: ${product.manufacturer_part_number_brand}</div>
-          <div>SKU #: ${product.sku}</div>
+        <div class="${prefix}-card-info">
+          <div class="manufacturer">${titleCase(product.manufacturer)}</div>
+          <h4><a href="${product.path}">${product.name}</a></h4>
+          <div class="catalog">
+            <div>MFR #: ${product.manufacturer_part_number_brand}</div>
+            <div>Part #: ${product.manufacturer_part_number}</div>
+          </div>
         </div>
+        ${this.renderProductPricing(product, account, prefix)}
       </div>`;
-    return (card);
+
+    if (!account) {
+      const signinBtn = card.querySelector('.signin');
+      signinBtn.addEventListener('click', () => signIn());
+    }
+
+    return card;
   }
 
   renderNoResults() {
@@ -697,33 +668,46 @@ class CategoryResultsController {
     // Update results cound
     document.querySelector('#products-results-count').textContent = totalCount;
 
-    if (collection.length > 0) {
-      // Render facets
-      const resultsElement = this.block.querySelector('.products-results');
-
-      // Sort and render the results
-      const sorts = {
-        name: (a, b) => a.name.localeCompare(b.name),
-        'price-asc': (a, b) => getNumber(a.final_price) - getNumber(b.final_price),
-        'price-desc': (a, b) => getNumber(b.final_price) - getNumber(a.final_price),
-      };
-      const sortBy = document.getElementById('products-sortby') ? document.getElementById('products-sortby').dataset.sort : 'best';
-      if (sortBy && sorts[sortBy]) collection.sort(sorts[sortBy]);
-
-      // Clear the resultsElement and render the new results set
-      resultsElement.innerHTML = '';
-      collection.forEach((product) => {
-        resultsElement.append(this.renderProductCard(product, 'products'));
-      });
-
-      this.categoryFilterController.render();
-      this.categoryPaginationController.render(totalCount, pageInfo);
-    } else {
+    if (!collection.length) {
       // Render no results
       const resultsContainer = this.block.querySelector('.results-container');
       resultsContainer.style.display = 'block';
       resultsContainer.innerHTML = this.renderNoResults();
+      return;
     }
+
+    // Render facets
+    const resultsElement = this.block.querySelector('.products-results');
+
+    // Sort and render the results
+    const sorts = {
+      name: (a, b) => a.name.localeCompare(b.name),
+      'price-asc': (a, b) => getNumber(a.final_price) - getNumber(b.final_price),
+      'price-desc': (a, b) => getNumber(b.final_price) - getNumber(a.final_price),
+    };
+    const sortBy = document.getElementById('products-sortby') ? document.getElementById('products-sortby').dataset.sort : 'best';
+    if (sortBy && sorts[sortBy]) collection.sort(sorts[sortBy]);
+
+    // Clear the resultsElement and render the new results set
+    resultsElement.innerHTML = '';
+
+    let matches;
+    const account = getSelectedAccount();
+    if (account) {
+      const skus = collection.map((product) => product.sku);
+      matches = checkProductsInCatalog(skus, account, collection);
+    }
+
+    collection.forEach((product, i) => {
+      const productInCatalog = !account || matches[i];
+
+      if (productInCatalog) {
+        resultsElement.append(this.renderProductCard(product, account, 'products'));
+      }
+    });
+
+    this.categoryFilterController.render();
+    this.categoryPaginationController.render(totalCount, pageInfo);
   }
 }
 

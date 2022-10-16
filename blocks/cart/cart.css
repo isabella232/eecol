@@ -38,6 +38,7 @@ header .cart .cart-badge:empty + .cart-mini {
 
 header .cart .cart-mini.visible{
     display: block;
+    cursor: default;
 };
 
 header .cart .cart-display {
@@ -104,6 +105,16 @@ header .cart .cart-display .cart-item-image img {
     display: block;
     width: 100px;
     flex: 0 0 100px;
+}
+
+header .cart .cart-display .cart-item-controls {
+    display: flex;
+    align-items: center;
+}
+
+header .cart .cart-display .remove-btn {
+    padding: 20px 10px;
+    cursor: pointer;
 }
 
 header .cart .cart-display .icon-trashcan {

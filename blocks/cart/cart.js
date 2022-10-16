@@ -6,11 +6,13 @@ import {
   getPlaceholders,
 } from '../../scripts/scripts.js';
 
-class Cart {
+export class Cart {
   constructor() {
     this.maxItem = 9;
     this.items = [];
     this.load();
+    const ready = new Event('module-ready', { name: 'cart' });
+    document.body.dispatchEvent(ready);
   }
 
   log() {
@@ -41,7 +43,10 @@ class Cart {
       this.plus(item.sku, quantity);
     } else {
       this.items.push({
-        sku, details, price, quantity,
+        sku,
+        details,
+        price,
+        quantity,
       });
     }
     this.update();
@@ -128,18 +133,23 @@ async function updateCartDisplay() {
     div.className = 'cart-item';
     if (!inCatalog) div.classList.add('cart-item-invalid');
     div.innerHTML = `
-    <div class="cart-item-image"><img src="${details.image}">
+    <div class="cart-item-image">
+      <img src="${details.image}">
     </div>
     <div class="cart-item-details">
-        <h6>${details.name}</h6>
+        <h6><a href="/ca/en/products/${details.sku.toLowerCase()}">
+          ${details.name}
+        </a></h6>
         ${createMods(['color', 'size'])}
         <p>${ph.qty} : ${item.quantity}</p>
         <p>${formatCurrency(item.price, ph.currency)} ${ph.ea}</p>
     </div>
     <div class="cart-item-controls">
-      <img src="/icons/trashcan.svg" class="icon icon-trashcan">
+      <a class="remove-btn">
+        <img src="/icons/trashcan.svg" class="icon icon-trashcan">
+      </a>
     </div>`;
-    const remove = div.querySelector('.icon-trashcan');
+    const remove = div.querySelector('.remove-btn');
     remove.addEventListener(('click'), () => cart.remove(item.sku));
     return div;
   };
@@ -158,8 +168,14 @@ async function updateCartDisplay() {
 
     const div = document.createElement('div');
     div.className = 'cart-mini';
-    div.innerHTML = `<div class="cart-header">
-      <div class="cart-numitems">${cart.totalItems} ${cart.totalItems === 1 ? ph.item : ph.items}</div><div class="cart-subtotal">${formatCurrency(cart.totalAmount, ph.currency)}</div></div>
+    div.innerHTML = `
+    <div class="cart-header">
+      <div class="cart-numitems">
+        ${cart.totalItems} ${cart.totalItems === 1 ? ph.item : ph.items}
+      </div>
+      <div class="cart-subtotal">
+        ${formatCurrency(cart.totalAmount, ph.currency)}
+      </div>
     </div>
     <div class="cart-items">
     </div>
@@ -189,7 +205,9 @@ async function updateCartDisplay() {
 export default function decorate(block) {
   document.body.addEventListener('cart-update', updateCartDisplay);
   document.body.addEventListener('account-change', updateCartDisplay);
-  store.cart = store.cart || new Cart();
+  if (!store.isReady('cart')) {
+    store.registerModule('cart', new Cart());
+  }
   const displayArea = document.createElement('div');
   displayArea.className = 'cart-display';
   block.append(displayArea);

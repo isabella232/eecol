@@ -48,7 +48,7 @@
 
 .address-list > div {
     margin: 0.5rem;
-    padding: 1rem 0 2rem 0;
+    padding: 1rem 0 2rem;
     position: relative;
 }
 
@@ -57,7 +57,7 @@
     position: absolute;
     bottom: 0;
     width: 90%;
-    border-bottom: solid rgba(0, 0, 0, 0.3) 1px;
+    border-bottom: solid rgba(0 0 0 / 30%) 1px;
 }
 
 .address-list > *:last-child {
@@ -66,8 +66,8 @@
 
 .address-tile p {
     font-size: var(--body-font-size-s);
-    margin-top: 0rem;
-    margin-bottom: 0rem;
+    margin-top: 0;
+    margin-bottom: 0;
 }
 
 .address-tile .is-default {
@@ -93,6 +93,6 @@
 
 .address-tile .is-default .icon img {
     position: relative;
-    top: 0px;
+    top: 0;
     filter: invert(100%);
 }

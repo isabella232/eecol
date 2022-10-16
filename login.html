@@ -4,10 +4,12 @@
   Logging in...
 
   <script type="module">
-    import { completeSignInRedirect } from '/scripts/auth.js';
+    import { store } from '/scripts/scripts.js';
+    import load, { completeSignInRedirect } from '/scripts/modules/Auth.js';
     // set a key to indicate login is in progress
     // this is cleared on every load of scripts.js
     window.sessionStorage.setItem('loginRedirecting', 'true');
+    await load(store);
     await completeSignInRedirect();
   </script>
 </body>

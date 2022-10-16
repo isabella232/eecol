@@ -10,7 +10,7 @@
  * governing permissions and limitations under the License.
  */
 
- :root {
+:root {
   /* brand colors */
   --bright-blue: #0099d8;
   --dark-gray: #1d252d;
@@ -290,7 +290,7 @@ main img {
   border-radius: 5px;
   background-color: var(--link-color);
   color: var(--link-color);
-  animation: dotFlashing 1s infinite linear alternate;
+  animation: dot-flashing 1s infinite linear alternate;
   animation-delay: .5s;
 }
 
@@ -308,7 +308,7 @@ main img {
   border-radius: 5px;
   background-color: var(--link-color);
   color: var(--link-color);
-  animation: dotFlashing 1s infinite alternate;
+  animation: dot-flashing 1s infinite alternate;
   animation-delay: 0s;
 }
 
@@ -319,7 +319,7 @@ main img {
   border-radius: 5px;
   background-color: var(--link-color);
   color: var(--link-color);
-  animation: dotFlashing 1s infinite alternate;
+  animation: dot-flashing 1s infinite alternate;
   animation-delay: 1s;
 }
 

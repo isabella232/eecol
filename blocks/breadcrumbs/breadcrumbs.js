@@ -9,7 +9,8 @@ function renderBreadcrumbs(block, breadcrumbs) {
 
   const breadCrumbsHTML = /* html */`
     <ul>
-      ${breadcrumbs.map(({ name, path }) => /* html */`<li><a href="${path}">${name}</a></li>`).join('')}
+      ${breadcrumbs.map(({ name, path }) => /* html */`
+      <li><a href="${path}">${name}</a></li>`).join('')}
     </ul > `;
 
   block.innerHTML = breadCrumbsHTML;
@@ -54,32 +55,34 @@ export default async function decorate(block) {
     renderBreadcrumbs(block, breadcrumbs);
   } else if (pageType === 'product') {
     const categoryIdDictionary = await getCategoriesIdDictionary();
-    const {
-      categories: productCategories,
-      name: productName,
-      url_key: productUrlKey,
-    } = store.product;
-    pathsArray.pop();
-    pathsArray.push('category');
-    productCategories.forEach((productCategoryId) => {
-      const productCategory = categoryIdDictionary[productCategoryId];
-      if (productCategory) {
-        const { name: categoryName, url_key: categoryUrlKey } = productCategory;
-        breadcrumbs.push({
-          name: categoryName,
-          path: `${pathsArray.join('/')}/${categoryUrlKey}`,
-        });
+    document.body.addEventListener('product-loaded', () => {
+      const {
+        categories: productCategories,
+        name: productName,
+        url_key: productUrlKey,
+      } = store.product;
+      pathsArray.pop();
+      pathsArray.push('category');
+      productCategories.forEach((productCategoryId) => {
+        const productCategory = categoryIdDictionary[productCategoryId];
+        if (productCategory) {
+          const { name: categoryName, url_key: categoryUrlKey } = productCategory;
+          breadcrumbs.push({
+            name: categoryName,
+            path: `${pathsArray.join('/')}/${categoryUrlKey}`,
+          });
 
-        pathsArray.push(categoryUrlKey);
-      }
+          pathsArray.push(categoryUrlKey);
+        }
+      });
+
+      breadcrumbs.push({
+        name: productName,
+        path: `${pathsArray.join('/')}/${productUrlKey}`,
+      });
+
+      renderBreadcrumbs(block, breadcrumbs);
     });
-
-    breadcrumbs.push({
-      name: productName,
-      path: `${pathsArray.join('/')}/${productUrlKey}`,
-    });
-
-    renderBreadcrumbs(block, breadcrumbs);
   } else {
     block.querySelectorAll(':scope > div').forEach((row) => {
       const [name, path] = [...row.querySelectorAll(':scope > div')].map((n) => n.innerText);
