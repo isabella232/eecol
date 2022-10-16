@@ -147,6 +147,8 @@ declare global {
     qty: number;
     /** The sellprice for the given uom */
     unitSellPrice: number;
+    /** The sellprice for the given uom */
+    totalSellPrice: number;
     /** Unit of measure, numeric value representing the pricing unit. */
     uom: string;
     /** Alphanumeric branch code */

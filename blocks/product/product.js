@@ -82,11 +82,11 @@ class ProductView {
 
   addToCart() {
     const quantityInput = this.block.querySelector('.cart .action input');
-    const quantity = parseInt(quantityInput.value, 2);
+    const quantity = parseInt(quantityInput.value, 10);
     store.cart.add(
       store.product.sku,
       store.product,
-      store.product.pricing.sellprice * quantity,
+      store.product.pricing.totalSellPrice * quantity,
       quantity,
     );
   }

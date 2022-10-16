@@ -527,7 +527,7 @@ header nav .breadcrumbs-wrapper {
     background-color: #fff;
   }
 
-   header nav .nav-toolbar .nav-search.desktop input {
+  header nav .nav-toolbar .nav-search.desktop input {
     border: 1px solid var(--border-color);
   }
 
