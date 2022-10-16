@@ -1,7 +1,9 @@
 import { PublicClientApplication, EventType } from '@azure/msal-browser';
 import * as MSAL from '@azure/msal-browser';
 
-import type { Cart as CartType } from '../blocks/cart/cart';
+import type { Cart as CartModule } from '../blocks/cart/cart';
+import type { InventoryStore as InventoryModule } from './Inventory';
+
 
 declare global {
   interface MSALStatic {
@@ -29,7 +31,6 @@ declare global {
     msToken?: string;
   }
 
-
   /**
    * Mulesoft Pricing Response Object
    */
@@ -55,27 +56,26 @@ declare global {
     zipCode: string;
   }
 
-  export interface BranchInventory {
+  export interface BranchStock {
     branchCode: string;
     qty: number;
     qtyInTransit: number;
     qtyCommited: number;
   }
 
-  export interface ProductInventory {
+  export interface ProductStock {
     isAvailable: boolean;
     /** call for availability */
     cfa?: boolean;
-    stock: BranchInventory[];
+    stock: BranchStock[];
   }
 
   /**
-   * Mulesoft Inventory Response Object
-   * TODO
+   * Mulesoft Stock Response Object
    */
-  export interface ProductInventoryResponse {
+  export interface ProductStockResponse {
     branchLocations: BranchLocation[];
-    productInventory: ProductInventory[];
+    productInventory: ProductStock[];
   }
 
   /**
@@ -165,18 +165,19 @@ declare global {
     isAvailable: boolean;
   }
 
+  export interface InventoryDetails {
+    pricing: ProductPricing;
+    stock: ProductStock;
+  }
+
   /**
    * Product Object
    */
-  export interface Product {
+  export interface Product extends InventoryDetails {
     /** An array of category ids */
     categories: string[];
     /** The product description */
     description: string;
-    /** The discount off the product */
-    discount_off: number;
-    /** The final price of the product */
-    final_price: number;
     /** The image url of the product */
     image: string;
     /** The name of the product */
@@ -187,43 +188,87 @@ declare global {
     regular_price: number;
     /** The sku of the product */
     sku: string;
-    /** The stock status of the product */
-    stock_status: string;
-    pricing: ProductPricing;
-    inventory: ProductInventory;
+    manufacturer_code: string;
+    manufacturer: string;
+    manufacturer_part_number: string;
+    manufacturer_part_number_brand: string;
   }
 
-  export type Cart = CartType;
+  export type Cart = CartModule;
 
   export interface AuthModule {
     validate: () => Promise<boolean>;
   }
 
-  export type LazyModule = 'cart' | 'auth';
+  export type LazyModuleType = 'Auth' | 'Inventory';
 
   interface ModuleMap {
-    cart: Cart;
-    auth: AuthModule;
-    [key: LazyModule]: any;
+    Auth: AuthModule;
+    Inventory: InventoryModule;
+    [key: LazyModuleType]: any;
   }
 
+  export type LazyModule<TName extends LazyModuleType> =
+    (store: Store) => Promise<ModuleMap[TName]>;
+
+  export type AutoLoadModule = LazyModuleType
+    | string
+    | [name: LazyModuleType | string, dependencies: (LazyModuleType | string)[]];
+
+  export type LazyModuleState = [
+    // function that resolves the promise
+    ready?: () => void,
+    // promise that resolves when module is done loading
+    promise: Promise<void>,
+    // whether the module is actively loading, but not yet ready
+    loading: boolean
+  ];
+
   interface StoreInternal {
-    _proms: Record<LazyModule, [
-      ready?: () => void,
-      promise: Promise<void>
-    ]>;
-    isLoginInProgress: () => boolean;
-    whenReady: (name: LazyModule) => Promise<void>;
-    attachModule<KName extends keyof ModuleMap>(
-      name: KName,
-      module: ModuleMap[KName]
-    ): void;
-    moduleReady: (name: LazyModule) => void;
+    /** Promises of modules being loaded and resolve functions */
+    _p: Record<LazyModule, LazyModuleState>;
+
+    /** Modules to load automatically in delayed */
+    autoLoad: AutoLoadModule[];
+
+    /** Selected product */
     product?: Product;
-    cart?: Cart;
-    auth: AuthModule;
+
+    /** Cart block module-like */
+    cart?: CartModule;
+
+    /** Upstream API URL */
+    upstreamURL: string;
+
+    /** Whether we're running in dev mode */
+    dev: boolean;
+
+    /** Set module to loading state */
+    setLoading: (name: LazyModuleType) => void;
+
+    /** Whether an active authentication redirect flow is occurring */
+    isLoginInProgress: () => boolean;
+
+    /** Load a module if needed */
+    load: (name: LazyModuleType) => Promise<void>;
+
+    /** Check if a module is ready synchronously */
+    isReady: (name: LazyModuleType) => boolean;
+
+    /** Promise that resolves when the module is ready */
+    whenReady: (name: LazyModuleType) => Promise<void>;
+
+    /** Register module at name */
+    registerModule<TName extends keyof ModuleMap>(
+      name: TName,
+      module: ModuleMap[TName]
+    ): void;
+
+    /** Declare module as ready */
+    moduleReady: (name: LazyModuleType) => void;
+
   }
-  export type Store = Omit<StoreInternal, '_proms'>;
+  export type Store = Omit<StoreInternal, '_p'> & ModuleMap;
 }
 
 export { };

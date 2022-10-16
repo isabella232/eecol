@@ -191,7 +191,9 @@ async function updateCartDisplay() {
 export default function decorate(block) {
   document.body.addEventListener('cart-update', updateCartDisplay);
   document.body.addEventListener('account-change', updateCartDisplay);
-  store.cart = store.cart || new Cart();
+  if (!store.isReady('cart')) {
+    store.registerModule('cart', new Cart());
+  }
   const displayArea = document.createElement('div');
   displayArea.className = 'cart-display';
   block.append(displayArea);

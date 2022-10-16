@@ -3,11 +3,9 @@ import {
   getPlaceholders,
   lookupProduct,
   titleCase,
-  lookupProductPricing,
-  getUserAccount,
   signIn,
   store,
-  lookupProductInventory,
+  getSelectedAccount,
 } from '../../scripts/scripts.js';
 
 /**
@@ -63,15 +61,6 @@ class ProductView {
       return;
     }
     const quantity = parseInt(quantityInput.value, 2);
-    console.log('store.cart: ', store.cart);
-    console.log('quantity: ', quantity);
-    console.log('store.canAdd: ', store.cart.canAdd(
-      store.product.sku,
-      store.product,
-      store.product.pricing.sellprice * quantity,
-      quantity,
-    ));
-
     if (store.cart
         && quantityInput
         && store.cart.canAdd(
@@ -127,7 +116,7 @@ class ProductView {
           <div class="name"><h3>${store.product.name}</h3></div>
           <div class="catalog">
             <div>MFR #: ${store.product.manufacturer_part_number_brand}</div>
-            <div>Part #: ${store.product.sku}</div>
+            <div>Part #: ${store.product.manufacturer_part_number}</div>
           </div>
         </div>
       </div>
@@ -176,11 +165,11 @@ class ProductView {
 
   /**
    * Renders the add to cart block
-   * @param {ProductInventory} inventory
+   * @param {ProductStock} stock
    * @param {ProductPricing} pricing
    * @returns {string}
    */
-  renderAddToCartBlock(inventory, pricing) {
+  renderAddToCartBlock(stock, pricing) {
     return /* html */`
       <div class="not-in-catalog">Item not in catalog</div>
       <div class="cost">
@@ -191,7 +180,7 @@ class ProductView {
         <div class="basismeasure">${pricing.uom}</div>
       </div>
       <div class="stock">
-        ${stockStatus(inventory)}
+        ${stockStatus(stock)}
       </div>
       ${pricing.isAvailable ? /* html */`
         <div class="action">
@@ -211,86 +200,31 @@ class ProductView {
   }
 
   /**
-   * @returns {Promise<ProductInventory>}
-   */
-  async fetchInventory() {
-    /** @type {ProductInventory} */
-    const inventory = {
-      isAvailable: false,
-      stock: [],
-    };
-    const res = await lookupProductInventory([this.sku]);
-    console.debug('[product] inventory: ', res);
-    if (!res.products || res.products.length === 0) {
-      return inventory;
-    }
-
-    inventory.stock = res.productInventory;
-    return inventory;
-  }
-
-  /**
-   * @returns {Promise<ProductPricing>}
-   */
-  async fetchPricing() {
-    const res = await lookupProductPricing([this.sku]);
-    console.debug('[product] pricing: ', res);
-
-    if (!res.products || res.products.length === 0) {
-      return {};
-    }
-
-    const [pricing] = res.products;
-
-    if (typeof pricing.numericuom === 'string') {
-      pricing.numericuom = parseInt(pricing.numericuom, 10);
-    }
-
-    if (pricing.qty > 0) {
-      pricing.isAvailable = true;
-    }
-
-    // TODO: pull currency from source of truth
-    if (!pricing.currency) {
-      pricing.currency = 'CA';
-    }
-
-    return pricing;
-  }
-
-  /**
    * Renders the product block
    */
   render() {
-    console.debug('[product] render() ', store.product);
     this.renderProductScaffolding();
     if (store.product.description) {
       this.renderProductOverview();
     }
 
-    this.userAccount = getUserAccount();
+    this.userAccount = getSelectedAccount();
     if (!this.userAccount) {
       this.renderPricingSignin();
       return;
     }
     this.renderPricingLoading();
 
-    Promise.all([
-      this.fetchInventory(),
-      this.fetchPricing(),
-    ]).then(([inventory, pricing]) => {
-      // if pricing declares as in stock and there are no inventory locations
-      // mark the product as "call for availability"
-      if (pricing.isAvailable && !inventory.isAvailable) {
-        inventory.cfa = true;
-      }
+    store.whenReady('Inventory').then(async () => {
+      const data = await store.Inventory.getDetails([this.sku]);
+      const { stock, pricing } = data[this.sku.toUpperCase()];
 
-      store.product.inventory = inventory;
+      store.product.stock = stock;
       store.product.pricing = pricing;
 
       const productCartElement = this.block.querySelector('.product-config .cart');
       productCartElement.innerHTML = this.renderAddToCartBlock(
-        inventory,
+        stock,
         pricing,
         pricing.currency,
       );

@@ -1,9 +1,6 @@
 /* global msal */
 
-// eslint-disable-next-line import/no-cycle
-import { loadScript } from './helix-web-library.esm.js';
-// eslint-disable-next-line import/no-cycle
-import { store } from './scripts.js';
+import { loadScript } from '../helix-web-library.esm.js';
 
 const MSAL_URL = 'https://alcdn.msauth.net/browser/2.30.0/js/msal-browser.min.js';
 export const AUTH_COOKIE = 'eecol.auth';
@@ -260,7 +257,30 @@ export async function completeSignIn() {
   resolveLogin(data);
 }
 
-async function init() {
+async function getAccounts(user) {
+  const resp = await fetch(`/accounts/account-map.json?id=${user}`);
+  const json = await resp.json();
+  const accounts = json.data.filter((elem) => (elem.email.startsWith('@') && user.endsWith(elem.email)) || username === elem.email);
+  for (let i = 0; i < accounts.length; i += 1) {
+    const account = accounts[i];
+    // eslint-disable-next-line no-await-in-loop
+    const actResp = await fetch(`/accounts/${account.accountId}.json`);
+    // eslint-disable-next-line no-await-in-loop
+    const actConfig = await actResp.json();
+    account.config = {};
+    actConfig.data.forEach((row) => {
+      let value = row.Value;
+      if (value.includes('\n')) value = value.split('\n');
+      account.config[row.Key] = value;
+    });
+  }
+  return accounts;
+}
+
+/**
+ * @returns {LazyModule<'Auth'>}
+ */
+export default async function load(store) {
   console.debug('[auth] init()');
   if (typeof msal === 'undefined') {
     await loadMSAL();
@@ -282,9 +302,7 @@ async function init() {
     msToken: getMSTokenFromCookie(),
     adToken: window.sessionStorage.getItem(AD_TOKEN_KEY),
   };
-}
 
-await init().finally(() => {
   ms.addEventCallback(async (message) => {
     if (message.eventType === msal.EventType.LOGOUT_SUCCESS) {
       window.location.reload();
@@ -303,10 +321,42 @@ await init().finally(() => {
     await signOut();
   });
 
-  store.attachModule('auth', {
+  // ----< tripod's auth poc >-------------------
+  // hack: get sign-in button
+  const account = await getCurrentAccount();
+  // const account = null;
+
+  const loggedIn = !!sessionStorage.getItem('account');
+  if (account && !loggedIn) {
+    sessionStorage.setItem('fullname', account.name);
+    account.accounts = await getAccounts(account.username);
+    account.accountsById = {};
+    account.accounts.forEach((acct) => {
+      account.accountsById[acct.accountId] = acct;
+    });
+    sessionStorage.setItem('account', JSON.stringify(account));
+    const updateEvent = new Event('login-update');
+    document.body.dispatchEvent(updateEvent);
+    const accountChange = new Event('account-change');
+    document.body.dispatchEvent(accountChange);
+  }
+
+  if (!account && loggedIn) {
+    sessionStorage.removeItem('fullname');
+    sessionStorage.removeItem('account');
+    const updateEvent = new Event('login-update');
+    document.body.dispatchEvent(updateEvent);
+    const accountChange = new Event('account-change');
+    document.body.dispatchEvent(accountChange);
+  }
+
+  //   // ----< eof tripod's auth poc >-------------------
+  // });
+
+  return {
     validate: async () => {
       const muleToken = await getMulesoftToken();
       return !!muleToken;
     },
-  });
-});
+  };
+}

@@ -26,9 +26,9 @@ const UPSTREAM_DEV = 'http://localhost:3000';
 const UPSTREAM_PROD = 'https://main--eecol--hlxsites.helix3.dev';
 const dev = window.location.origin === UPSTREAM_DEV
   || new URL(window.location.href).searchParams.get('dev') === 'true';
-const upstreamURL = dev ? UPSTREAM_DEV : UPSTREAM_PROD;
+export const upstreamURL = dev ? UPSTREAM_DEV : UPSTREAM_PROD;
 
-const loggedIn = !!sessionStorage.getItem('account') || document.cookie.indexOf('eecolauth') > -1;
+const loggedIn = !!sessionStorage.getItem('account') || document.cookie.indexOf('eecol.auth') > -1;
 const loginRedirect = sessionStorage.getItem('loginRedirect') === 'true';
 let quickLoadAuth = loggedIn || loginRedirect;
 
@@ -41,61 +41,119 @@ if (loginRedirect) {
  * Application Store
  * @type {Store}
  */
-/* eslint-disable no-underscore-dangle, no-use-before-define */
-export const store = {
-  _proms: {},
+export const store = new (class {
+  constructor() {
+    this._p = {};
+
+    this.upstreamURL = upstreamURL;
+    this.dev = dev;
+    this.product = undefined;
+
+    this.autoLoad = [
+      // module
+      'Auth',
+      // module -> [deps]
+      ['Inventory', ['Auth']],
+    ];
+    this.autoLoad.forEach(this._proxy.bind(this));
+
+    // manually proxy non-module but lazy blocks
+    this._proxy('cart');
+  }
+
+  isLoginInProgress = () => loginRedirect;
+
+  _proxy(mod) {
+    let n = mod; // name
+    if (Array.isArray(n)) {
+      [n] = n;
+    }
+    this[n] = new Proxy({}, {
+      get: (_, prop) => async () => {
+        await this.whenReady(n);
+        return this[n][prop];
+      },
+      set: (_, prop, val) => {
+        (async () => {
+          await this.whenReady(n);
+          this[n][prop] = val;
+        })();
+        return true;
+      },
+    });
+  }
+
+  isReady(name) {
+    const p = this._p[name];
+    return this[name] && p && !p[0] && !p[2] && !(this[name] instanceof Proxy);
+  }
+
+  isLoading(name) {
+    const p = this._p[name];
+    return this[name] && p && p[0] && p[2];
+  }
+
   moduleReady(name) {
-    if (!this._proms[name]) {
-      this._proms[name] = [undefined, Promise.resolve()];
+    if (!this._p[name]) {
+      this._p[name] = [undefined, Promise.resolve(), false];
     } else {
-      const [ready] = this._proms[name] || [];
+      const [ready] = this._p[name];
       if (ready) {
-        ready(name);
-        console.info(`[store] ${name} module ready`);
+        ready();
       }
     }
-  },
-  whenReady(name) {
-    if (!this._proms[name]) {
-      let ready;
-      const prom = new Promise((res) => {
-        ready = () => {
-          this._proms[name][0] = undefined;
-          res();
-        };
-      });
-      this._proms[name] = [ready, prom];
-    }
-    return this._proms[name][1];
-  },
-  attachModule(name, module) {
-    store[name] = module;
-    this.moduleReady(name);
-  },
-  isLoginInProgress: () => loginRedirect,
-  product: undefined,
-  cart: storeProxy('cart'),
-  auth: storeProxy('auth'),
-};
-/* eslint-enable no-underscore-dangle, no-use-before-define */
+  }
 
-function storeProxy(name) {
-  return new Proxy({}, {
-    get(_, prop) {
-      return async () => {
-        await store.whenReady(name);
-        return store[name][prop];
+  initState(name) {
+    let ready;
+    const prom = new Promise((res) => {
+      ready = () => {
+        console.debug(`[store] ${name} module ready`);
+        this._p[name][0] = undefined; // remove resolver
+        this._p[name][2] = false; // done loading
+        res();
       };
-    },
-    set(_, prop, val) {
-      (async () => {
-        await store.whenReady(name);
-        store[name][prop] = val;
-      })();
-      return false;
-    },
-  });
-}
+    });
+    this._p[name] = [ready, prom, false];
+  }
+
+  setLoading(name) {
+    if (!this._p[name]) {
+      this.initState(name);
+    }
+    this._p[name][2] = true;
+  }
+
+  whenReady(name) {
+    if (!this._p[name]) {
+      this.initState(name);
+    }
+    return this._p[name][1];
+  }
+
+  registerModule(name, module) {
+    this[name] = module;
+    this.moduleReady(name);
+  }
+
+  async load(name) {
+    if (this.isReady(name) || this.isLoading(name)) {
+      console.debug(`[store] skip loading ${name}`);
+      return undefined;
+    }
+    this.setLoading(name);
+
+    const ready = this.whenReady(name);
+    const pkg = await import(`./modules/${name}.js`);
+
+    if (!pkg.default) {
+      throw Error(`Invalid module: ${name}`);
+    }
+    const module = await pkg.default(this);
+    this.registerModule(name, module);
+    return ready;
+  }
+})();
 
 /**
  * Builds the hero autoblock
@@ -298,48 +356,6 @@ export async function lookupProduct(sku) {
     [product] = replaceProductImages(json.data);
   }
   return product;
-}
-
-/**
- * Fetches the inventory for a product
- * @param {string[]} skus
- * @returns {Promise<ProductInventoryResponse>}
- */
-export async function lookupProductInventory(skus) {
-  if (!skus || skus.length === 0) {
-    return {};
-  }
-
-  const valid = await store.auth.validate();
-  if (!valid) {
-    return {};
-  }
-
-  const skusStr = encodeURIComponent(skus.join(';'));
-  const req = await fetch(`${upstreamURL}/inventory?skus=${skusStr}`);
-  const json = await req.json();
-  return json.data;
-}
-
-/**
- * Fetches the pricing for a product
- * @param {string[]} skus
- * @returns {Promise<ProductPricingResponse>}
- */
-export async function lookupProductPricing(skus) {
-  if (!skus || skus.length === 0) {
-    return {};
-  }
-
-  const valid = await store.auth.validate();
-  if (!valid) {
-    return {};
-  }
-
-  const skusStr = encodeURIComponent(skus.join(';'));
-  const req = await fetch(`${upstreamURL}/pricing?skus=${skusStr}`);
-  const json = await req.json();
-  return json.data;
 }
 
 /**
