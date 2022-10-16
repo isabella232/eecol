@@ -37,13 +37,13 @@ class ProductView {
       this.sku = window.location.pathname.split('/').pop();
       const product = await lookupProduct(this.sku);
       store.product = product;
-
       document.title = store.product.name;
-      document.dispatchEvent(new CustomEvent('product-loaded'));
+      document.body.dispatchEvent(new Event('product-loaded'));
 
       this.ph = await getPlaceholders('/ca/en');
       this.render();
     } catch (error) {
+      console.error('[product] failed to load: ', error);
       this.render404();
     }
 
@@ -83,14 +83,12 @@ class ProductView {
   addToCart() {
     const quantityInput = this.block.querySelector('.cart .action input');
     const quantity = parseInt(quantityInput.value, 2);
-    if (store.cart) {
-      store.cart.add(
-        store.product.sku,
-        store.product,
-        store.product.pricing.sellprice * quantity,
-        quantity,
-      );
-    }
+    store.cart.add(
+      store.product.sku,
+      store.product,
+      store.product.pricing.sellprice * quantity,
+      quantity,
+    );
   }
 
   /**
@@ -112,7 +110,7 @@ class ProductView {
       <div class="product-block">
         <picture><img src="${store.product.image}"></picture>
         <div class="details">
-          <div class="manufacturer">${titleCase(store.product.manufacturer)}</div>
+          <div class="manufacturer">${titleCase(store.product.manufacturer || '')}</div>
           <div class="name"><h3>${store.product.name}</h3></div>
           <div class="catalog">
             <div>MFR #: ${store.product.manufacturer_part_number_brand}</div>
@@ -174,7 +172,7 @@ class ProductView {
       <div class="not-in-catalog">Item not in catalog</div>
       <div class="cost">
         <div class="numericuom">
-          ${pricing.currency}$${pricing.unitSellPrice}
+          ${pricing.currency}$${pricing.unitSellPrice.toFixed(2)}
         </div>
         <span>/</span>
         <div class="basismeasure">${pricing.uom}</div>

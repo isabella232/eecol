@@ -335,11 +335,12 @@ function replaceProductImages(data) {
  */
 export async function lookupCategory(category, activeFilterUrlParams) {
   let products = [];
-  const req = await fetch(`${upstreamURL}/productLookup?${category.uid ? `category=${category.uid}` : ''}${activeFilterUrlParams ? `&${activeFilterUrlParams}` : ''}`);
-  if (req.status === 200) {
-    products = await req.json();
-    products.data = replaceProductImages(products.data);
+  const res = await fetch(`${upstreamURL}/productLookup?${category.uid ? `category=${category.uid}` : ''}${activeFilterUrlParams ? `&${activeFilterUrlParams}` : ''}`);
+  if (!res.ok) {
+    return products;
   }
+  products = await res.json();
+  products.data = replaceProductImages(products.data);
   return products;
 }
 
@@ -350,11 +351,18 @@ export async function lookupCategory(category, activeFilterUrlParams) {
  */
 export async function lookupProduct(sku) {
   let product = {};
-  if (sku) {
-    const req = await fetch(`${upstreamURL}/productLookup?sku=${sku}`);
-    const json = await req.json();
-    [product] = replaceProductImages(json.data);
+  if (!sku) {
+    return product;
   }
+  const res = await fetch(`${upstreamURL}/productLookup?sku=${sku}`);
+  if (!res.ok) {
+    console.error('failed to lookup product: ', res);
+    throw Error('failed to lookup product');
+  }
+
+  const data = await res.json();
+  [product] = replaceProductImages(data.data);
+
   return product;
 }
 

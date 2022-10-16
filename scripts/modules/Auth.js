@@ -127,8 +127,6 @@ async function getTokenRedirect(request) {
 }
 
 export async function getADToken() {
-  console.debug('[auth] getADToken()');
-
   const prevAdToken = state.adToken;
   const { accessToken: adToken } = await getTokenRedirect(loginRequest);
   // new AD token means we need a new MS token
@@ -195,7 +193,6 @@ function getMSTokenFromCookie() {
  * Get a mulesoft token, refresh if AD token has changed
  */
 async function getMulesoftToken() {
-  console.debug('[auth] getMulesoftToken()');
   const adToken = await getADToken(); // revokes msToken if needed
   if (!state.msToken) {
     console.info('[auth] refreshing api auth');
@@ -242,7 +239,6 @@ export async function completeSignInRedirect() {
  */
 export async function completeSignIn() {
   console.debug('[auth] completeSignIn()');
-
   const data = await ms.handleRedirectPromise();
 
   try {
@@ -281,7 +277,6 @@ async function getAccounts(user) {
  * @returns {LazyModule<'Auth'>}
  */
 export default async function load(store) {
-  console.debug('[auth] init()');
   if (typeof msal === 'undefined') {
     await loadMSAL();
   }

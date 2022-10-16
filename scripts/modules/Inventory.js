@@ -35,6 +35,8 @@ export class InventoryStore {
    * @returns {Promise<Record<string, InventoryDetails>>}
    */
   async fetchDetails(skus) {
+    // eslint-disable-next-line no-param-reassign
+    skus = skus.map((sku) => sku.toUpperCase());
     const [stock, pricing] = await Promise.all([
       this.fetchStock(skus),
       this.fetchPricing(skus),
@@ -43,8 +45,6 @@ export class InventoryStore {
     /** @type {Record<string, InventoryDetails>} */
     const data = {};
     skus.forEach((sku) => {
-      // eslint-disable-next-line no-param-reassign
-      sku = sku.toUpperCase();
       const item = {
         pricing: pricing[sku],
         stock: stock[sku],
@@ -68,15 +68,22 @@ export class InventoryStore {
    * @returns {Promise<Record<string, ProductStock>>}
    */
   async fetchStock(skus) {
+    const empty = () => ({});
+
     const res = await this._fetchStock(skus);
-    console.debug('[Inventory] stock: ', res);
     if (!res.productInventory || res.productInventory.length === 0) {
-      return {};
+      return Object.fromEntries(skus.map((sku) => [sku, empty()]));
     }
 
     const stockData = {};
+    const skusLeft = Object.fromEntries(skus.map((sku) => [sku, 0]));
     res.productInventory.forEach((product) => {
       stockData[product.sku] = product;
+      delete skusLeft[product.sku];
+    });
+
+    Object.keys(skusLeft).forEach((sku) => {
+      stockData[sku] = empty();
     });
     return stockData;
   }
@@ -86,14 +93,17 @@ export class InventoryStore {
    * @returns {Promise<Record<string, ProductPricing>>}
    */
   async fetchPricing(skus) {
+    const empty = () => ({});
+
     const res = await this._fetchPricing(skus);
     console.debug('[Inventory] pricing: ', res);
 
     if (!res.products || res.products.length === 0) {
-      return {};
+      return Object.fromEntries(skus.map((sku) => [sku, empty()]));
     }
 
     const pricingData = {};
+    const skusLeft = Object.fromEntries(skus.map((sku) => [sku, 0]));
     res.products.forEach((pricing) => {
       if (typeof pricing.numericuom === 'string') {
         pricing.numericuom = parseInt(pricing.numericuom, 10);
@@ -108,7 +118,12 @@ export class InventoryStore {
         pricing.currency = 'CA';
       }
 
+      delete skusLeft[pricing.sku];
       pricingData[pricing.sku] = pricing;
+    });
+
+    Object.keys(skusLeft).forEach((sku) => {
+      pricingData[sku] = empty();
     });
 
     return pricingData;
