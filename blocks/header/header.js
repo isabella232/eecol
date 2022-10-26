@@ -8,7 +8,6 @@ import {
   buildBlock,
 } from '../../scripts/helix-web-library.esm.js';
 import {
-  searchProducts,
   getCategories,
   setSelectedAccount,
   getSelectedAccount,
@@ -18,7 +17,19 @@ import {
   signIn,
   signOut,
   getPlaceholders,
+  searchSuggestions,
 } from '../../scripts/scripts.js';
+
+function debounce(cb, time = 1000) {
+  let timer;
+  return (...args) => {
+    if (timer) {
+      clearTimeout(timer);
+      timer = undefined;
+    }
+    timer = setTimeout(() => cb(...args), time);
+  };
+}
 
 async function updateTopBar() {
   const account = sessionStorage.getItem('account') ? JSON.parse(sessionStorage.getItem('account')) : '';
@@ -278,18 +289,30 @@ export default async function decorate(block) {
     };
 
     const fillSuggestions = async (input) => {
+      console.log('fillSuggestions');
       const query = input.value;
       const parent = input.parentElement;
       const suggestionsContainer = parent.querySelector('.nav-search-suggestions');
-      suggestionsContainer.textContent = '';
+
+      if (query.length < 3) {
+        // clear suggestions
+        suggestionsContainer.textContent = '';
+        return;
+      }
+
+      // TODO: insert loading indicator in suggestionsContainer
+
       const results = filterNav(query);
       if (results.length < MAX_SUGGESTIONS) {
-        const products = await searchProducts({ fulltext: query });
-        while (results.length < MAX_SUGGESTIONS && products.length) {
-          const res = products.shift();
-          results.push({ title: res.title, href: res.path });
+        const products = await searchSuggestions(query);
+        while (results.length < MAX_SUGGESTIONS && products.items.length) {
+          const { productView: item } = products.items.shift();
+          results.push({ title: item.name, href: `/ca/en/products/${item.sku.toLowerCase()}` });
         }
       }
+
+      // TODO: remove loading indicator in suggestionsContainer
+
       results.forEach((r) => {
         const option = document.createElement('div');
         option.innerHTML = `<a href="${r.href}">${addHighlight(r.title, query)}</a>`;
@@ -324,9 +347,9 @@ export default async function decorate(block) {
     searchMobile.prepend(suggestions);
     searchDesktop.prepend(suggestions.cloneNode(true));
 
-    addEventListeners([mobileInput, desktopInput], 'input', (e) => {
+    addEventListeners([mobileInput, desktopInput], 'input', debounce((e) => {
       fillSuggestions(e.target);
-    });
+    }));
 
     addEventListeners([mobileInput, desktopInput], 'focus', (e) => {
       const parent = e.target.parentElement;
