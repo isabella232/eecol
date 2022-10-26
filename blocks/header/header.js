@@ -293,10 +293,9 @@ export default async function decorate(block) {
       const query = input.value;
       const parent = input.parentElement;
       const suggestionsContainer = parent.querySelector('.nav-search-suggestions');
+      suggestionsContainer.textContent = '';
 
       if (query.length < 3) {
-        // clear suggestions
-        suggestionsContainer.textContent = '';
         return;
       }
 
