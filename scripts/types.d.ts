@@ -2,8 +2,19 @@ import { PublicClientApplication, EventType } from '@azure/msal-browser';
 import * as MSAL from '@azure/msal-browser';
 
 import type { Cart as CartModule } from '../blocks/cart/cart';
-import type { InventoryStore as InventoryModule } from './Inventory';
+import type { InventoryStore as InventoryModule } from './modules/Inventory';
+import type {
+  ProductData as ProductDataType,
+  ProductPage as ProductPageType,
+  PageInfo as PageInfoType
+} from '../blocks/product/Product';
+import type {
+  ProductView as ProductViewType
+} from '../blocks/product/ProductView';
 
+type Common<A, B> = {
+  [P in keyof A & keyof B]: A[P] | B[P];
+}
 
 declare global {
   interface MSALStatic {
@@ -17,6 +28,21 @@ declare global {
     validateAuth: () => Promise<void>;
   }
   export var msal: MSALStatic;
+
+  export type ProductData = ProductDataType;
+  export type ProductPage = ProductPageType;
+  export type ProductView = ProductViewType;
+  export type ProductBase = Common<ProductData, ProductView> & { image: string };
+
+  export interface SearchResult {
+    page_info: PageInfoType;
+    items: { productView: ProductView }[];
+  }
+
+  export interface SearchSuggestionResult {
+    page_info: PageInfoType;
+    items: { productView: Pick<ProductView, 'sku' | 'name' | 'shortDescription'> }[];
+  }
 
   export type RedirectRequest = MSAL.RedirectRequest;
 
@@ -207,7 +233,6 @@ declare global {
   interface ModuleMap {
     Auth: AuthModule;
     Inventory: InventoryModule;
-    [key: LazyModuleType]: any;
   }
 
   export type LazyModule<TName extends LazyModuleType> =
@@ -219,7 +244,7 @@ declare global {
 
   export type LazyModuleState = [
     // function that resolves the promise
-    ready?: () => void,
+    ready: (() => void) | undefined,
     // promise that resolves when module is done loading
     promise: Promise<void>,
     // whether the module is actively loading, but not yet ready
@@ -228,7 +253,7 @@ declare global {
 
   interface StoreInternal {
     /** Promises of modules being loaded and resolve functions */
-    _p: Record<LazyModule, LazyModuleState>;
+    _p: Record<string, LazyModuleState>;
 
     /** Modules to load automatically in delayed */
     autoLoad: AutoLoadModule[];

@@ -9,4 +9,11 @@
     "[css]": {
         "editor.defaultFormatter": "stylelint.vscode-stylelint"
     },
+    "todohighlight.isEnable": true,
+    "todohighlight.keywords": [
+        "TODO:",
+        "KLUDGE:",
+        "NOTE:",
+        "HACK:"
+    ]
 }

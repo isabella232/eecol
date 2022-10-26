@@ -145,8 +145,8 @@ export class InventoryStore {
       return {};
     }
 
-    const skusStr = encodeURIComponent(skus.join(';'));
-    const req = await fetch(`${upstreamURL}/stock?skus=${skusStr}`);
+    const skusStr = encodeURIComponent(skus.join(','));
+    const req = await fetch(`${upstreamURL}/stock?sku=${skusStr}`);
     const json = await req.json();
     return json.data;
   }
@@ -167,8 +167,8 @@ export class InventoryStore {
       return {};
     }
 
-    const skusStr = encodeURIComponent(skus.join(';'));
-    const req = await fetch(`${upstreamURL}/pricing?skus=${skusStr}`);
+    const skusStr = encodeURIComponent(skus.join(','));
+    const req = await fetch(`${upstreamURL}/pricing?sku=${skusStr}`);
     const json = await req.json();
     return json.data;
   }

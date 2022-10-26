@@ -491,6 +491,8 @@ class CategoryResultsController {
   }
 
   async fetchProducts() {
+    // TODO: use searchProducts if there's no filter, just a query
+    // it uses catalog service which is ~75% faster
     this.results = await lookupCategory(
       this.category,
       this.categoryFilterController.getFilterQueryParamsString(),

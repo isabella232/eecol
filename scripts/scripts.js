@@ -24,7 +24,7 @@ import {
 
 const UPSTREAM_DEV = 'http://localhost:3000';
 const UPSTREAM_PROD = 'https://main--eecol--hlxsites.helix3.dev';
-const dev = window.location.origin === UPSTREAM_DEV
+const dev = window.location.hostname.startsWith('localhost')
   || new URL(window.location.href).searchParams.get('dev') === 'true';
 export const upstreamURL = dev ? UPSTREAM_DEV : UPSTREAM_PROD;
 
@@ -239,7 +239,7 @@ export function titleCase(string) {
  */
 async function fetchCategories() {
   if (!window.categories) {
-    const response = await fetch(`${upstreamURL}/categories`);
+    const response = await fetch(`${upstreamURL}/api/categories`);
     const json = await response.json();
     const categories = json.data.categories?.items[0].children;
     const categoriesKeyDictionary = {};
@@ -288,7 +288,7 @@ export async function getCategoriesNameDictionary() {
 
 /**
  * Returns a dictionary of fetched categories
- * @returns {Object}
+ * @returns {Promise<any>}
  */
 export async function getCategoriesKeyDictionary() {
   if (!window.categoriesKeyDictionary) {
@@ -300,7 +300,7 @@ export async function getCategoriesKeyDictionary() {
 
 /**
  * Returns a dictionary of fetched categories
- * @returns {Object}
+ * @returns {Promise<any>}
  */
 export async function getCategoriesIdDictionary() {
   if (!window.categoriesIdDictionary) {
@@ -310,19 +310,12 @@ export async function getCategoriesIdDictionary() {
   return window.categoriesIdDictionary;
 }
 
-/**
- * Given a query string, return matching products
- * @param {string} query
- * @returns {Object}[]
- */
-export async function searchProducts(query) {
-  // TODO: Implement search
-  return query;
-}
-
 function replaceProductImages(data) {
   return data.map((product) => {
-    product.image = `${product.image.replace('https://qa-store.eecol.com/', `${upstreamURL}/`)}?format=webply&quality=medium&width=750`;
+    if (typeof product.image === 'string') {
+      const url = new URL(product.image);
+      product.image = `${upstreamURL}${url.pathname}?format=webply&quality=medium&width=750`;
+    }
     return product;
   });
 }
@@ -330,12 +323,12 @@ function replaceProductImages(data) {
 /**
  * Returns an array of products for a category
  * @param {Object} category
- * @param {string} categoryFacets
+ * @param {Promise<string>} categoryFacets
  * @returns
  */
 export async function lookupCategory(category, activeFilterUrlParams) {
   let products = [];
-  const res = await fetch(`${upstreamURL}/productLookup?${category.uid ? `category=${category.uid}` : ''}${activeFilterUrlParams ? `&${activeFilterUrlParams}` : ''}`);
+  const res = await fetch(`${upstreamURL}/api/products?${category.uid ? `category=${category.uid}` : ''}${activeFilterUrlParams ? `&${activeFilterUrlParams}` : ''}`);
   if (!res.ok) {
     return products;
   }
@@ -345,16 +338,33 @@ export async function lookupCategory(category, activeFilterUrlParams) {
 }
 
 /**
+ * @param {ProductView[]} views
+ * @returns {ProductBase[]}
+ */
+function transformProductViews(views) {
+  return views.map((v) => {
+    /** @type {ProductBase} */
+    const product = v;
+    if (v.images && v.images.length) {
+      // eslint-disable-next-line prefer-destructuring
+      product.image = v.images[0];
+    }
+
+    return product;
+  });
+}
+
+/**
  * Returns an array of products for a category
  * @param {string} sku The product sku
- * @returns {Promise<Product[]>}
+ * @returns {Promise<ProductData[]>}
  */
 export async function lookupProduct(sku) {
   let product = {};
   if (!sku) {
     return product;
   }
-  const res = await fetch(`${upstreamURL}/productLookup?sku=${sku}`);
+  const res = await fetch(`${upstreamURL}/api/products/${sku}`);
   if (!res.ok) {
     console.error('failed to lookup product: ', res);
     throw Error('failed to lookup product');
@@ -367,8 +377,67 @@ export async function lookupProduct(sku) {
 }
 
 /**
+ * Returns an array of products for a category
+ * @param {string} sku The product sku
+ * @returns {Promise<ProductBase[]>}
+ */
+export async function lookupCatalogProduct(sku) {
+  if (!sku) {
+    return {};
+  }
+  const res = await fetch(`${upstreamURL}/api/catalog/products/${sku}`);
+  if (!res.ok) {
+    console.error(`failed to lookup catalog product (${res.status}): `, res);
+    throw Error('failed to lookup catalog product');
+  }
+
+  const data = await res.json();
+  return replaceProductImages(transformProductViews(data.data.products))[0];
+}
+
+/**
+ * Given a query string, return matching products
+ * @param {string} query
+ * @param {number} page
+ * @returns {Promise<SearchResult>}
+ */
+export async function searchProducts(query, page) {
+  // TODO: Implement search
+  if (!query) {
+    return {};
+  }
+  const res = await fetch(
+    `${upstreamURL}/api/catalog/search?q=${query}${page ? `&p=${page}` : ''}`,
+  );
+  if (!res.ok) {
+    console.error(`failed to search (${res.status}): `, res);
+    throw Error('failed to search');
+  }
+
+  return res.json();
+}
+
+/**
+ *
+ * @param {string} query
+ * @returns {Promise<SearchSuggestionResult>}
+ */
+export async function searchSuggestions(query) {
+  if (!query) {
+    return {};
+  }
+  const res = await fetch(`${upstreamURL}/api/catalog/search?q=${query}&s=1`);
+  if (!res.ok) {
+    console.error(`failed to get suggestions (${res.status}): `, res);
+    throw Error('failed to get suggestions');
+  }
+
+  return res.json();
+}
+
+/**
  * Return site placeholders
- * @returns {Object} Site placeholders
+ * @returns {Promise<Record<string, string>>} Site placeholders
  */
 export async function getPlaceholders() {
   return fetchPlaceholders('/ca/en');
