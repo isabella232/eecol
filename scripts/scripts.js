@@ -680,7 +680,7 @@ HelixApp.init({
   productionDomains: ['poc-staging.eecol.com'],
   lazyStyles: true,
   eagerHeader: true,
-  favIcon: '/styles/favicon.ico',
+  favicon: '/styles/favicon.ico',
 })
   .withLoadEager(async () => {
     await fetchCategories();
