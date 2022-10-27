@@ -57,7 +57,7 @@
   --heading-font-size-xs: 16px;  
 
   /* nav height */
-  --nav-height: 161px;
+  --nav-height: 145px;
   --breadcrumbs-height: 69px; 
 }
 
@@ -442,4 +442,10 @@ main .section.background-image .default-content-wrapper {
 
 main .section.section.background-image .default-content-wrapper {
   text-align: left;
+}
+
+@media (min-width: 1000px) {
+  :root {
+    --nav-height: 161px;
+  }
 }
