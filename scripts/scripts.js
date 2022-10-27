@@ -264,7 +264,7 @@ async function fetchCategories() {
 
 /**
  * Returns fetched categories
- * @returns {Object}
+ * @returns {Promise<Record<string, string>>}
  */
 export async function getCategories() {
   if (!window.categories) {
@@ -417,6 +417,19 @@ export async function searchProducts(query, page) {
   return res.json();
 }
 
+export function getIcon(icons, alt) {
+  // eslint-disable-next-line no-param-reassign
+  icons = Array.isArray(icons) ? icons : [icons];
+  const [defaultIcon, mobileIcon] = icons;
+  let name = (mobileIcon && window.innerWidth < 600) ? mobileIcon : defaultIcon;
+  let icon = `${name}.svg`;
+  if (name.endsWith('.png')) {
+    icon = name;
+    name = name.slice(0, -4);
+  }
+  return (`<img class="icon icon-${name}${alt ? ` icon-${alt}` : ''}" src="/icons/${icon}" alt="${alt || name}">`);
+}
+
 /**
  *
  * @param {string} query
@@ -459,11 +472,31 @@ export function formatCurrency(amount, currency) {
 
 /**
  * Helper function to add a callback to multiple HTMLElements
+ * @param {HTMLElement|HTMLElement[]} els - elements
+ * @param {string|string[]} evs - events
+ * @param {(e: Event)=>any} cb - handler
  */
-export function addEventListeners(elements, event, callback) {
-  elements.forEach((e) => {
-    e.addEventListener(event, callback);
+export function addEventListeners(els, evs, cb) {
+  // eslint-disable-next-line no-param-reassign
+  els = Array.isArray(els) ? els : [els];
+  // eslint-disable-next-line no-param-reassign
+  evs = Array.isArray(evs) ? evs : [evs];
+
+  els.forEach((elem) => {
+    evs.forEach((ev) => {
+      elem.addEventListener(ev, cb);
+    });
   });
+}
+
+/**
+ * Make element from string
+ * @param {string} content
+ */
+export function el(content) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = content;
+  return tmp.firstElementChild;
 }
 
 /**

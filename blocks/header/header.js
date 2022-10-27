@@ -1,6 +1,5 @@
 import {
   readBlockConfig,
-  decorateIcons,
   makeLinksRelative,
   loadBlock,
   decorateBlock,
@@ -9,18 +8,24 @@ import {
 } from '../../scripts/helix-web-library.esm.js';
 import {
   getCategories,
-  setSelectedAccount,
   getSelectedAccount,
   checkCategoriesInCatalog,
   addEventListeners,
   PageTypes,
-  signIn,
-  signOut,
   getPlaceholders,
   searchSuggestions,
+  getIcon,
+  el,
 } from '../../scripts/scripts.js';
 
-function debounce(cb, time = 1000) {
+const MAX_SUGGESTIONS = 10;
+
+const d = document;
+let categs; // categories
+let phP; // placeholders promise
+let nav; // nav root element
+
+function debounce(cb, time = 600) {
   let timer;
   return (...args) => {
     if (timer) {
@@ -33,75 +38,23 @@ function debounce(cb, time = 1000) {
 
 async function updateTopBar() {
   const account = sessionStorage.getItem('account') ? JSON.parse(sessionStorage.getItem('account')) : '';
-  const nav = document.querySelector('nav');
 
-  const navWrapper = document.querySelector('.nav-topbar-wrapper');
-  const authNavi = navWrapper.children[1];
-  while (authNavi.firstChild) {
-    authNavi.firstChild.remove();
-  }
+  const wrapper = d.querySelector('.topbar-cta').firstChild;
+  const [msg, authLink] = [...wrapper.childNodes];
+  const def = msg.firstChild;
 
   if (account && account.name) {
-    const { accounts } = account;
-    if (accounts.length) {
-      const selectedAccount = getSelectedAccount();
-      const select = document.createElement('select');
-      // select.classList.add('account-selector');
-      accounts.forEach((acct) => {
-        const option = document.createElement('option');
-        option.value = acct.accountId;
-        option.textContent = `Account: ${acct.accountName}`;
-        if (acct.accountId === selectedAccount.accountId) option.setAttribute('selected', '');
-        select.append(option);
-      });
-      select.addEventListener(('change'), () => {
-        console.log('set select from header: ', select.value, account.accountsById[select.value]);
-        setSelectedAccount(select.value, account.accountsById[select.value]);
-      });
-      authNavi.append(select);
-    }
-
-    authNavi.appendChild(document.createTextNode('Welcome '));
-    const btnProfile = document.createElement('a');
-    authNavi.appendChild(btnProfile);
-    btnProfile.innerText = account.name;
-    // btnProfile.href = '/profile.html';
-    btnProfile.href = '/my-account/';
-
-    authNavi.appendChild(document.createTextNode(' | '));
-
-    const btnSignOut = document.createElement('a');
-    authNavi.appendChild(btnSignOut);
-    btnSignOut.innerText = 'Sign out';
-    btnSignOut.style.cursor = 'pointer';
-    btnSignOut.onclick = signOut;
-
-    const accountBtn = nav.querySelector('.nav-toolbar-actions .account');
-    accountBtn.addEventListener('click', () => {
-      window.location = '/my-account/';
-    });
-
-    const accountBtnText = nav.querySelector('.nav-toolbar-actions .account .icon span');
-    accountBtnText.textContent = 'Account';
+    // set welcome message
+    console.debug('[header] set account: ', account);
+    msg.innerText = 'welcome';
+    authLink.style.display = 'none';
   } else {
-    const btnSignIn = document.createElement('a');
-    authNavi.appendChild(btnSignIn);
-    btnSignIn.innerText = 'Sign in';
-    btnSignIn.onclick = signIn;
-
-    btnSignIn.style.cursor = 'pointer';
-    authNavi.appendChild(document.createTextNode(' or '));
-    const btnRegister = document.createElement('a');
-    authNavi.appendChild(btnRegister);
-    btnRegister.href = '/content/eecol/ca/en/register';
-    btnRegister.innerText = 'Register';
-    authNavi.appendChild(document.createTextNode(' CAD'));
-
-    const accountBtn = nav.querySelector('.nav-toolbar-actions .account');
-    accountBtn.onclick = signIn;
-
-    const accountBtnText = nav.querySelector('.nav-toolbar-actions .account .icon span');
-    accountBtnText.textContent = 'Login';
+    console.debug('[header] unset account');
+    msg.innerText = def;
+    phP.then((ph) => {
+      msg.innerText = `${ph.shopAt || def}`;
+    });
+    authLink.style.display = 'inline-block';
   }
 }
 
@@ -117,7 +70,7 @@ function collapseAllNavSections(sections) {
 }
 
 function createCategory(title, children) {
-  const ul = document.createElement('ul');
+  const ul = d.createElement('ul');
 
   const firstChild = children[0];
   if (firstChild) {
@@ -126,7 +79,7 @@ function createCategory(title, children) {
   ul.classList.add('nav-group');
 
   if (title) {
-    const li = document.createElement('li');
+    const li = d.createElement('li');
     li.classList.add('nav-group-title');
     li.innerText = title;
     ul.appendChild(li);
@@ -134,7 +87,7 @@ function createCategory(title, children) {
 
   children.forEach((child) => {
     if (child.url_path) {
-      const li = document.createElement('li');
+      const li = d.createElement('li');
       li.innerHTML = `<a href="/ca/en/products/category/${child.url_path.split('.')[0]}">${child.name}</a>${child.level === 2 ? '<span><img class="disclosure-arrow" src="/icons/disclosure-white.svg"></span>' : ''}`;
       if (child.children) {
         li.append(createCategory(child.level !== 3 ? child.name : '', child.children));
@@ -146,298 +99,307 @@ function createCategory(title, children) {
 }
 
 /**
+ * @param {HTMLDivElement} content
+ */
+function createTopBar(content) {
+  const items = ['tagline', 'cta'];
+
+  // TODO: handle languages, switcher
+  const wrapper = el(/* html */`
+<div class="nav-topbar-wrapper">
+  <div class="nav-topbar">
+    <div class="language-switcher">
+      <span>English</span>
+      ${getIcon('canada-flag', 'flag')}
+      ${getIcon('caret')}
+    </div>
+    ${[...content.children].map((c, i) => `<div class="topbar-${items[i]}">${c.outerHTML}</div>`).join('\n')}
+  </div>
+</div>`);
+
+  return wrapper;
+}
+
+function createToolbar() {
+  const toolbar = el(/* html */`
+<div class="nav-toolbar">
+  <div class="nav-toolbar-actions">
+    <div class="account">
+      <a class="action">
+        ${getIcon('account')}
+        <span class="label">Login</span>
+      </a>
+    </div>
+    <div class="cart" data-block-name="cart" data-block-status="loaded">
+      <a class="action">
+        ${getIcon('cart')}
+        <span class="label cart-display">Cart</span>
+        <div class="portal" id="cart">
+          <div class="cart"><!-- lazy --></div>
+        </div>
+      </a>
+    </div>
+    <div class="hamburger">
+      <a class="action">
+        ${getIcon('hamburger')}
+        <span class="label">Menu</span>
+      </a>
+    </div>
+  </div>
+</div>`);
+
+  // add hamburger click
+  const hamburger = toolbar.querySelector('div.hamburger');
+  hamburger.addEventListener('click', () => {
+    const expanded = nav.getAttribute('aria-expanded') === 'true';
+    nav.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+  });
+
+  // load cart once on click
+  const cartPortal = toolbar.querySelector('.portal#cart');
+  let cartBlock = cartPortal.children[0];
+  cartPortal.addEventListener('click', () => {
+    if (!cartBlock) return;
+    decorateBlock(cartBlock);
+    loadBlock(cartBlock);
+    cartBlock = undefined;
+  });
+
+  return toolbar;
+}
+
+/**
+ * @param {HTMLDivElement} content
+ */
+function createNavSections(content) {
+  const first = content.firstElementChild.firstElementChild;
+  first.remove(); // div > ul > li (products)
+
+  const sections = el(/* html */`
+  <div class="nav-sections">
+    <ul class="level-1">
+      <li class="nav-drop" aria-expanded="false">
+        ${getIcon('hamburger')}
+        <u>Products</u>
+        <ul id="nav-products-root" class="level-2 nav-group">
+          <li>
+            <div class="nav-products-loading">
+              <span class="dot-flashing"></span>
+            </div>
+          </li>
+        </ul>
+      </li>
+      ${content.firstElementChild.innerHTML}
+    </ul>
+  </div>`);
+
+  const expand = (e) => {
+    const section = e.target.closest('li');
+    const expanded = section.getAttribute('aria-expanded') === 'true';
+    collapseAllNavSections(sections);
+    section.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+  };
+
+  sections.querySelectorAll(':scope > ul > li').forEach((section) => {
+    const subsection = section.querySelector('ul');
+    if (!subsection) {
+      return;
+    }
+    section.classList.add('nav-drop');
+    subsection.classList.add('nav-group', 'level-2');
+    section.addEventListener('click', expand);
+  });
+
+  return sections;
+}
+
+function createSearch() {
+  const search = el(/* html */`
+<div class="nav-search">
+  <div class="nav-search-suggestions"></div>
+  <input id="nav-search-input" list="nav-search-suggestion" placeholder="Search by keyword, item or part number">
+  <p>
+    <a href="/search">
+      ${getIcon('search')}
+    </a>
+  </p>
+</div>`);
+
+  const input = search.querySelector('input');
+  const suggestions = search.querySelector('nav-search-suggestions');
+
+  phP.then((ph) => { input.setAttribute('placeholder', ph.searchPlaceholder); });
+
+  const addHighlight = (text, highlight) => {
+    if (highlight) {
+      const offset = text.toLowerCase().indexOf(highlight.toLowerCase());
+      if (offset >= 0) {
+        return `${text.substr(0, offset)}<span class="highlight">${text.substr(offset, highlight.length)}</span>${text.substr(offset + highlight.length)}`;
+      }
+    }
+    return text;
+  };
+
+  const filterNav = (query) => {
+    const q = query.toLowerCase();
+    const results = [...nav.querySelectorAll('a')].filter((e) => e.textContent.toLowerCase().includes(q)).slice(0, MAX_SUGGESTIONS);
+    return results.map((e) => ({ title: e.textContent, href: e.href, hidden: !!e.closest('.hidden') }));
+  };
+
+  const fillSuggestions = async () => {
+    const query = input.value;
+    suggestions.textContent = '';
+
+    if (query.length < 3) {
+      suggestions.classList.remove('visible');
+      return;
+    }
+
+    // TODO: insert loading indicator in suggestionsContainer
+
+    const results = filterNav(query);
+    if (results.length < MAX_SUGGESTIONS) {
+      const products = await searchSuggestions(query);
+      while (results.length < MAX_SUGGESTIONS && products.items.length) {
+        const { productView: item } = products.items.shift();
+        results.push({ title: item.name, href: `/ca/en/products/${item.sku.toLowerCase()}` });
+      }
+    }
+
+    // TODO: remove loading indicator in suggestionsContainer
+
+    suggestions.classList[results.length > 0 ? 'add' : 'remove']('visible');
+
+    results.forEach((r) => {
+      const option = d.createElement('div');
+      option.innerHTML = `<a href="${r.href}">${addHighlight(r.title, query)}</a>`;
+      suggestions.append(option);
+    });
+  };
+
+  addEventListeners(input, 'input', debounce((e) => {
+    fillSuggestions(e.target);
+  }));
+
+  addEventListeners(input, 'blur', () => {
+    setTimeout(() => suggestions.classList.remove('visible'), 100);
+  });
+
+  addEventListeners(input, 'keypress', (e) => {
+    if (e.key === 'Enter') {
+      window.location.href = `/ca/en/search?query=${e.target.value}`;
+    }
+  });
+
+  return search;
+}
+
+const filterCategoriesByAccount = () => {
+  /* adjust navigation based on account information */
+  const account = getSelectedAccount();
+  if (account && categs) {
+    const topLevel = [...categs.querySelectorAll(':scope > li > a')];
+    const show = checkCategoriesInCatalog(topLevel.map((a) => a.textContent), account);
+    topLevel.forEach((a, i) => { a.closest('li').className = show[i] ? '' : 'hidden'; });
+  }
+};
+
+function updateProductsList() {
+  filterCategoriesByAccount();
+
+  const root = nav.querySelector('#nav-products-root');
+  if (!root || !categs) return;
+
+  // TODO: fix filtering when account is switched,
+  // currently categs global is detached because innerHTML is inserted here
+  root.innerHTML = categs.innerHTML;
+}
+
+async function setupProducts() {
+  const productsBtn = nav.querySelector('#nav-products-root').parentElement;
+
+  const loadProducts = async () => {
+    console.debug('[header] lazy load products list');
+    productsBtn.removeEventListener('mouseenter', loadProducts);
+
+    categs = await getCategories();
+    categs = createCategory('', categs);
+    updateProductsList();
+  };
+  addEventListeners(productsBtn, 'mouseenter', loadProducts);
+}
+
+/**
  * decorates the header, mainly the nav
  * @param {Element} block The header block element
  */
 
 export default async function decorate(block) {
-  let categs;
   const cfg = readBlockConfig(block);
   block.textContent = '';
 
-  const ph = await getPlaceholders();
-  const categories = await getCategories();
+  phP = getPlaceholders();
 
   // fetch nav content
   const navPath = cfg.nav || '/nav';
   const resp = await fetch(`${navPath}.plain.html`);
-  if (resp.ok) {
-    const html = await resp.text();
+  if (!resp.ok) {
+    console.error('Failed to load nav: ', resp);
+    return;
+  }
+  const html = await resp.text();
 
-    // decorate nav DOM
-    const nav = document.createElement('nav');
-    nav.innerHTML = html;
-    decorateIcons(nav);
-    makeLinksRelative(nav);
+  // decorate nav DOM
+  nav = d.createElement('nav');
+  nav.innerHTML = html;
+  makeLinksRelative(nav);
 
-    const classes = ['topbar', 'toolbar', 'sections', 'search'];
-    classes.forEach((e, j) => {
-      const section = nav.children[j];
-      if (section) section.classList.add(`nav-${e}`);
-    });
+  const topbar = nav.children[0];
+  topbar.replaceWith(createTopBar(topbar));
 
-    const navSections = [...nav.children][2];
-    if (navSections) {
-      navSections.querySelectorAll(':scope > ul > li').forEach((navSection) => {
-        if (navSection.querySelector('ul')) navSection.classList.add('nav-drop');
-        navSection.addEventListener('click', () => {
-          const expanded = navSection.getAttribute('aria-expanded') === 'true';
-          collapseAllNavSections(navSections);
-          navSection.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-        });
-      });
-    }
+  const toolbar = nav.children[1];
+  toolbar.replaceWith(createToolbar());
 
-    nav.querySelectorAll('.nav-tools .icon').forEach((icon) => {
-      icon.closest('p').classList.add(`nav-tools-${icon.className.split('icon-')[1]}`);
-    });
+  const navSections = nav.children[2];
+  navSections.replaceWith(createNavSections(navSections));
 
-    const topbar = nav.querySelector('.nav-topbar');
-    const topbarWrapper = document.createElement('div');
-    topbarWrapper.classList.add('nav-topbar-wrapper');
+  const search = nav.children[3];
+  search.replaceWith(createSearch(search));
 
-    topbarWrapper.innerHTML = topbar.innerHTML;
-    topbar.innerHTML = '';
+  const logo = el(/* html */`
+  <div class="nav-logo">
+    <picture>
+      ${getIcon('logo.png')}
+    </picture>
+  </div>`);
+  nav.prepend(logo);
 
-    const languageSwitcher = document.createElement('div');
-    languageSwitcher.classList.add('language-switcher');
+  logo.addEventListener('click', () => {
+    window.location = '/';
+  });
 
-    // TODO: Embedding the svg for now just so I can change the color..
-    // This is shared with the facets filter so can't change in the svg file.
-    // Embedding svg using the img tag kills the ability to change the color via css.
-    languageSwitcher.innerHTML = /* html */`
-    <span>EN</span>
-    <img class='canada-flag' src='/icons/canada-flag.svg' width="11" height="12"/>
-    <svg xmlns="http://www.w3.org/2000/svg" width="237.201" height="348.328" viewBox="0 0 237.201 348.328"  fill="currentColor">
-      <g transform="matrix(0.995, -0.105, 0.105, 0.995, -258.757, -67.721)" fill="currentColor">
-        <path id="Path_4" data-name="Path 4" fill="currentColor" stroke="currentColor" d="M271.09,444.41,451.98,296.28l-23.062-28.164-.051.043L303.507,115.6l-28.125,23.1,125.33,152.51-152.68,125.03Z"/>
-      </g>
-    </svg>
-    `;
-    topbarWrapper.prepend(languageSwitcher);
+  nav.setAttribute('aria-expanded', 'false');
+  block.append(nav);
 
-    topbar.append(topbarWrapper);
+  d.body.addEventListener('account-change', debounce(async () => {
+    /* account switch */
+    updateProductsList();
+  }, 1));
 
-    nav.querySelector('.nav-toolbar').remove();
-
-    const navToolbar = /* html */`
-      <div class="nav-toolbar-logo">
-        <picture>
-          <img loading="lazy" alt="Home" type="image/png" src="./media_11e0e648e5f78452ada12404956dff13905bac140.webp?width=139&amp;format=webp&amp;optimize=medium" width="139" height="45">
-        </picture>
-      </div>
-      <div class="nav-search desktop">
-        <input id="nav-search-input" list="nav-search-suggestion" placeholder="Search by keyword, item or part number">
-        <p><a href="/search"><span class="icon icon-search"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path fill-rule="evenodd" clip-rule="evenodd" d="M18.3 14.4C20.7 11.2 20.542 6.7 17.6 3.8C14.5 0.7 9.5 0.7 6.3 3.8C3.2 7 3.2 12.1 6.3 15.2C9.2 18.1 13.8 18.3 16.9 15.8C16.9 15.9 16.9 15.9 16.9 15.9L21.1 20.1C21.6 20.5 22.2 20.5 22.6 20.1C23 19.7412 22.9971 19.1081 22.6066 18.7175L18.364 14.4749C18.3493 14.4603 18.3343 14.4462 18.319 14.4326ZM16.2426 5.28251C18.5858 7.62565 18.5858 11.4246 16.2426 13.7678C13.8995 16.1109 10.1005 16.1109 7.75736 13.7678C5.41421 11.4246 5.41421 7.62565 7.75736 5.28251C10.1005 2.93936 13.8995 2.93936 16.2426 5.28251Z" fill="currentColor"></path>
-        </svg></span></a></p>
-      </div>
-      <div class="nav-toolbar-actions">
-        <div class="account">
-          <div class="icon">
-            <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="user" class="svg-inline--fa fa-user cmp-AccountContainer__accountTrigger__icon" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path fill="currentColor" d="M224 256c70.7 0 128-57.3 128-128S294.7 0 224 0 96 57.3 96 128s57.3 128 128 128zm89.6 32h-16.7c-22.2 10.2-46.9 16-72.9 16s-50.6-5.8-72.9-16h-16.7C60.2 288 0 348.2 0 422.4V464c0 26.5 21.5 48 48 48h352c26.5 0 48-21.5 48-48v-41.6c0-74.2-60.2-134.4-134.4-134.4z"></path></svg>
-            <span>Login</span>
-          </div>
-        </div>
-        <div class="cart" data-block-name="cart" data-block-status="loaded">
-          <div class="icon">
-            <svg aria-hidden="true" focusable="false" data-prefix="fas" data-icon="shopping-cart" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><path fill="currentColor" d="M528.12 301.319l47.273-208C578.806 78.301 567.391 64 551.99 64H159.208l-9.166-44.81C147.758 8.021 137.93 0 126.529 0H24C10.745 0 0 10.745 0 24v16c0 13.255 10.745 24 24 24h69.883l70.248 343.435C147.325 417.1 136 435.222 136 456c0 30.928 25.072 56 56 56s56-25.072 56-56c0-15.674-6.447-29.835-16.824-40h209.647C430.447 426.165 424 440.326 424 456c0 30.928 25.072 56 56 56s56-25.072 56-56c0-22.172-12.888-41.332-31.579-50.405l5.517-24.276c3.413-15.018-8.002-29.319-23.403-29.319H218.117l-6.545-32h293.145c11.206 0 20.92-7.754 23.403-18.681z"></path></svg>
-            <span class="cart-display">Cart</span>
-          </div>
-        </div>
-        <div class="hamburger">
-          <div class="icon">
-            <svg class="svg-inline--fa fa-bars fa-w-14 mobile-header-button__icon" aria-hidden="true" focusable="false" data-prefix="fas" data-icon="bars" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" data-fa-i2svg="">
-              <path fill="currentColor" d="M16 132h416c8.837 0 16-7.163 16-16V76c0-8.837-7.163-16-16-16H16C7.163 60 0 67.163 0 76v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16zm0 160h416c8.837 0 16-7.163 16-16v-40c0-8.837-7.163-16-16-16H16c-8.837 0-16 7.163-16 16v40c0 8.837 7.163 16 16 16z"></path>
-            </svg>
-            <span>Menu</span>
-          </div>
-        </div>
-      </div>`;
-
-    const navToolbarContainer = document.createElement('div');
-    navToolbarContainer.classList.add('nav-toolbar');
-    navToolbarContainer.innerHTML = navToolbar;
-
-    nav.append(navToolbarContainer);
-
-    const searchMobile = nav.querySelector('.nav-search');
-    const suggestions = document.createElement('div');
-    suggestions.className = 'nav-search-suggestions';
-    const mobileInput = document.createElement('input');
-    mobileInput.id = 'nav-search-input';
-    mobileInput.setAttribute('list', 'nav-search-suggestion');
-    mobileInput.setAttribute('placeholder', ph.searchPlaceholder);
-    searchMobile.prepend(mobileInput);
-
-    const MAX_SUGGESTIONS = 10;
-
-    const addHighlight = (text, highlight) => {
-      if (highlight) {
-        const offset = text.toLowerCase().indexOf(highlight.toLowerCase());
-        if (offset >= 0) {
-          return `${text.substr(0, offset)}<span class="highlight">${text.substr(offset, highlight.length)}</span>${text.substr(offset + highlight.length)}`;
-        }
-      }
-      return text;
-    };
-
-    const filterNav = (query) => {
-      const q = query.toLowerCase();
-      const results = [...nav.querySelectorAll('a')].filter((e) => e.textContent.toLowerCase().includes(q)).slice(0, MAX_SUGGESTIONS);
-      return results.map((e) => ({ title: e.textContent, href: e.href, hidden: !!e.closest('.hidden') }));
-    };
-
-    const fillSuggestions = async (input) => {
-      console.log('fillSuggestions');
-      const query = input.value;
-      const parent = input.parentElement;
-      const suggestionsContainer = parent.querySelector('.nav-search-suggestions');
-      suggestionsContainer.textContent = '';
-
-      if (query.length < 3) {
-        return;
-      }
-
-      // TODO: insert loading indicator in suggestionsContainer
-
-      const results = filterNav(query);
-      if (results.length < MAX_SUGGESTIONS) {
-        const products = await searchSuggestions(query);
-        while (results.length < MAX_SUGGESTIONS && products.items.length) {
-          const { productView: item } = products.items.shift();
-          results.push({ title: item.name, href: `/ca/en/products/${item.sku.toLowerCase()}` });
-        }
-      }
-
-      // TODO: remove loading indicator in suggestionsContainer
-
-      results.forEach((r) => {
-        const option = document.createElement('div');
-        option.innerHTML = `<a href="${r.href}">${addHighlight(r.title, query)}</a>`;
-        suggestionsContainer.append(option);
-      });
-    };
-
-    const filterCategoriesByAccount = () => {
-      /* adjust navigation based on account information */
-      const account = getSelectedAccount();
-      if (account) {
-        const topLevel = [...categs.querySelectorAll(':scope > li > a')];
-        const show = checkCategoriesInCatalog(topLevel.map((a) => a.textContent), account);
-        topLevel.forEach((a, i) => { a.closest('li').className = show[i] ? '' : 'hidden'; });
-      }
-    };
-
-    const buildProductCategories = (e) => {
-      const navGroup = e.target.querySelector('.nav-group li');
-      if (navGroup) return;
-
-      categs = createCategory('Categories', categories);
-      const products = nav.querySelector('.nav-sections > ul:first-of-type > li:first-of-type > ul');
-      products.replaceWith(categs);
-
-      filterCategoriesByAccount();
-    };
-
-    const searchDesktop = nav.querySelector('.nav-search.desktop');
-    const desktopInput = searchDesktop.querySelector('input');
-
-    searchMobile.prepend(suggestions);
-    searchDesktop.prepend(suggestions.cloneNode(true));
-
-    addEventListeners([mobileInput, desktopInput], 'input', debounce((e) => {
-      fillSuggestions(e.target);
-    }));
-
-    addEventListeners([mobileInput, desktopInput], 'focus', (e) => {
-      const parent = e.target.parentElement;
-      const suggestionsContainer = parent.querySelector('.nav-search-suggestions');
-      setTimeout(() => suggestionsContainer.classList.add('visible'), 300);
-    });
-
-    addEventListeners([mobileInput, desktopInput], 'blur', (e) => {
-      const parent = e.target.parentElement;
-      const suggestionsContainer = parent.querySelector('.nav-search-suggestions');
-      setTimeout(() => suggestionsContainer.classList.remove('visible'), 300);
-    });
-
-    addEventListeners([mobileInput, desktopInput], 'keypress', (e) => {
-      if (e.key === 'Enter') {
-        window.location.href = `/ca/en/search?query=${e.target.value}`;
-      }
-    });
-
-    const logo = nav.querySelector('.nav-toolbar-logo');
-    logo.addEventListener('click', () => {
-      window.location = '/';
-    });
-
-    // hamburger for mobile
-    const hamburger = navToolbarContainer.querySelector('.hamburger');
-    hamburger.addEventListener('click', () => {
-      const expanded = nav.getAttribute('aria-expanded') === 'true';
-      // document.body.style.overflowY = expanded ? '' : 'hidden';
-      nav.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-    });
-
-    nav.setAttribute('aria-expanded', 'false');
-    decorateIcons(nav);
-    block.append(nav);
-
-    const products = nav.querySelector('.nav-sections > ul:first-of-type > li:first-of-type');
-    const productsCategoriesList = document.createElement('ul');
-    productsCategoriesList.classList.add('nav-group');
-    productsCategoriesList.classList.add('level-2');
-    products.append(productsCategoriesList);
-    products.addEventListener('click', (e) => {
-      buildProductCategories(e);
-    });
-
-    const level1 = document.querySelector('nav .nav-sections > ul');
-    level1.classList.add('level-1');
-
-    // Add hamburger icon to Products section
-    const productsHeading = document.querySelector('nav .nav-sections > ul > li:first-of-type');
-    productsHeading.classList.add('nav-drop');
-
-    const hamburgerIcon = document.createElement('div');
-    hamburgerIcon.classList.add('nav-hamburger-icon');
-    productsHeading.prepend(hamburgerIcon);
-
-    const solutions = document.querySelector('header nav .nav-sections .level-1 .nav-drop:nth-child(2) ul');
-    solutions.classList.add('level-2');
-    solutions.classList.add('nav-group');
-
-    document.body.addEventListener('account-change', () => {
-      /* account switch */
-      filterCategoriesByAccount();
-    });
-
-    document.body.addEventListener('login-update', () => {
-      /* logged-in state changed, reflect in top bar */
-      updateTopBar();
-    });
-
+  d.body.addEventListener('login-update', () => {
+    /* logged-in state changed, reflect in top bar */
     updateTopBar();
+  });
 
-    /* init cart */
-    const cartIcon = block.querySelector('header .nav-toolbar .nav-toolbar-actions .cart .icon');
-    const cart = document.createElement('div');
-    cartIcon.parentElement.append(cart);
-    cart.append(cartIcon);
-    cart.classList.add('cart');
-    decorateBlock(cart);
-    loadBlock(cart);
+  updateTopBar();
 
-    const pageType = getMetadata('pagetype');
-    if (PageTypes.includes(pageType)) {
-      const section = document.createElement('div');
-      document.querySelector('nav').append(section);
-      const breadcrumbsBlock = buildBlock('breadcrumbs', '');
-      section.append(breadcrumbsBlock);
-      decorateBlock(breadcrumbsBlock);
-      loadBlock(breadcrumbsBlock, false);
-    }
+  setupProducts();
+
+  const pageType = getMetadata('pagetype');
+  if (PageTypes.includes(pageType)) {
+    const breadcrumbs = buildBlock('breadcrumbs', '');
+    nav.append(el(`<div>${breadcrumbs.innerHTML}</div>`));
+    decorateBlock(breadcrumbs);
+    loadBlock(breadcrumbs, false);
   }
 }
