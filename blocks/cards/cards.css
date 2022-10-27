@@ -21,14 +21,27 @@
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 }
 
-
 .cards > ul > li {
+    background-color: var(--background-color);
+    border-radius: 4px;
+}
+
+.cards.quiet > ul > li {
     border: 1px solid var(--highlight-background-color);
-    background-color: var(--background-color)
 }
 
 .cards .cards-card-body {
-    margin: 16px;
+    padding: 0.625rem 0.5rem;
+    background: var(--highlight-background-color);
+    border-radius: 0 0 4px 4px;
+}
+
+.cards.quiet .cards-card-body {
+    background: transparent
+}
+
+.cards.center .cards-card-body {
+    text-align: center;
 }
 
 .cards .cards-card-image {
@@ -43,6 +56,7 @@
     width: 100%;
     aspect-ratio: 4 / 3;
     object-fit: cover;
+    border-radius: 4px 4px 0 0;
 }
 
 .cards.logos > ul > li {

@@ -156,6 +156,40 @@ export const store = new (class {
 })();
 
 /**
+ * Make element from string
+ * @param {string} content
+ */
+export function el(content) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = content;
+  return tmp.firstElementChild;
+}
+
+/**
+ * HTML string template tag
+ * @param {string[]} strs
+ * @param  {...(string|Element)[]} params
+ */
+export function html(strs, ...params) {
+  let res = '';
+  strs.forEach((s, i) => {
+    const p = params[i];
+    res += s;
+    if (!p) return;
+    if (p instanceof HTMLElement) {
+      res += p.outerHTML;
+    } else {
+      res += p;
+    }
+  });
+  return res;
+}
+
+export function htmlel(strs, ...params) {
+  return el(html(strs, ...params));
+}
+
+/**
  * Builds the hero autoblock
  * @param {HTMLElement} main
  */
@@ -177,6 +211,12 @@ function buildHeroBlock(main) {
 
     section.append(buildBlock('hero', { elems }));
     main.prepend(section);
+  } else if (!h1 && picture && picture.parentElement.tagName === 'MAIN') {
+    main.prepend(htmlel`
+    <div>
+      ${buildBlock('hero', { elems: [htmlel`<p>${picture}</p>`] })}
+    </div>`);
+    picture.remove();
   }
 }
 
@@ -487,16 +527,6 @@ export function addEventListeners(els, evs, cb) {
       elem.addEventListener(ev, cb);
     });
   });
-}
-
-/**
- * Make element from string
- * @param {string} content
- */
-export function el(content) {
-  const tmp = document.createElement('div');
-  tmp.innerHTML = content;
-  return tmp.firstElementChild;
 }
 
 /**

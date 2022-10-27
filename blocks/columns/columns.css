@@ -1,43 +1,75 @@
 .columns > div {
-    display: flex;
-    flex-direction: column;
+  display: flex;
+  flex-direction: column;
 }
 
 .columns img {
-    width: 100%;
+  width: 100%;
+}
+
+.columns > div > div {
+  padding: 0 16px;
+  text-align: center;
+  margin: 16px 0 0;
+  background-color: var(--light-gray);
 }
 
 .solution .columns > div {
   align-items: center;
 }
 
-.columns.dark > div > div {
-  background-color: var(--dark-gray);
-  padding: 32px;
-  text-align: center;
-  margin: 16px 0 0;
+.columns.quiet > div > div {
+  background-color: transparent;
 }
 
-.solution .section.dark .columns.dark > div > div {
+.columns.small > div > div {
+  margin: auto;
+  padding: 0;
+}
+
+.columns.compact > div > div {
+  padding: 0;
+}
+
+.columns.small > div > div > h1,
+.columns.small > div > div > h2,
+.columns.small > div > div > h3,
+.columns.small > div > div > h4,
+.columns.small > div > div > h5,
+.columns.small > div > div > h6 {
+  margin: auto;
+}
+
+.columns.dark > div > div {
+  background-color: var(--dark-gray);
+}
+
+.columns > div > div.button-container {
+  align-self: center;
+  display: inline-flex;
+  justify-content: space-around;
+}
+
+.solution .section .columns > div > div {
   text-align: left;
 }
 
 @media (min-width: 900px) {
-    .columns > div {
-        display: flex;
-        flex-direction: unset;
-    }
+  .columns > div {
+    display: flex;
+    flex-direction: unset;
+  }
 
-    .columns > div > div {
-        flex: 1;
-        margin-left: 32px;
-    }
+  .columns > div > div {
+    flex: 1;
+    margin-left: 32px;
+  }
 
-    .columns.dark > div > div {
-      margin: 16px 0 0 16px;
-    }
+  .columns.dark > div > div {
+    margin: 16px 0 0 16px;
+  }
 
-    .columns > div > div:first-of-type {
-        margin-left: unset;
-    }
+  .columns > div > div:first-of-type {
+    margin-left: unset;
+  }
 }

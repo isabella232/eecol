@@ -14,21 +14,28 @@
   /* brand colors */
   --bright-blue: #0099d8;
   --dark-gray: #1d252d;
+  --light-gray: #f4f6f5;
   --dark-overlay: #1d252dc0;
 
   /* colors */
-  --link-color: #0099d8;
+  --link-color: #0670a0;
   --brand-color: #0099d8;
-  --link-hover-color: #0099d8;
+  --link-hover-color: #095c82;
+  --button-color: #012139;
+  --button-hover-color: #646464;
   --background-color: #fefefe;
   --medium-background-color: #092a42;
   --overlay-background-color: #eee;
   --highlight-background-color: #f4f6f5;
-  --text-color: #000;
+  --text-color: #646464;
   --dark-background-color: #012139;
   --border-color: #DDE3E3;
+  --dark-border-color: #646464;
   --nav-background-color: #F4F6F5;
   --negative-color: #b41a1a;
+  --header-sections-color: #dde4e4;
+  --header-mobile-menu-color: #fff;
+  --header-text-color: #012139;
 
   /* fonts */
   --body-font-family: 'Source Sans Pro', 'Source Sans Pro-fallback';
@@ -47,10 +54,10 @@
   --heading-font-size-l: 27px;
   --heading-font-size-m: 24px;
   --heading-font-size-s: 18px;
-  --heading-font-size-xs: 16px;
+  --heading-font-size-xs: 16px;  
 
   /* nav height */
-  --nav-height: 141px;
+  --nav-height: 161px;
   --breadcrumbs-height: 69px; 
 }
 
@@ -95,6 +102,7 @@ footer {
 
 main {
   grid-area: main;
+  margin-top: 16px;
 }
 
 .account-nav {
@@ -118,17 +126,17 @@ h1 {
 
 h2 { 
   font-size: var(--heading-font-size-xl); 
-  font-weight: 600; 
+  font-weight: 400; 
 }
 
 h3 {
   font-size: var(--heading-font-size-l); 
-  font-weight: 600; 
+  font-weight: 400; 
 }
 
 h4 { 
   font-size: var(--heading-font-size-m); 
-  font-weight: 600; 
+  font-weight: 400; 
 }
 
 h5 { 
@@ -184,7 +192,7 @@ a.button:any-link, button {
   font-weight: 600;
   cursor: pointer;
   color: var(--background-color);
-  background-color: var(--link-color);
+  background-color: var(--button-color);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -192,7 +200,7 @@ a.button:any-link, button {
 }
 
 a.button:hover, a.button:focus, button:hover, button:focus  {
-  background-color: var(--link-hover-color);
+  background-color: var(--button-hover-color);
   cursor: pointer;
 }
 
