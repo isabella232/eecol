@@ -2,7 +2,9 @@ main bread-crumbs {
     grid-area: breadcrumbs;
 }
 
-
+main .category {
+    margin: 0 1em;
+}
 
 main .category-title {
     grid-area: title;
@@ -374,10 +376,18 @@ main .category-title .products-results-count {
 }
 
 @media (min-width: 900px) {
+    main .category {
+        margin: 0 2em;
+    }
+
     main .category-title {
         gap: 20px;
         flex-direction: unset;
         align-items: flex-end;
+    }
+
+    main .category-title h1 {
+        font-size: var(--heading-font-size-xxl);
     }
 
     main .results-container {

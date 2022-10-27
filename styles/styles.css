@@ -58,7 +58,7 @@
 
   /* nav height */
   --nav-height: 145px;
-  --breadcrumbs-height: 69px; 
+  --breadcrumbs-height: 47px; 
 }
 
 @font-face {
@@ -249,7 +249,7 @@ main input[type=checkbox] {
 }
 
 main .section {
-  padding: 16px;
+  padding: 0 16px 16px;
   position: relative;
 }
 
@@ -360,10 +360,6 @@ main img {
     margin: auto;
   }
 
-  main .section {
-    padding: 16px;
-  }
-
 }
 
 /* progressive section appearance */
@@ -447,5 +443,6 @@ main .section.section.background-image .default-content-wrapper {
 @media (min-width: 1000px) {
   :root {
     --nav-height: 161px;
+    --breadcrumbs-height: 57px; 
   }
 }

@@ -397,8 +397,10 @@ export default async function decorate(block) {
 
   const pageType = getMetadata('pagetype');
   if (PageTypes.includes(pageType)) {
+    const section = d.createElement('div');
     const breadcrumbs = buildBlock('breadcrumbs', '');
-    nav.append(el(`<div>${breadcrumbs.innerHTML}</div>`));
+    section.append(breadcrumbs);
+    nav.append(section);
     decorateBlock(breadcrumbs);
     loadBlock(breadcrumbs, false);
   }
