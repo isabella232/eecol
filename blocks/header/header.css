@@ -75,6 +75,10 @@ header .nav-topbar-wrapper {
   align-items: center;
 }
 
+header .topbar-tagline {
+  display: none;
+}
+
 header .nav-topbar p {
   margin: 0;
 }
@@ -361,6 +365,12 @@ header nav .breadcrumbs-wrapper {
   padding: 0 20px;
 }
 
+@media (min-width: 768px) {
+  header .topbar-tagline {
+    display: block;
+  }
+}
+
 /* desktop nav styles */
 @media (min-width: 1000px) {
   header nav {
@@ -577,6 +587,7 @@ header nav .breadcrumbs-wrapper {
   header nav .nav-search {
     display: flex;
     height: 100%;
+    margin: auto;
     padding: 0 25px;
     background-color: #fff;
   }

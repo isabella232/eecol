@@ -48,6 +48,7 @@ export const store = new (class {
     this.upstreamURL = upstreamURL;
     this.dev = dev;
     this.product = undefined;
+    this.pageType = getMetadata('pagetype');
 
     this.autoLoad = [
       // module
@@ -278,28 +279,34 @@ export function titleCase(string) {
  * Fetches a hierarchy of categories from the server
  */
 async function fetchCategories() {
-  if (!window.categories) {
-    const response = await fetch(`${upstreamURL}/api/categories`);
-    const json = await response.json();
-    const categories = json.data.categories?.items[0].children;
-    const categoriesKeyDictionary = {};
-    const categoriesIdDictionary = {};
-    const categoriesNameDictionary = {};
-    categories.forEach((child) => buildCategoryDictionary(
-      child,
-      categoriesKeyDictionary,
-      categoriesIdDictionary,
-      categoriesNameDictionary,
-    ));
-
-    // Store categories in a hierarchy
-    window.categories = categories;
-
-    // Store categories in a dictionary
-    window.categoriesKeyDictionary = categoriesKeyDictionary;
-    window.categoriesIdDictionary = categoriesIdDictionary;
-    window.categoriesNameDictionary = categoriesNameDictionary;
+  if (window.categories) {
+    await window.categories;
+    return;
   }
+
+  let done;
+  window.categories = new Promise((res) => { done = res; });
+  const response = await fetch(`${upstreamURL}/api/categories`);
+  const json = await response.json();
+  const categories = json.data.categories?.items[0].children;
+  const categoriesKeyDictionary = {};
+  const categoriesIdDictionary = {};
+  const categoriesNameDictionary = {};
+  categories.forEach((child) => buildCategoryDictionary(
+    child,
+    categoriesKeyDictionary,
+    categoriesIdDictionary,
+    categoriesNameDictionary,
+  ));
+
+  // Store categories in a hierarchy
+  window.categories = categories;
+
+  // Store categories in a dictionary
+  window.categoriesKeyDictionary = categoriesKeyDictionary;
+  window.categoriesIdDictionary = categoriesIdDictionary;
+  window.categoriesNameDictionary = categoriesNameDictionary;
+  done();
 }
 
 /**
@@ -713,13 +720,14 @@ HelixApp.init({
   favicon: '/styles/favicon.ico',
 })
   .withLoadEager(async () => {
-    await fetchCategories();
+    if (PageTypes.includes(store.pageType)) {
+      await fetchCategories();
+    }
   })
   .withBuildAutoBlocks((main) => {
     try {
-      const pageType = getMetadata('pagetype');
-      if (PageTypes.includes(pageType)) {
-        buildAutoBlock(main, pageType);
+      if (PageTypes.includes(store.pageType)) {
+        buildAutoBlock(main, store.pageType);
         document.body.classList.add('commerce-page');
       } else {
         buildHeroBlock(main);
