@@ -40,7 +40,7 @@ class ProductView {
       document.title = store.product.name;
       document.body.dispatchEvent(new Event('product-loaded'));
 
-      this.ph = await getPlaceholders('/ca/en');
+      this.ph = await getPlaceholders();
       this.render();
     } catch (error) {
       console.error('[product] failed to load: ', error);

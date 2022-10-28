@@ -45,6 +45,11 @@ export const store = new (class {
   constructor() {
     this._p = {};
 
+    const pathParts = window.location.pathname.split('/').slice(1);
+    const [r, l] = pathParts;
+    this.region = r || 'ca';
+    this.lang = l || 'en';
+    this.hrefRoot = `/${this.region}/${this.lang}`;
     this.upstreamURL = upstreamURL;
     this.dev = dev;
     this.product = undefined;
@@ -70,8 +75,11 @@ export const store = new (class {
       [n] = n;
     }
     this[n] = new Proxy({}, {
-      get: (_, prop) => async () => {
+      get: (_, prop) => async (...args) => {
         await this.whenReady(n);
+        if (typeof this[n][prop] === 'function') {
+          return this[n][prop].call(this[n], ...args);
+        }
         return this[n][prop];
       },
       set: (_, prop, val) => {
@@ -171,7 +179,7 @@ export function el(content) {
  * @param {string[]} strs
  * @param  {...(string|Element)[]} params
  */
-export function html(strs, ...params) {
+export function htmlstr(strs, ...params) {
   let res = '';
   strs.forEach((s, i) => {
     const p = params[i];
@@ -186,8 +194,8 @@ export function html(strs, ...params) {
   return res;
 }
 
-export function htmlel(strs, ...params) {
-  return el(html(strs, ...params));
+export function html(strs, ...params) {
+  return el(htmlstr(strs, ...params));
 }
 
 /**
@@ -213,9 +221,9 @@ function buildHeroBlock(main) {
     section.append(buildBlock('hero', { elems }));
     main.prepend(section);
   } else if (!h1 && picture && picture.parentElement.tagName === 'MAIN') {
-    main.prepend(htmlel`
+    main.prepend(html`
     <div>
-      ${buildBlock('hero', { elems: [htmlel`<p>${picture}</p>`] })}
+      ${buildBlock('hero', { elems: [html`<p>${picture}</p>`] })}
     </div>`);
     picture.remove();
   }
@@ -500,7 +508,7 @@ export async function searchSuggestions(query) {
  * @returns {Promise<Record<string, string>>} Site placeholders
  */
 export async function getPlaceholders() {
-  return fetchPlaceholders('/ca/en');
+  return fetchPlaceholders(store.hrefRoot);
 }
 
 /**
@@ -706,6 +714,10 @@ export async function signOut() {
   document.body.dispatchEvent(ev);
 }
 
+export function isMobile() {
+  return window.innerWidth < 900;
+}
+
 /**
  *
  * Start the Helix Decoration Flow
@@ -719,11 +731,6 @@ HelixApp.init({
   eagerHeader: true,
   favicon: '/styles/favicon.ico',
 })
-  .withLoadEager(async () => {
-    if (PageTypes.includes(store.pageType)) {
-      await fetchCategories();
-    }
-  })
   .withBuildAutoBlocks((main) => {
     try {
       if (PageTypes.includes(store.pageType)) {

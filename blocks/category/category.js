@@ -10,7 +10,6 @@ import {
   clearQueryParams,
   getSelectedAccount,
   checkProductsInCatalog,
-  signIn,
 } from '../../scripts/scripts.js';
 
 const ExcludedFilterKeys = ['fulltext', 'page', 'query'];
@@ -580,15 +579,14 @@ class CategoryResultsController {
    * @returns {string}
    */
   renderProductPricing(product, account, prefix) {
-    return `<div class="${prefix}-card-pricing">
-    <div class="pricing-content">
-      ${!account
-    ? '<a class="signin">Sign in for Price</a>'
-    : `<div class="pricing-loader">
-        <div class="dot-flashing"></div>
-      </div>`}
-    </div>
-  </div>`;
+    return /* html */`
+    <div class="${prefix}-card-pricing${account ? '' : ' hidden'}">
+      <div class="pricing-content">
+        <div class="pricing-loader">
+          <div class="dot-flashing"></div>
+        </div>
+      </div>
+    </div>`;
   }
 
   /**
@@ -606,20 +604,15 @@ class CategoryResultsController {
       </a>
       <div class="${prefix}-card-details">
         <div class="${prefix}-card-info">
-          <div class="manufacturer">${titleCase(product.manufacturer)}</div>
-          <h4><a href="${product.path}">${product.name}</a></h4>
+          <p class="manufacturer">${titleCase(product.manufacturer)}</p>
+          <p class="product-name"><a href="${product.path}">${product.name}</a></p>
           <div class="catalog">
-            <div>MFR #: ${product.manufacturer_part_number_brand}</div>
-            <div>Part #: ${product.manufacturer_part_number}</div>
+            <p><span class="product-detail">MFR #:</span> ${product.manufacturer_part_number_brand}</p>
+            <p><span class="product-detail">Part #:</span> ${product.manufacturer_part_number}</p>
           </div>
         </div>
         ${this.renderProductPricing(product, account, prefix)}
       </div>`;
-
-    if (!account) {
-      const signinBtn = card.querySelector('.signin');
-      signinBtn.addEventListener('click', () => signIn());
-    }
 
     return card;
   }

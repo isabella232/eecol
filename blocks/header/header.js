@@ -15,7 +15,8 @@ import {
   getPlaceholders,
   searchSuggestions,
   getIcon,
-  el,
+  html,
+  store,
 } from '../../scripts/scripts.js';
 
 const MAX_SUGGESTIONS = 10;
@@ -88,7 +89,7 @@ function createCategory(title, children) {
   children.forEach((child) => {
     if (child.url_path) {
       const li = d.createElement('li');
-      li.innerHTML = `<a href="/ca/en/products/category/${child.url_path.split('.')[0]}">${child.name}</a>${child.level === 2 ? '<span><img class="disclosure-arrow" src="/icons/disclosure-white.svg"></span>' : ''}`;
+      li.innerHTML = `<a href="${store.hrefRoot}/products/category/${child.url_path.split('.')[0]}">${child.name}</a>${child.level === 2 ? '<span><img class="disclosure-arrow" src="/icons/disclosure-white.svg"></span>' : ''}`;
       if (child.children) {
         li.append(createCategory(child.level !== 3 ? child.name : '', child.children));
       }
@@ -105,7 +106,7 @@ function createTopBar(content) {
   const items = ['tagline', 'cta'];
 
   // TODO: handle languages, switcher
-  const wrapper = el(/* html */`
+  const wrapper = html`
 <div class="nav-topbar-wrapper">
   <div class="nav-topbar">
     <div class="language-switcher">
@@ -115,13 +116,13 @@ function createTopBar(content) {
     </div>
     ${[...content.children].map((c, i) => `<div class="topbar-${items[i]}">${c.outerHTML}</div>`).join('\n')}
   </div>
-</div>`);
+</div>`;
 
   return wrapper;
 }
 
 function createToolbar() {
-  const toolbar = el(/* html */`
+  const toolbar = html`
 <div class="nav-toolbar">
   <div class="nav-toolbar-actions">
     <div class="account">
@@ -146,7 +147,7 @@ function createToolbar() {
       </a>
     </div>
   </div>
-</div>`);
+</div>`;
 
   // add hamburger click
   const hamburger = toolbar.querySelector('div.hamburger');
@@ -163,6 +164,7 @@ function createToolbar() {
     decorateBlock(cartBlock);
     loadBlock(cartBlock);
     cartBlock = undefined;
+    store.cart.toggleModal();
   });
 
   return toolbar;
@@ -175,7 +177,7 @@ function createNavSections(content) {
   const first = content.firstElementChild.firstElementChild;
   first.remove(); // div > ul > li (products)
 
-  const sections = el(/* html */`
+  const sections = html`
   <div class="nav-sections">
     <ul class="level-1">
       <li class="nav-drop" aria-expanded="false">
@@ -191,7 +193,7 @@ function createNavSections(content) {
       </li>
       ${content.firstElementChild.innerHTML}
     </ul>
-  </div>`);
+  </div>`;
 
   const expand = (e) => {
     const section = e.target.closest('li');
@@ -214,7 +216,7 @@ function createNavSections(content) {
 }
 
 function createSearch() {
-  const search = el(/* html */`
+  const search = html`
 <div class="nav-search">
   <div class="nav-search-suggestions"></div>
   <input id="nav-search-input" list="nav-search-suggestion" placeholder="Search by keyword, item or part number">
@@ -223,7 +225,7 @@ function createSearch() {
       ${getIcon('search')}
     </a>
   </p>
-</div>`);
+</div>`;
 
   const input = search.querySelector('input');
   const suggestions = search.querySelector('.nav-search-suggestions');
@@ -262,7 +264,7 @@ function createSearch() {
       const products = await searchSuggestions(query);
       while (results.length < MAX_SUGGESTIONS && products.items.length) {
         const { productView: item } = products.items.shift();
-        results.push({ title: item.name, href: `/ca/en/products/${item.sku.toLowerCase()}` });
+        results.push({ title: item.name, href: `${store.hrefRoot}/products/${item.sku.toLowerCase()}` });
       }
     }
 
@@ -287,7 +289,7 @@ function createSearch() {
 
   addEventListeners(input, 'keypress', (e) => {
     if (e.key === 'Enter') {
-      window.location.href = `/ca/en/search?query=${e.target.value}`;
+      window.location.href = `${store.hrefRoot}/search?query=${e.target.value}`;
     }
   });
 
@@ -347,11 +349,10 @@ export default async function decorate(block) {
     console.error('Failed to load nav: ', resp);
     return;
   }
-  const html = await resp.text();
+  const content = await resp.text();
 
   // decorate nav DOM
-  nav = d.createElement('nav');
-  nav.innerHTML = html;
+  nav = html`<nav aria-expanded="false">${content}</nav>`;
   makeLinksRelative(nav);
 
   const topbar = nav.children[0];
@@ -366,19 +367,18 @@ export default async function decorate(block) {
   const search = nav.children[3];
   search.replaceWith(createSearch(search));
 
-  const logo = el(/* html */`
+  const logo = html`
   <div class="nav-logo">
     <picture>
       ${getIcon('logo.png')}
     </picture>
-  </div>`);
+  </div>`;
   nav.prepend(logo);
 
   logo.addEventListener('click', () => {
-    window.location = '/';
+    window.location = `${store.hrefRoot}`;
   });
 
-  nav.setAttribute('aria-expanded', 'false');
   block.append(nav);
 
   d.body.addEventListener('account-change', debounce(async () => {

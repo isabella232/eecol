@@ -285,6 +285,13 @@ main .category-title .products-results-count {
 .products-results .products-card-details p {
     margin: 0;
     font-size: var(--body-font-size-s);
+    font-weight: 200;
+}
+
+.products-results .products-card-details p.product-name {
+    font-size: var(--body-font-size-m);
+    font-weight: 600;
+    margin: 0.5em 0;
 }
 
 .products-results .products-card-details h4 {
@@ -294,14 +301,6 @@ main .category-title .products-results-count {
 .products-results .products-card-details a {
     color: var(--text-color);
     cursor: pointer;
-}
-
-.products-results .products-card-details a.signin {
-    text-decoration: underline;
-}
-
-.products-results .products-card-details a.signin:hover {
-    color: rgb(153 153 153);
 }
 
 .products-results a.button:any-link {

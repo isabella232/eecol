@@ -290,6 +290,10 @@ main img {
   height: auto;
 }
 
+.hidden {
+  display: none !important;
+}
+
 /* Loader */
 .dot-flashing {
   position: relative;

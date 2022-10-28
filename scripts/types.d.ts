@@ -255,6 +255,11 @@ declare global {
     /** Promises of modules being loaded and resolve functions */
     _p: Record<string, LazyModuleState>;
 
+    hrefRoot: string;
+    region: string;
+    lang: string;
+    pageType: 'product' | 'category' | undefined;
+
     /** Modules to load automatically in delayed */
     autoLoad: AutoLoadModule[];
 
