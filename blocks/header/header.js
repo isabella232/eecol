@@ -226,7 +226,7 @@ function createSearch() {
 </div>`);
 
   const input = search.querySelector('input');
-  const suggestions = search.querySelector('nav-search-suggestions');
+  const suggestions = search.querySelector('.nav-search-suggestions');
 
   phP.then((ph) => { input.setAttribute('placeholder', ph.searchPlaceholder); });
 
