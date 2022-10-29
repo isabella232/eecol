@@ -271,7 +271,8 @@ header .nav-toolbar .nav-toolbar-actions a.action {
   position: relative;
 }
 
-header .nav-toolbar .portal#cart {
+header .nav-toolbar .portal#account-modal,
+header .nav-toolbar .portal#cart-modal  {
   position: absolute;
   top: 0;
   bottom: 0;

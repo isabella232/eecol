@@ -8,20 +8,14 @@ import { store } from './scripts.js';
 // Core Web Vitals RUM collection
 sampleRUM('cwv');
 
+const log = logger('delayed');
+
 (async () => {
-  store.autoLoad.forEach(async (toLoad) => {
-    let name = toLoad;
-    let deps = [];
-    if (Array.isArray(toLoad)) {
-      ([name, deps] = toLoad);
+  store.autoLoad.forEach((name) => {
+    if (store.isLoading(name) || store.isReady(name)) {
+      return;
     }
-
-    if (deps.length) {
-      console.debug(`[delayed] auto load waiting for ${deps}`);
-    }
-    await Promise.all(deps.map((dep) => store.whenReady(dep)));
-    console.debug(`[delayed] auto loaded ${name} module`);
-
+    log.debug(`auto loading ${name} module`);
     store.load(name);
   });
 })();

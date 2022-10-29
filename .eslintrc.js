@@ -10,6 +10,9 @@ module.exports = {
     sourceType: 'module',
     requireConfigFile: false,
   },
+  globals: {
+    logger: 'readonly',
+  },
   rules: {
     // allow reassigning param
     'no-param-reassign': [2, { props: false }],

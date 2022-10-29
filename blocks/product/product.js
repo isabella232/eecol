@@ -3,13 +3,14 @@ import {
   getPlaceholders,
   lookupProduct,
   titleCase,
-  signIn,
   store,
   getSelectedAccount,
 } from '../../scripts/scripts.js';
 
+const log = logger('product');
+
 /**
- * @param {ProductInventory} inv
+ * @param {ProductStock} inv
  */
 const stockStatus = (inv) => {
   if (inv.cfa) {
@@ -43,7 +44,7 @@ class ProductView {
       this.ph = await getPlaceholders();
       this.render();
     } catch (error) {
-      console.error('[product] failed to load: ', error);
+      log.error('[product] failed to load: ', error);
       this.render404();
     }
 
@@ -61,9 +62,9 @@ class ProductView {
       return;
     }
     const quantity = parseInt(quantityInput.value, 2);
-    if (store.cart
+    if (store.Cart
         && quantityInput
-        && store.cart.canAdd(
+        && store.Cart.canAdd(
           store.product.sku,
           store.product,
           store.product.pricing.sellprice * quantity,
@@ -83,7 +84,7 @@ class ProductView {
   addToCart() {
     const quantityInput = this.block.querySelector('.cart .action input');
     const quantity = parseInt(quantityInput.value, 10);
-    store.cart.add(
+    store.Cart.add(
       store.product.sku,
       store.product,
       store.product.pricing.totalSellPrice * quantity,
@@ -157,7 +158,9 @@ class ProductView {
       <a class="signin">Sign in for Price</a>
     `;
     cartElement.querySelector('a').addEventListener('click', () => {
-      signIn();
+      const { location } = window;
+      const redirect = `${location.pathname}${location.search}`;
+      location.href = `${store.hrefRoot}/login#redirect=${encodeURIComponent(redirect)}`;
     });
   }
 

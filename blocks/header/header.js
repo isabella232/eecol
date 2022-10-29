@@ -20,6 +20,7 @@ import {
 } from '../../scripts/scripts.js';
 
 const MAX_SUGGESTIONS = 10;
+const log = logger('header');
 
 const d = document;
 let categs; // categories
@@ -37,25 +38,38 @@ function debounce(cb, time = 600) {
   };
 }
 
-async function updateTopBar() {
-  const account = sessionStorage.getItem('account') ? JSON.parse(sessionStorage.getItem('account')) : '';
+function updateActions() {
+  const { session } = store.Auth;
+
+  const wrapper = d.querySelector('.nav-toolbar-actions');
+  const [login, cart] = [...wrapper.children];
+
+  if (session) {
+    cart.classList.remove('hidden');
+  } else {
+    cart.classList.add('hidden');
+  }
+}
+
+/** update topbar elements that rely on a logged in user */
+function updateTopbar() {
+  const { session } = store.Auth;
 
   const wrapper = d.querySelector('.topbar-cta').firstChild;
   const [msg, authLink] = [...wrapper.childNodes];
   const def = msg.firstChild;
 
-  if (account && account.name) {
-    // set welcome message
-    console.debug('[header] set account: ', account);
-    msg.innerText = 'welcome';
-    authLink.style.display = 'none';
+  if (session) {
+    const { accountNumber, name } = session.company;
+    // unauthenticated - set welcome message
+    msg.innerText = `${accountNumber} - ${name}`;
+    authLink.classList.add('hidden');
   } else {
-    console.debug('[header] unset account');
     msg.innerText = def;
     phP.then((ph) => {
       msg.innerText = `${ph.shopAt || def}`;
     });
-    authLink.style.display = 'inline-block';
+    authLink.classList.remove('hidden');
   }
 }
 
@@ -100,6 +114,34 @@ function createCategory(title, children) {
 }
 
 /**
+ * Lazy load a modal block after dependency or on immediately on click
+ * @param {HTMLDivElement} toolbar
+ * @param {string} name
+ * @param {LazyModuleType}
+ */
+function lazyLoadModal(toolbar, name, dep) {
+  const portal = toolbar.querySelector(`.portal#${name}-modal`);
+  const block = portal.children[0];
+  let ready = false;
+  const load = async (clicked) => {
+    portal.removeEventListener('click', load);
+    if (ready) return;
+    ready = true;
+    decorateBlock(block);
+    const bp = loadBlock(block);
+    if (clicked) {
+      await Promise.all([store.load(dep), bp]);
+      log.debug('loaded modal by click: ', name);
+      store.emit(`${name}:modal:toggle`);
+    }
+  };
+  portal.addEventListener('click', () => load(true));
+  if (dep) {
+    store.whenReady(dep).then(() => load(false));
+  }
+}
+
+/**
  * @param {HTMLDivElement} content
  */
 function createTopBar(content) {
@@ -129,14 +171,17 @@ function createToolbar() {
       <a class="action">
         ${getIcon('account')}
         <span class="label">Login</span>
+        <div class="portal" id="account-modal">
+          <div class="account-modal"><!-- lazy --></div>
+        </div>
       </a>
     </div>
-    <div class="cart" data-block-name="cart" data-block-status="loaded">
+    <div class="cart hidden" data-block-name="cart" data-block-status="loaded">
       <a class="action">
         ${getIcon('cart')}
-        <span class="label cart-display">Cart</span>
-        <div class="portal" id="cart">
-          <div class="cart"><!-- lazy --></div>
+        <span class="label">Cart</span>
+        <div class="portal" id="cart-modal">
+          <div class="cart-modal"><!-- lazy --></div>
         </div>
       </a>
     </div>
@@ -156,16 +201,11 @@ function createToolbar() {
     nav.setAttribute('aria-expanded', expanded ? 'false' : 'true');
   });
 
-  // load cart once on click
-  const cartPortal = toolbar.querySelector('.portal#cart');
-  let cartBlock = cartPortal.children[0];
-  cartPortal.addEventListener('click', () => {
-    if (!cartBlock) return;
-    decorateBlock(cartBlock);
-    loadBlock(cartBlock);
-    cartBlock = undefined;
-    store.cart.toggleModal();
-  });
+  // load account once on click, or default after auth is ready
+  lazyLoadModal(toolbar, 'account', 'Auth');
+
+  // load cart once on click, or default after auth is ready
+  lazyLoadModal(toolbar, 'cart', 'Auth');
 
   return toolbar;
 }
@@ -321,7 +361,7 @@ async function setupProducts() {
   const productsBtn = nav.querySelector('#nav-products-root').parentElement;
 
   const loadProducts = async () => {
-    console.debug('[header] lazy load products list');
+    log.debug('[header] lazy load products list');
     productsBtn.removeEventListener('mouseenter', loadProducts);
 
     categs = await getCategories();
@@ -346,7 +386,7 @@ export default async function decorate(block) {
   const navPath = cfg.nav || '/nav';
   const resp = await fetch(`${navPath}.plain.html`);
   if (!resp.ok) {
-    console.error('Failed to load nav: ', resp);
+    log.error('Failed to load nav: ', resp);
     return;
   }
   const content = await resp.text();
@@ -381,19 +421,16 @@ export default async function decorate(block) {
 
   block.append(nav);
 
-  d.body.addEventListener('account-change', debounce(async () => {
-    /* account switch */
-    updateProductsList();
-  }, 1));
-
-  d.body.addEventListener('login-update', () => {
-    /* logged-in state changed, reflect in top bar */
-    updateTopBar();
-  });
-
-  updateTopBar();
-
   setupProducts();
+
+  store.on('auth:changed', () => {
+    updateTopbar();
+    updateActions();
+  });
+  store.whenReady('Auth', () => {
+    updateTopbar();
+    updateActions();
+  });
 
   const pageType = getMetadata('pagetype');
   if (PageTypes.includes(pageType)) {

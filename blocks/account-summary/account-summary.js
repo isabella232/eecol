@@ -6,6 +6,7 @@ import {
 } from '../../scripts/scripts.js';
 
 const ACCOUNT_CHANGE_EVT = 'account-change';
+const log = logger('account-summary');
 
 /**
  * @typedef {Object} AccountConfig
@@ -120,7 +121,7 @@ export function retrieve(account, key) {
     case 'addresses':
       return defaultAddresses(account);
     default:
-      console.error('unexpected account key: ', key);
+      log.error('unexpected account key: ', key);
       return null;
   }
 }
@@ -245,7 +246,7 @@ function createSection(account) {
         content = createRecentOrders(account);
         break;
       default:
-        console.warn('Unknown account summary section: ', name);
+        log.warn('Unknown account summary section: ', name);
         return '';
     }
 
