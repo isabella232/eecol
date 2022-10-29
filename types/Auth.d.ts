@@ -10,6 +10,11 @@
  * governing permissions and limitations under the License.
  */
 
+export interface SigninPayload {
+  email: string;
+  password: string;
+}
+
 export interface CustomerProfile {
   firstName: string;
   lastName: string;

@@ -10,11 +10,14 @@
  * governing permissions and limitations under the License.
  */
 
-import type { Session } from "./session"
+import type { Session, SigninPayload } from "./Auth"
 
 export interface EventMap {
   /** when Auth changes from logged in/out to opposite */
   'auth:changed': Session;
+
+  /** when submit button is clicked on signin form */
+  'auth:signin:submit': { data: SigninPayload };
 
   /** toggle the auth modal or redirect to profile */
   'account:modal:toggle': undefined | boolean;

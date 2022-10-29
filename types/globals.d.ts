@@ -11,9 +11,11 @@
  */
 
 import type * as StoreT from './Store';
-import type * as SessionT from './Session';
+import type * as AuthT from './Auth';
 import type * as ProductT from './Product';
 import type * as LoggerT from './Logger';
+import type * as FormsT from './Forms';
+
 
 
 /**
@@ -28,11 +30,14 @@ declare global {
 
   export type ProductStock = ProductT.ProductStock;
   export type ProductPricing = ProductT.ProductPricing;
-  export type Session = SessionT.Session;
+  export type Session = AuthT.Session;
 
   export type Logger = LoggerT.Logger;
   export type LoggerFactory = LoggerT.LoggerFactory;
   export type LoggerColors = LoggerT.LoggerColors;
+
+  export type FormConfig = FormsT.FormConfig;
+  export type CreateFormOptions = FormsT.CreateFormOptions;
 
   export interface Window {
     store: Store;

@@ -346,12 +346,7 @@ header .nav-search input {
   box-sizing: border-box;
   width: 100%;
   border-radius: 5px;
-  border: 1px solid #646464;
-}
-
-header .nav-search input:focus-visible {
-  border-bottom-width: 2px;
-  outline: none;
+  border: 1px solid var(--text-color);
 }
 
 /* hamburger */

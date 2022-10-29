@@ -227,16 +227,21 @@ main input {
   max-width: 50rem;
   display: block;
   margin-bottom: 1rem;
-  padding: 0.75rem 0.6rem;    
-  border-radius: 0.25rem;
+  padding: 11px 16px;
   box-sizing: border-box;
   border: 1px solid var(--text-color);
   color: var(--text-color);
   background-color: var(--background-color);
+  border-radius: 5px;
 }
 
 main input:hover {
   border: 1px solid var(--text-color);
+}
+
+main input:focus-visible {
+  border-bottom-width: 2px;
+  outline: none;
 }
 
 main input:disabled {
@@ -403,6 +408,11 @@ main .section.dark {
 main .section .default-content-wrapper {
   text-align: center;
 }
+
+main .section.left .default-content-wrapper {
+  text-align: left;
+}
+
 
 main .section picture.section-background {
   position: absolute;
