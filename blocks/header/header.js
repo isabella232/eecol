@@ -17,11 +17,14 @@ import {
   getIcon,
   html,
   store,
+  loader,
+  once,
 } from '../../scripts/scripts.js';
 
 const MAX_SUGGESTIONS = 10;
 const log = logger('header');
 
+const w = window;
 const d = document;
 let categs; // categories
 let phP; // placeholders promise
@@ -38,37 +41,68 @@ function debounce(cb, time = 600) {
   };
 }
 
+/**
+ * @param {HTMLLinkElement} account
+ * @param {Session} session
+ */
+async function updateAccountAction(account, session) {
+  const ph = await phP;
+
+  const [_icon, labelRoot, _portal] = account.children;
+  const [authedLabel, label] = labelRoot.children;
+  if (!session) {
+    labelRoot.classList.remove('authed');
+    authedLabel.classList.add('hidden');
+    label.textContent = ph.login || 'Login';
+    account.setAttribute('href', `${store.hrefRoot}/signin`);
+    return;
+  }
+
+  account.removeAttribute('href');
+  label.textContent = ph.account || 'Account';
+  const [msg, name] = authedLabel.children;
+  msg.textContent = `${ph.hello},`;
+  name.textContent = session.customer.firstName;
+  authedLabel.classList.remove('hidden');
+  labelRoot.classList.add('authed');
+}
+
+/**
+ * @param {HTMLLinkElement} cart
+ * @param {Session} session
+ */
+function updateCartAction(cart, session) {
+  const parent = cart.parentElement;
+  if (!session) {
+    parent.classList.add('hidden');
+    return;
+  }
+  parent.classList.remove('hidden');
+}
+
 function updateActions() {
   const { session } = store.Auth;
-
   const wrapper = d.querySelector('.nav-toolbar-actions');
-  const [login, cart] = [...wrapper.children];
+  const [account, cart] = [...wrapper.children];
 
-  if (session) {
-    cart.classList.remove('hidden');
-  } else {
-    cart.classList.add('hidden');
-  }
+  updateAccountAction(account.firstElementChild, session);
+  updateCartAction(cart.firstElementChild, session);
 }
 
 /** update topbar elements that rely on a logged in user */
-function updateTopbar() {
+async function updateTopbar() {
+  const ph = await phP;
   const { session } = store.Auth;
 
   const wrapper = d.querySelector('.topbar-cta').firstChild;
   const [msg, authLink] = [...wrapper.childNodes];
-  const def = msg.firstChild;
 
   if (session) {
     const { accountNumber, name } = session.company;
-    // unauthenticated - set welcome message
-    msg.innerText = `${accountNumber} - ${name}`;
+    msg.textContent = `${accountNumber} - ${name} | ${ph.currency}`;
     authLink.classList.add('hidden');
   } else {
-    msg.innerText = def;
-    phP.then((ph) => {
-      msg.innerText = `${ph.shopAt || def}`;
-    });
+    msg.textContent = `${ph.shopAt || 'Shop at'}`;
     authLink.classList.remove('hidden');
   }
 }
@@ -114,31 +148,42 @@ function createCategory(title, children) {
 }
 
 /**
- * Lazy load a modal block after dependency or on immediately on click
- * @param {HTMLDivElement} toolbar
- * @param {string} name
- * @param {LazyModuleType}
+ * Lazy load a modal block after dependency or immediately on click
+ * If an href is set on the parent action link, use it instead of the modal,
+ * since that is the unauthenticated redirect.
+ *
+ * @param {HTMLDivElement} toolbar toolbar element
+ * @param {string} name modal name, without the `-modal` suffix
  */
-function lazyLoadModal(toolbar, name, dep) {
+function lazyLoadModal(toolbar, name) {
   const portal = toolbar.querySelector(`.portal#${name}-modal`);
+  const link = portal.closest('a.action');
   const block = portal.children[0];
   let ready = false;
   const load = async (clicked) => {
-    portal.removeEventListener('click', load);
     if (ready) return;
+    const { session } = store.Auth;
+    if (link && link.href && typeof session !== 'object') {
+      log.debug('redirect from action: ', name, link.href);
+      const redirect = `${w.location.href}${w.location.search}`;
+      w.location.href = `${link.href}#redirect=${encodeURIComponent(redirect)}`;
+      // NOTE: this isn't necessary since there's a page load
+      // but will be necessary if we change to SPA loading.
+      once(portal, 'click', () => load(true));
+      return;
+    }
+
+    log.debug('loading modal: ', name);
     ready = true;
     decorateBlock(block);
     const bp = loadBlock(block);
     if (clicked) {
-      await Promise.all([store.load(dep), bp]);
+      await Promise.all([store.load('Auth'), bp]);
       log.debug('loaded modal by click: ', name);
       store.emit(`${name}:modal:toggle`);
     }
   };
-  portal.addEventListener('click', () => load(true));
-  if (dep) {
-    store.whenReady(dep).then(() => load(false));
-  }
+  once(portal, 'click', () => load(true));
 }
 
 /**
@@ -168,18 +213,26 @@ function createToolbar() {
 <div class="nav-toolbar">
   <div class="nav-toolbar-actions">
     <div class="account">
-      <a class="action">
+      <a class="action" href="${store.hrefRoot}/signin">
         ${getIcon('account')}
-        <span class="label">Login</span>
+        <label>
+          <span class="authed-label hidden">
+            <span class="msg">Hello,</span>
+            <span class="name"></span>
+          </span>
+          <span class="label">Login</span>
+        </label>
         <div class="portal" id="account-modal">
           <div class="account-modal"><!-- lazy --></div>
         </div>
       </a>
     </div>
-    <div class="cart hidden" data-block-name="cart" data-block-status="loaded">
+    <div class="cart hidden">
       <a class="action">
         ${getIcon('cart')}
-        <span class="label">Cart</span>
+        <label>
+          <span class="label">Cart <span class="qty">(0)</span></span>
+        </label>
         <div class="portal" id="cart-modal">
           <div class="cart-modal"><!-- lazy --></div>
         </div>
@@ -201,10 +254,8 @@ function createToolbar() {
     nav.setAttribute('aria-expanded', expanded ? 'false' : 'true');
   });
 
-  // load account once on click, or default after auth is ready
+  // lazy load account & cart modals once on click, after Auth completes
   lazyLoadModal(toolbar, 'account', 'Auth');
-
-  // load cart once on click, or default after auth is ready
   lazyLoadModal(toolbar, 'cart', 'Auth');
 
   return toolbar;
@@ -225,8 +276,8 @@ function createNavSections(content) {
         <u>Products</u>
         <ul id="nav-products-root" class="level-2 nav-group">
           <li>
-            <div class="nav-products-loading">
-              <span class="dot-flashing"></span>
+            <div class="nav-products-loading loader-wrapper">
+              ${loader()}
             </div>
           </li>
         </ul>
@@ -329,7 +380,7 @@ function createSearch() {
 
   addEventListeners(input, 'keypress', (e) => {
     if (e.key === 'Enter') {
-      window.location.href = `${store.hrefRoot}/search?query=${e.target.value}`;
+      w.location.href = `${store.hrefRoot}/search?query=${e.target.value}`;
     }
   });
 
@@ -360,22 +411,23 @@ function updateProductsList() {
 async function setupProducts() {
   const productsBtn = nav.querySelector('#nav-products-root').parentElement;
 
-  const loadProducts = async () => {
-    log.debug('[header] lazy load products list');
-    productsBtn.removeEventListener('mouseenter', loadProducts);
-
+  once(productsBtn, 'mouseenter', async () => {
+    log.debug('lazy load products');
     categs = await getCategories();
     categs = createCategory('', categs);
     updateProductsList();
-  };
-  addEventListeners(productsBtn, 'mouseenter', loadProducts);
+  });
+}
+
+function update() {
+  updateActions();
+  updateTopbar();
 }
 
 /**
  * decorates the header, mainly the nav
  * @param {Element} block The header block element
  */
-
 export default async function decorate(block) {
   const cfg = readBlockConfig(block);
   block.textContent = '';
@@ -386,7 +438,7 @@ export default async function decorate(block) {
   const navPath = cfg.nav || '/nav';
   const resp = await fetch(`${navPath}.plain.html`);
   if (!resp.ok) {
-    log.error('Failed to load nav: ', resp);
+    log.error('failed to load nav: ', resp);
     return;
   }
   const content = await resp.text();
@@ -409,28 +461,23 @@ export default async function decorate(block) {
 
   const logo = html`
   <div class="nav-logo">
-    <picture>
-      ${getIcon('logo.png')}
-    </picture>
+    <a href=${store.hrefRoot}>
+      <picture>
+        ${getIcon('logo.png')}
+      </picture>
+    </a>
   </div>`;
   nav.prepend(logo);
-
-  logo.addEventListener('click', () => {
-    window.location = `${store.hrefRoot}`;
-  });
-
   block.append(nav);
 
   setupProducts();
 
-  store.on('auth:changed', () => {
-    updateTopbar();
-    updateActions();
-  });
-  store.whenReady('Auth', () => {
-    updateTopbar();
-    updateActions();
-  });
+  store.on('auth:changed', update);
+  store.whenReady('Auth', update);
+  if (store.isReady('Auth')) {
+    // if auth loaded first, initialize
+    update();
+  }
 
   const pageType = getMetadata('pagetype');
   if (PageTypes.includes(pageType)) {

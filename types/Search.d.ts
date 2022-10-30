@@ -10,8 +10,8 @@
  * governing permissions and limitations under the License.
  */
 
-import { PageInfo } from "./Product";
-import { ProductView } from "./ProductView";
+import { PageInfo } from './Product';
+import { ProductView } from './ProductView';
 
 export interface SearchResult {
   page_info: PageInfo;

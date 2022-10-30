@@ -38,6 +38,8 @@ declare global {
 
   export type FormConfig = FormsT.FormConfig;
   export type CreateFormOptions = FormsT.CreateFormOptions;
+  export type AugmentedFormElement = FormsT.AugmentedFormElement;
+  export type FormForwardedEvent<T = any> = FormsT.FormForwardedEvent<T>;
 
   export interface Window {
     store: Store;

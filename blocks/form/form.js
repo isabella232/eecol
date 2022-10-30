@@ -1,6 +1,8 @@
 import { createForm } from '../../scripts/helix-forms.esm.js';
 import { readBlockConfig, toClassName } from '../../scripts/helix-web-library.esm.js';
-import { getPlaceholders, store } from '../../scripts/scripts.js';
+import {
+  getPlaceholders, loader, store,
+} from '../../scripts/scripts.js';
 
 const log = logger('form');
 
@@ -15,12 +17,23 @@ function validateConfig(config) {
   }
 }
 
+/**
+ * @param {HTMLFormElement} form
+ * @returns {AugmentedFormElement}
+ */
+function augmentFormElement(form) {
+  form.setLoading = (val) => {
+    const block = form.closest('div.block.form');
+    if (!block) return;
+    block.classList[val ? 'add' : 'remove']('loading');
+  };
+  return form;
+}
+
 /** @param {HTMLDivElement} block */
 export default async function decorate(block) {
   /** @type {FormConfig} */
   const config = readBlockConfig(block);
-  console.log('config: ', config);
-
   block.innerHTML = '';
 
   try {
@@ -30,9 +43,15 @@ export default async function decorate(block) {
     return;
   }
 
-  const placeholders = await getPlaceholders();
-  console.log('placeholders: ', placeholders);
+  /** @type {AugmentedFormElement} */
+  let form;
+  /** @returns {FormForwardedEvent} */
+  const formEvent = (data) => ({
+    data,
+    target: form,
+  });
 
+  const placeholders = await getPlaceholders();
   const {
     definition,
     event,
@@ -45,9 +64,8 @@ export default async function decorate(block) {
   let action;
   if (event) {
     const ev = event.replace(/-/g, ':');
-    log.debug('using submit event: ', ev);
     action = (data) => {
-      store.emit(ev, { data });
+      store.emit(ev, formEvent(data));
     };
   }
 
@@ -57,7 +75,9 @@ export default async function decorate(block) {
     autocorrect,
     placeholders,
   };
-  const form = await createForm(definition, opts);
+  form = await createForm(definition, opts);
+  form = augmentFormElement(form);
+
   if (template) {
     const templs = template.trim().split(',').map((t) => toClassName(`form-${t.trim()}`));
     form.classList.add(...templs);
@@ -72,8 +92,9 @@ export default async function decorate(block) {
   form.addEventListener('form-event', ({ detail = {} }) => {
     const { type, data } = detail;
     if (type) {
-      store.emit(type, data);
+      store.emit(type, formEvent(data));
     }
   });
   block.append(form);
+  block.append(loader());
 }

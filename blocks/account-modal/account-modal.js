@@ -1,6 +1,9 @@
-import { html, isMobile, store } from '../../scripts/scripts.js';
+import {
+  html, isMobile, signinHref, store,
+} from '../../scripts/scripts.js';
 
 const log = logger('account-modal');
+const w = window;
 
 /** @param {HTMLDivElement} modal */
 function update(modal) {
@@ -22,16 +25,16 @@ export default async function decorate(block) {
   };
 
   const handlePortalClick = async () => {
-    log.info('handlePortalClick: ', store.Auth);
     await store.whenReady('Auth');
     const { session } = store.Auth;
-    log.info('handlePortalClick session: ', session);
-
     if (!session) {
-      window.location.href = `${store.hrefRoot}/signin`;
-    } else if (isMobile() || !session) {
-      window.location.href = `${store.hrefRoot}/account-details`;
+      log.debug('redirect to signin, no session');
+      w.location.href = signinHref();
+    } else if (isMobile()) {
+      log.debug('redirect to account details, mobile');
+      w.location.href = `${store.hrefRoot}/account-details`;
     } else {
+      log.debug('toggle modal');
       toggleModal();
     }
   };

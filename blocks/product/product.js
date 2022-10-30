@@ -5,6 +5,7 @@ import {
   titleCase,
   store,
   getSelectedAccount,
+  signinHref,
 } from '../../scripts/scripts.js';
 
 const log = logger('product');
@@ -44,7 +45,7 @@ class ProductView {
       this.ph = await getPlaceholders();
       this.render();
     } catch (error) {
-      log.error('[product] failed to load: ', error);
+      log.error('failed to load: ', error);
       this.render404();
     }
 
@@ -145,7 +146,7 @@ class ProductView {
     const cartElement = this.block.querySelector('.product-config .cart');
     cartElement.innerHTML = /* html */`
       <div class="cart-loader">
-        <div class="dot-flashing"></div>
+        <div class="loading-progress"></div>
       </div>`;
   }
 
@@ -158,9 +159,7 @@ class ProductView {
       <a class="signin">Sign in for Price</a>
     `;
     cartElement.querySelector('a').addEventListener('click', () => {
-      const { location } = window;
-      const redirect = `${location.pathname}${location.search}`;
-      location.href = `${store.hrefRoot}/login#redirect=${encodeURIComponent(redirect)}`;
+      window.location.href = signinHref();
     });
   }
 

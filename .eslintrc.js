@@ -21,7 +21,7 @@ module.exports = {
       js: 'always',
     }],
     'no-underscore-dangle': 'off',
-    'no-unused-vars': ['error', { args: 'after-used', argsIgnorePattern: '^_' }],
+    'no-unused-vars': ['error', { args: 'after-used', argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     'max-classes-per-file': 'off',
     'class-methods-use-this': 'off',
   },

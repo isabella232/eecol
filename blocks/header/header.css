@@ -70,7 +70,7 @@ header .nav-topbar-wrapper {
   font-size: var(--body-font-size-xs);
   grid-area: topbar;
   height: 34px;
-  padding: 10px 14px;
+  padding: 0 14px;
   box-sizing: border-box;
   align-items: center;
 }
@@ -271,6 +271,10 @@ header .nav-toolbar .nav-toolbar-actions a.action {
   position: relative;
 }
 
+header .nav-toolbar .account a.action label .authed-label {
+  display: none;
+}
+
 header .nav-toolbar .portal#account-modal,
 header .nav-toolbar .portal#cart-modal  {
   position: absolute;
@@ -281,28 +285,26 @@ header .nav-toolbar .portal#cart-modal  {
   z-index: 100;
 }
 
-header .nav-toolbar .nav-toolbar-actions .account img.icon {
-  width: 18px;
-}
-
-header .nav-toolbar .nav-toolbar-actions .cart img.icon {
+header .nav-toolbar a.action img.icon {
   width: 22px;
-}
-
-header .nav-toolbar .nav-toolbar-actions .hamburger img.icon {
-  width: 17px;
-}
-
-header .nav-toolbar .nav-toolbar-actions a.action img.icon {
   margin-top: auto;
 }
 
-header .nav-toolbar .nav-toolbar-actions a.action span.label {
+header .nav-toolbar .hamburger a.action img.icon {
+  width: 17px;
+  margin-top: 6px;
+}
+
+header .nav-toolbar a.action label {
   line-height: 12px;
   margin-top: auto;
 }
 
-header .nav-toolbar .nav-toolbar-actions a.action:hover {
+header .nav-toolbar a.action label .label {
+  white-space: nowrap;
+}
+
+header .nav-toolbar a.action:hover {
   text-decoration: none;
   color: unset;
 }
@@ -387,7 +389,7 @@ header nav .breadcrumbs-wrapper {
       'sections sections sections' 
       'breadcrumbs breadcrumbs breadcrumbs';
     justify-content: space-between;
-    grid-template-columns: 200px 1fr 112px;
+    grid-template-columns: 200px 1fr auto;
   }
 
   header .nav-toolbar {
@@ -606,8 +608,64 @@ header nav .breadcrumbs-wrapper {
     position: unset;
   }
 
+  header .nav-toolbar .nav-toolbar-actions {
+    margin-right: 12px;
+  }
+
   header .nav-toolbar .nav-toolbar-actions .hamburger {
     display: none;
+  }
+
+  header .nav-toolbar .nav-toolbar-actions a.action {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  header .nav-toolbar a.action label {
+    margin: auto 0 4px 2px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header .nav-toolbar .account a.action label {
+    margin: auto 0 auto 2px;
+  }
+
+  header .nav-toolbar a.action label .label {
+    font-size: var(--body-font-size-s);
+    font-weight: 700;
+    margin-top: 4px;
+    text-transform: uppercase;
+  }
+
+  header .nav-toolbar .account a.action label:not(.authed) .label {
+    font-size: var(--body-font-size-m);
+    font-weight: 500;
+    text-transform: none;
+  }
+
+  header .nav-toolbar .nav-toolbar-actions a.action img.icon {
+    margin: auto;
+    width: 24px;
+  }
+
+  header .nav-toolbar .nav-toolbar-actions a.action img.icon-cart {
+    width: 26px;
+    margin: auto 0 4px;
+  }
+
+  header .nav-toolbar .account a.action label .authed-label {
+    display: flex;
+  }
+
+  header .nav-toolbar .account a.action label .authed-label .msg {
+    margin-right: 4px;
+  }
+
+  header .nav-toolbar .cart a.action label .label .qty {
+    font-weight: 300;
+    font-size: var(--body-font-size-xs);
   }
 
   header .nav-search-suggestions {

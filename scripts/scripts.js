@@ -66,16 +66,11 @@ export const PageTypes = [
 ];
 
 // already logged in or logging in
-const quickLoadAuth = (!!sessionStorage.getItem(SESSION_KEY)
-  || (location.pathname.endsWith('/login') && location.hash));
-
-/** Simple deep duplicate object */
-function dupe(o) {
-  if (!o || typeof o !== 'object') {
-    return o;
-  }
-  return JSON.parse(JSON.stringify(o));
-}
+const ql = [
+  !!sessionStorage.getItem(SESSION_KEY),
+  location.pathname.endsWith('/signin') && location.hash,
+];
+const quickLoadAuth = ql[0] || ql[1];
 
 /**
  * Application Store
@@ -97,6 +92,7 @@ export const store = new (
       this.dev = dev;
       this.product = undefined;
       this.pageType = getMetadata('pagetype');
+      [this.hadSess] = ql;
 
       this.graph = {
         Auth: [],
@@ -136,8 +132,15 @@ export const store = new (
     }
 
     emit(ev, data) {
-      const hs = this._h[ev] || [];
-      hs.forEach((h) => h && h.call(null, dupe(data)));
+      (async () => {
+        const [scope] = ev.split(':');
+        const dest = Object.keys(this.graph).find((k) => k.toLowerCase() === scope);
+        if (dest && !this.isReady(dest)) {
+          await this.load(dest);
+        }
+        const hs = this._h[ev] || [];
+        await Promise.all(hs.map((h) => h && h.call(null, data)));
+      })().catch((e) => this._log.error('failed to emit event: ', e));
     }
 
     on(ev, h) {
@@ -228,6 +231,19 @@ export const store = new (
   })();
 w.store = store; // for debugging
 
+/** Simple deep duplicate object */
+export function dupe(o) {
+  if (!o || typeof o !== 'object') {
+    return o;
+  }
+  return JSON.parse(JSON.stringify(o));
+}
+
+export function signinHref() {
+  const redirect = `${w.location.pathname}${w.location.search}`;
+  return `${store.hrefRoot}/signin#redirect=${encodeURIComponent(redirect)}`;
+}
+
 /**
  * Make element from string
  * @param {string} content
@@ -265,6 +281,11 @@ export function html(strs, ...params) {
 export function isMobile() {
   return window.innerWidth < 900;
 }
+
+export const loader = () => html`
+  <div class="loader">
+    <div class="loader-progress"></div>
+  </div>`;
 
 /**
  * Builds the hero autoblock
@@ -612,6 +633,24 @@ export function addEventListeners(els, evs, cb) {
 }
 
 /**
+ * Listen to an event one time
+ * @param {HTMLElement} elem
+ * @param {string} ev
+ * @param {() => any} cb
+ * @returns {()=>void} manual remover function
+ */
+export function once(elem, ev, cb) {
+  let remove;
+  const wrap = (...args) => {
+    remove();
+    cb.call(null, ...args);
+  };
+  elem.addEventListener(ev, wrap);
+  remove = () => elem.removeEventListener(ev, wrap);
+  return remove;
+}
+
+/**
  * Adds a query param to the window location
  * @param {string} key
  * @param {string} value
@@ -766,7 +805,7 @@ HelixApp.init({
 })
   .withLoadEager(async () => {
     if (quickLoadAuth) {
-      log.debug('quick load');
+      log.debug(`quick load due to${ql[0] ? ' existing session' : ''}${ql[0] && ql[1] ? ' &' : ''}${ql[1] ? ' auth redirect' : ''}`);
       await store.load('Auth');
     }
   })

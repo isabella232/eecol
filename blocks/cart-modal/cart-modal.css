@@ -1,18 +1,19 @@
-.portal#cart-modal .cart {
+.portal#cart-modal .cart-modal {
     position: fixed;
     top: 0;
     right: 0;
 }
 
-.portal#cart-modal .cart-modal {
+.portal#cart-modal .cart-modal-root {
     position: absolute;
     z-index: 100;
     width: 358px;
     right: 7px;
     top: calc(var(--nav-height) - 100%);
+    cursor: auto;
 }
 
-.portal#cart-modal .cart .cart-mini {
+.portal#cart-modal .cart-modal-root .cart-mini {
     background-color: #fff;
     border: 1px solid var(--dark-border-color);
     border-radius: 4px;
@@ -20,85 +21,85 @@
     display: flex;
 }
 
-.portal#cart-modal .cart .empty-cart-message {
+.portal#cart-modal .cart-modal-root .empty-cart-message {
     padding: 40px 0;
     margin: auto;
     font-weight: 600;
     font-size: var(--body-font-size-m);
 }
 
-.portal#cart-modal .cart .cart-items {
+.portal#cart-modal .cart-modal-root .cart-items {
     max-height: 60vh;
     overflow-y: scroll;
 }
 
-.portal#cart-modal .cart .cart-item {
+.portal#cart-modal .cart-modal-root .cart-item {
     display: flex;
     justify-content: space-between;
     border-bottom: 1px solid grey;
     padding: 32px 0;
 }
 
-.portal#cart-modal .cart .cart-item.cart-item-invalid {
+.portal#cart-modal .cart-modal-root .cart-item.cart-item-invalid {
     background-color: #fdd;
 }
 
-.portal#cart-modal .cart .cart-item.cart-item-invalid .cart-item-details::after {
+.portal#cart-modal .cart-modal-root .cart-item.cart-item-invalid .cart-item-details::after {
     color: red;
     content: 'Item not in catalog';
 }
 
-.portal#cart-modal .cart .cart-item-details {
+.portal#cart-modal .cart-modal-root .cart-item-details {
     flex: 1;
     padding: 0 20px;
 }
 
-.portal#cart-modal .cart .cart-item h6 {
+.portal#cart-modal .cart-modal-root .cart-item h6 {
     padding: 0;
     margin: 0;
 } 
 
-.portal#cart-modal .cart .cart-item p, header .cart .cart-header {
+.portal#cart-modal .cart-modal-root .cart-item p, header .cart .cart-header {
     margin: 0;
     font-size: var(--body-font-size-m);
 }
 
-.portal#cart-modal .cart .cart-header {
+.portal#cart-modal .cart-modal-root .cart-header {
     display: flex;
     justify-content: space-between;
     padding: 0 0 16px;
 }
 
-.portal#cart-modal .cart .cart-controls {
+.portal#cart-modal .cart-modal-root .cart-controls {
     display: flex;
     justify-content: center;
     gap: 20px;
     padding-top: 10px;
 }
 
-.portal#cart-modal .cart .cart-controls p {
+.portal#cart-modal .cart-modal-root .cart-controls p {
     text-align: center;
     margin: 0;
 }
 
 
-.portal#cart-modal .cart .cart-display .cart-item-image img {
+.portal#cart-modal .cart-modal-root .cart-display .cart-item-image img {
     display: block;
     width: 100px;
     flex: 0 0 100px;
 }
 
-.portal#cart-modal .cart .cart-display .cart-item-controls {
+.portal#cart-modal .cart-modal-root .cart-display .cart-item-controls {
     display: flex;
     align-items: center;
 }
 
-.portal#cart-modal .cart .cart-display .remove-btn {
+.portal#cart-modal .cart-modal-root .cart-display .remove-btn {
     padding: 20px 10px;
     cursor: pointer;
 }
 
-.portal#cart-modal .cart .cart-display .icon-trashcan {
+.portal#cart-modal .cart-modal-root .cart-display .icon-trashcan {
     display: block;
     width: 40px;
     height: 16px;
@@ -106,7 +107,7 @@
 }
 
 @media (min-width: 1000px) {
-    .portal#cart-modal .cart .cart-mini {
+    .portal#cart-modal .cart-modal-root .cart-mini {
         padding: 20px;
     }
 }

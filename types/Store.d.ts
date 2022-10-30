@@ -53,6 +53,9 @@ declare class StoreImpl {
   lang: string;
   pageType: 'product' | 'category' | undefined;
 
+  /** if Auth session existed previously */
+  hadSess: boolean;
+
   /** Simple dependency graph for modules */
   graph: Record<LazyModuleType, LazyModuleType[]>;
 

@@ -10,16 +10,18 @@
  * governing permissions and limitations under the License.
  */
 
-import type { Session, SigninPayload } from "./Auth"
+import type { Session, SigninPayload } from './Auth';
+import type { FormForwardedEvent } from './Forms';
 
 export interface EventMap {
   /** when Auth changes from logged in/out to opposite */
   'auth:changed': Session;
 
   /** when submit button is clicked on signin form */
-  'auth:signin:submit': { data: SigninPayload };
+  'auth:signin:submit': FormForwardedEvent<SigninPayload>;
+  'auth:signin:submit:beta': FormForwardedEvent<SigninPayload>;
 
-  /** toggle the auth modal or redirect to profile */
+  /** toggle the profile modal, redirect to login, or redirect to profile */
   'account:modal:toggle': undefined | boolean;
 
   /** when cart selection has been updated */

@@ -10,9 +10,20 @@
  * governing permissions and limitations under the License.
  */
 
-type HTMLInputTypeAttribute = "button" | "checkbox" | "color" | "date" | "datetime-local" | "email" | "file" | "hidden" | "image" | "month" | "number" | "password" | "radio" | "range" | "reset" | "search" | "submit" | "tel" | "text" | "time" | "url" | "week";
+type HTMLInputTypeAttribute = 'button' | 'checkbox' | 'color' | 'date' | 'datetime-local' | 'email' | 'file' | 'hidden' | 'image' | 'month' | 'number' | 'password' | 'radio' | 'range' | 'reset' | 'search' | 'submit' | 'tel' | 'text' | 'time' | 'url' | 'week';
 
 type FormFieldInputType = HTMLInputTypeAttribute | 'heading';
+
+export interface FormElementAPI {
+  setLoading: (loading: boolean) => void;
+}
+
+export type AugmentedFormElement = HTMLFormElement & FormElementAPI;
+
+export type FormForwardedEvent<TPayload> = {
+  data: TPayload;
+  target: AugmentedFormElement;
+}
 
 /**
  * The expected format of a form row in the definition spreadsheet
@@ -42,6 +53,11 @@ export interface FormFieldDefinition {
    */
   Autocomplete?: string;
 
+  /** Variant for buttons */
+  Variant?: string;
+
+  /** Event emitted on field actions */
+  Event?: string;
 }
 
 /**

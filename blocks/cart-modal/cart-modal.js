@@ -101,12 +101,13 @@ async function update(modal) {
 
 export default async function decorate(block) {
   log.debug('decorate()');
-  block.append(html`<div class="cart-modal hidden"></div>`);
+  block.append(html`<div class="cart-modal-root hidden"></div>`);
   const portal = document.querySelector('.portal#cart-modal');
-  const modal = portal.querySelector('.cart-modal');
+  const modal = portal.querySelector('.cart-modal-root');
 
   const toggleModal = (open) => {
     const action = typeof open === 'undefined' ? 'toggle' : (open && 'remove') || 'add';
+    log.debug('toggleModal: ', action);
     modal.classList[action]('hidden');
   };
 
@@ -120,5 +121,9 @@ export default async function decorate(block) {
 
   store.on('cart:changed', () => update(modal));
   store.on('cart:modal:toggle', toggleModal);
-  await store.load('Cart');
+  if (store.isReady('Auth')) {
+    update(modal);
+  } else {
+    store.load('Auth').then(() => update(modal));
+  }
 }

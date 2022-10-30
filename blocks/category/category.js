@@ -584,7 +584,7 @@ class CategoryResultsController {
     <div class="${prefix}-card-pricing${account ? '' : ' hidden'}">
       <div class="pricing-content">
         <div class="pricing-loader">
-          <div class="dot-flashing"></div>
+          <div class="loading-progress"></div>
         </div>
       </div>
     </div>`;

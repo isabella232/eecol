@@ -10,8 +10,9 @@
  * governing permissions and limitations under the License.
  */
 
-import { SESSION_KEY } from '../scripts.js';
+import { dupe, SESSION_KEY } from '../scripts.js';
 
+const w = window;
 const log = logger('Auth');
 
 export class Auth {
@@ -20,6 +21,39 @@ export class Auth {
     this.store = store;
     /** @type {Session|undefined} */
     this.session = undefined;
+
+    this.redirect = this._extractRedirect();
+    this.attachListeners();
+  }
+
+  _extractRedirect() {
+    const { pathname, hash } = w.location.pathname;
+    let redirect = this.store.hrefRoot;
+    if (this.onSigninPage() && hash) {
+      const hps = new URLSearchParams(hash.substring(1));
+      const r = hps.get('redirect');
+      if (r) {
+        redirect = decodeURIComponent(r);
+        w.history.replaceState('', document.title, pathname);
+      }
+    }
+    return redirect;
+  }
+
+  onSigninPage() {
+    const { pathname } = w.location.pathname;
+    return pathname === `${this.redirect}/signin`;
+  }
+
+  attachListeners() {
+    // eslint-disable-next-line no-alert
+    this.store.on('auth:signin:submit', () => alert('not implemented!'));
+    this.store.on('auth:signin:submit:beta', async ({ target, data }) => {
+      const { email, password } = data;
+      target.setLoading(true);
+      await this.signin(email, password);
+      w.location.href = this.redirect;
+    });
   }
 
   isValid() {
@@ -54,8 +88,12 @@ export class Auth {
   }
 
   save() {
-    sessionStorage.setItem(SESSION_KEY, this.session && JSON.stringify(this.session));
-    this.store.emit('auth:changed', this.session);
+    if (this.session) {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(this.session));
+    } else {
+      sessionStorage.removeItem(SESSION_KEY);
+    }
+    this.store.emit('auth:changed', dupe(this.session));
   }
 
   invalidate() {
@@ -66,6 +104,7 @@ export class Auth {
 
   async signin(email, password) {
     const res = await fetch('/api/auth/signin', {
+      method: 'POST',
       headers: {
         'content-type': 'application/json',
       },

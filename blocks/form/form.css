@@ -1,5 +1,21 @@
 /* === defaults === */ 
 
+.form.block {
+  position: relative;
+}
+
+.form.block .loader {
+  display: none;
+}
+
+.form.block.loading form {
+  opacity: 0;
+}
+
+.form.block.loading .loader {
+  display: flex;
+}
+
 main .section.form-container .default-content-wrapper h1,
 main .section.form-container .default-content-wrapper h2,
 main .section.form-container .default-content-wrapper h3 {
