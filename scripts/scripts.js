@@ -22,147 +22,234 @@ import {
   decorateSections,
 } from './helix-web-library.esm.js';
 
+export const SESSION_KEY = 'wesco.session';
+
+const w = window;
+const { location } = w;
+
+/** @type {LoggerFactory} */
+w.logger = (() => {
+  const dc = ['#0066CC', '#0066FF', '#0099CC', '#0099FF', '#00CC00', '#00CC33', '#00CC66', '#00CC99', '#00CCCC', '#00CCFF', '#3300CC', '#3300FF', '#3333CC', '#3333FF', '#3366CC'];
+  let i = 0; // default color index
+  const s = (pc) => {
+    let c = pc;
+    if (!c) c = dc[i]; i += 1; if (i === dc.length) i = 0;
+    else if (c.startsWith('color:')) return c;
+    return `color:${c}`;
+  };
+  return (name, color, colors = { debug: 'green', warn: 'yellow', error: 'red' }, tty = console) => {
+    const names = Array.isArray(name) ? name : [name];
+    const nc = s(color);
+    const log = Object.fromEntries(Object.entries(tty).map(([lvl, fn]) => {
+      const mc = colors[lvl] ? s(colors[lvl]) : 'color:#fff';
+      return [lvl, (...ms) => {
+        const [msgs, objs] = [[], []];
+        ms.forEach((m) => (typeof m === 'object' ? objs.push(m) : msgs.push(m)));
+        return fn(`%c ${names.map((n) => `[${n}]`).join(' ')} %c [${lvl.toUpperCase()}] ${msgs.join(' ')}`, nc, mc, ...objs);
+      }];
+    }));
+    // sub-logger
+    log.logger = (...a) => logger([...names, a[0]], a[1] || nc, a[2] || colors, a[3] || tty);
+    return log;
+  };
+})();
+
+const log = logger('scripts.js');
 const UPSTREAM_DEV = 'http://localhost:3000';
 const UPSTREAM_PROD = 'https://main--eecol--hlxsites.helix3.dev';
-const dev = window.location.hostname.startsWith('localhost')
-  || new URL(window.location.href).searchParams.get('dev') === 'true';
+const dev = location.hostname.startsWith('localhost')
+  || new URL(location.href).searchParams.get('dev') === 'true';
 export const upstreamURL = dev ? UPSTREAM_DEV : UPSTREAM_PROD;
+export const PageTypes = [
+  'category',
+  'product',
+];
 
-const loggedIn = !!sessionStorage.getItem('account') || document.cookie.indexOf('eecol.auth') > -1;
-const loginRedirect = sessionStorage.getItem('loginRedirect') === 'true';
-let quickLoadAuth = loggedIn || loginRedirect;
-
-if (loginRedirect) {
-  console.debug('login in progress...');
-  sessionStorage.removeItem('loginRedirect');
-}
+// already logged in or logging in
+const ql = [
+  !!sessionStorage.getItem(SESSION_KEY),
+  location.pathname.endsWith('/signin') && location.hash,
+];
+const quickLoadAuth = ql[0] || ql[1];
 
 /**
  * Application Store
  * @type {Store}
  */
-export const store = new (class {
-  constructor() {
-    this._p = {};
+export const store = new (
+  class {
+    constructor() {
+      this._p = {};
+      this._h = {};
+      this._log = log.logger('store');
 
-    const pathParts = window.location.pathname.split('/').slice(1);
-    const [r, l] = pathParts;
-    this.region = r || 'ca';
-    this.lang = l || 'en';
-    this.hrefRoot = `/${this.region}/${this.lang}`;
-    this.upstreamURL = upstreamURL;
-    this.dev = dev;
-    this.product = undefined;
-    this.pageType = getMetadata('pagetype');
+      const pathParts = location.pathname.split('/').slice(1);
+      const [r, l] = pathParts;
+      this.region = r || 'ca';
+      this.lang = l || 'en';
+      this.hrefRoot = `/${this.region}/${this.lang}`;
+      this.upstreamURL = upstreamURL;
+      this.dev = dev;
+      this.product = undefined;
+      this.pageType = getMetadata('pagetype');
+      [this.hadSess] = ql;
 
-    this.autoLoad = [
-      // module
-      'Auth',
-      // module -> [deps]
-      ['Inventory', ['Auth']],
-    ];
-    this.autoLoad.forEach(this._proxy.bind(this));
+      this.graph = {
+        Auth: [],
+        Inventory: ['Auth'],
+        Cart: ['Auth', 'Inventory'],
+      };
+      this.autoLoad = [
+        'Auth',
+      ];
 
-    // manually proxy non-module but lazy blocks
-    this._proxy('cart');
-  }
-
-  isLoginInProgress = () => loginRedirect;
-
-  _proxy(mod) {
-    let n = mod; // name
-    if (Array.isArray(n)) {
-      [n] = n;
+      Object.keys(this.graph).forEach(this._proxy.bind(this));
     }
-    this[n] = new Proxy({}, {
-      get: (_, prop) => async (...args) => {
-        await this.whenReady(n);
-        if (typeof this[n][prop] === 'function') {
-          return this[n][prop].call(this[n], ...args);
-        }
-        return this[n][prop];
-      },
-      set: (_, prop, val) => {
-        (async () => {
+
+    _proxy(mod) {
+      let n = mod; // name
+      if (Array.isArray(n)) {
+        [n] = n;
+      }
+      this[n] = new Proxy({}, {
+        get: (_, prop) => async (...args) => {
+          if (!this.isLoading(n)) this.load(n);
           await this.whenReady(n);
-          this[n][prop] = val;
-        })();
-        return true;
-      },
-    });
-  }
+          if (typeof this[n][prop] === 'function') {
+            return this[n][prop].call(this[n], ...args);
+          }
+          return this[n][prop];
+        },
+        set: (_, prop, val) => {
+          if (!this.isLoading(n)) this.load(n);
+          (async () => {
+            await this.whenReady(n);
+            this[n][prop] = val;
+          })();
+          return true;
+        },
+      });
+    }
 
-  isReady(name) {
-    const p = this._p[name];
-    return this[name] && p && !p[0] && !p[2] && !(this[name] instanceof Proxy);
-  }
+    emit(ev, data) {
+      (async () => {
+        const [scope] = ev.split(':');
+        const dest = Object.keys(this.graph).find((k) => k.toLowerCase() === scope);
+        if (dest && !this.isReady(dest)) {
+          this._log.debug(`waiting for scope '${scope}' (${dest}) before emitting '${ev}'`);
+          await this.load(dest);
+          this._log.debug(`scope '${scope}' ready`);
+        }
+        const hs = this._h[ev] || [];
+        await Promise.all(hs.map((h) => h && h.call(null, data)));
+      })().catch((e) => this._log.error('failed to emit event: ', e));
+    }
 
-  isLoading(name) {
-    const p = this._p[name];
-    return this[name] && p && p[0] && p[2];
-  }
+    on(ev, h) {
+      if (!this._h[ev]) {
+        this._h[ev] = [];
+      }
+      const len = this._h[ev].push(h);
+      return () => {
+        delete this._h[len - 1];
+      };
+    }
 
-  moduleReady(name) {
-    if (!this._p[name]) {
-      this._p[name] = [undefined, Promise.resolve(), false];
-    } else {
-      const [ready] = this._p[name];
-      if (ready) {
-        ready();
+    isReady(name) {
+      const p = this._p[name];
+      return (this[name] && p && !p[0] && !p[2]
+        && (!this[name].prototype || !(this[name] instanceof Proxy)));
+    }
+
+    isLoading(name) {
+      const p = this._p[name];
+      return this[name] && p && p[0] && p[2];
+    }
+
+    moduleReady(name) {
+      if (!this._p[name]) {
+        this._p[name] = [undefined, Promise.resolve(), false];
+      } else {
+        const [ready] = this._p[name];
+        if (ready) {
+          ready(this[name]);
+        }
       }
     }
-  }
 
-  initState(name) {
-    let ready;
-    const prom = new Promise((res) => {
-      ready = () => {
-        console.debug(`[store] ${name} module ready`);
-        this._p[name][0] = undefined; // remove resolver
-        this._p[name][2] = false; // done loading
-        res();
-      };
-    });
-    this._p[name] = [ready, prom, false];
-  }
-
-  setLoading(name) {
-    if (!this._p[name]) {
-      this.initState(name);
+    initState(name) {
+      let ready;
+      const prom = new Promise((res) => {
+        ready = (mod) => {
+          this._log.debug(`${name} module ready`);
+          this._p[name][0] = undefined; // remove resolver
+          this._p[name][2] = false; // done loading
+          res(mod);
+        };
+      });
+      this._p[name] = [ready, prom, false];
     }
-    this._p[name][2] = true;
-  }
 
-  whenReady(name) {
-    if (!this._p[name]) {
-      this.initState(name);
+    setLoading(name) {
+      if (!this._p[name]) {
+        this.initState(name);
+      }
+      this._p[name][2] = true;
     }
-    return this._p[name][1];
-  }
 
-  registerModule(name, module) {
-    this[name] = module;
-    this.moduleReady(name);
-  }
-
-  async load(name) {
-    if (this.isReady(name) || this.isLoading(name)) {
-      console.debug(`[store] skip loading ${name}`);
-      return undefined;
+    whenReady(name) {
+      if (!this._p[name]) {
+        this.initState(name);
+      }
+      return this._p[name][1];
     }
-    this.setLoading(name);
 
-    const ready = this.whenReady(name);
-    const pkg = await import(`./modules/${name}.js`);
-
-    if (!pkg.default) {
-      throw Error(`Invalid module: ${name}`);
+    registerModule(name, module) {
+      this[name] = module;
+      this.moduleReady(name);
     }
-    const module = await pkg.default(this);
-    this.registerModule(name, module);
-    return ready;
+
+    async load(name) {
+      if (this.isReady(name) || this.isLoading(name)) {
+        return this._p[name][1];
+      }
+      this._log.debug(`start loading ${name}`);
+      this.setLoading(name);
+
+      // load deps
+      const deps = this.graph[name];
+      if (deps && deps.length) {
+        this._log.debug(`'${name}' waiting for deps: `, deps);
+        await Promise.all((deps).map(this.load.bind(this)));
+        this._log.debug(`'${name}' deps ready, load now`);
+      }
+
+      // load module
+      const ready = this.whenReady(name);
+      const pkg = await import(`./modules/${name}.js`);
+
+      if (!pkg.default) {
+        throw Error(`Invalid module: ${name}`);
+      }
+      const module = await pkg.default(this);
+      this.registerModule(name, module);
+      return ready;
+    }
+  })();
+w.store = store; // for debugging
+
+/** Simple deep duplicate object */
+export function dupe(o) {
+  if (!o || typeof o !== 'object') {
+    return o;
   }
-})();
+  return JSON.parse(JSON.stringify(o));
+}
+
+export function signinHref() {
+  const redirect = `${w.location.pathname}${w.location.search}`;
+  return `${store.hrefRoot}/signin#redirect=${encodeURIComponent(redirect)}`;
+}
 
 /**
  * Make element from string
@@ -197,6 +284,15 @@ export function htmlstr(strs, ...params) {
 export function html(strs, ...params) {
   return el(htmlstr(strs, ...params));
 }
+
+export function isMobile() {
+  return window.innerWidth < 900;
+}
+
+export const loader = () => html`
+  <div class="loader">
+    <div class="loader-progress"></div>
+  </div>`;
 
 /**
  * Builds the hero autoblock
@@ -287,13 +383,13 @@ export function titleCase(string) {
  * Fetches a hierarchy of categories from the server
  */
 async function fetchCategories() {
-  if (window.categories) {
-    await window.categories;
+  if (w.categories) {
+    await w.categories;
     return;
   }
 
   let done;
-  window.categories = new Promise((res) => { done = res; });
+  w.categories = new Promise((res) => { done = res; });
   const response = await fetch(`${upstreamURL}/api/categories`);
   const json = await response.json();
   const categories = json.data.categories?.items[0].children;
@@ -308,12 +404,12 @@ async function fetchCategories() {
   ));
 
   // Store categories in a hierarchy
-  window.categories = categories;
+  w.categories = categories;
 
   // Store categories in a dictionary
-  window.categoriesKeyDictionary = categoriesKeyDictionary;
-  window.categoriesIdDictionary = categoriesIdDictionary;
-  window.categoriesNameDictionary = categoriesNameDictionary;
+  w.categoriesKeyDictionary = categoriesKeyDictionary;
+  w.categoriesIdDictionary = categoriesIdDictionary;
+  w.categoriesNameDictionary = categoriesNameDictionary;
   done();
 }
 
@@ -322,11 +418,11 @@ async function fetchCategories() {
  * @returns {Promise<Record<string, string>>}
  */
 export async function getCategories() {
-  if (!window.categories) {
+  if (!w.categories) {
     await fetchCategories();
   }
 
-  return window.categories;
+  return w.categories;
 }
 
 /**
@@ -334,11 +430,11 @@ export async function getCategories() {
  * @returns {Object}
  */
 export async function getCategoriesNameDictionary() {
-  if (!window.categoriesNameDictionary) {
+  if (!w.categoriesNameDictionary) {
     await fetchCategories();
   }
 
-  return window.categoriesNameDictionary;
+  return w.categoriesNameDictionary;
 }
 
 /**
@@ -346,11 +442,11 @@ export async function getCategoriesNameDictionary() {
  * @returns {Promise<any>}
  */
 export async function getCategoriesKeyDictionary() {
-  if (!window.categoriesKeyDictionary) {
+  if (!w.categoriesKeyDictionary) {
     await fetchCategories();
   }
 
-  return window.categoriesKeyDictionary;
+  return w.categoriesKeyDictionary;
 }
 
 /**
@@ -358,11 +454,11 @@ export async function getCategoriesKeyDictionary() {
  * @returns {Promise<any>}
  */
 export async function getCategoriesIdDictionary() {
-  if (!window.categoriesIdDictionary) {
+  if (!w.categoriesIdDictionary) {
     await fetchCategories();
   }
 
-  return window.categoriesIdDictionary;
+  return w.categoriesIdDictionary;
 }
 
 function replaceProductImages(data) {
@@ -421,7 +517,7 @@ export async function lookupProduct(sku) {
   }
   const res = await fetch(`${upstreamURL}/api/products/${sku}`);
   if (!res.ok) {
-    console.error('failed to lookup product: ', res);
+    log.error('failed to lookup product: ', res);
     throw Error('failed to lookup product');
   }
 
@@ -442,7 +538,7 @@ export async function lookupCatalogProduct(sku) {
   }
   const res = await fetch(`${upstreamURL}/api/catalog/products/${sku}`);
   if (!res.ok) {
-    console.error(`failed to lookup catalog product (${res.status}): `, res);
+    log.error(`failed to lookup catalog product (${res.status}): `, res);
     throw Error('failed to lookup catalog product');
   }
 
@@ -457,7 +553,6 @@ export async function lookupCatalogProduct(sku) {
  * @returns {Promise<SearchResult>}
  */
 export async function searchProducts(query, page) {
-  // TODO: Implement search
   if (!query) {
     return {};
   }
@@ -465,7 +560,7 @@ export async function searchProducts(query, page) {
     `${upstreamURL}/api/catalog/search?q=${query}${page ? `&p=${page}` : ''}`,
   );
   if (!res.ok) {
-    console.error(`failed to search (${res.status}): `, res);
+    log.error(`failed to search (${res.status}): `, res);
     throw Error('failed to search');
   }
 
@@ -476,7 +571,7 @@ export function getIcon(icons, alt) {
   // eslint-disable-next-line no-param-reassign
   icons = Array.isArray(icons) ? icons : [icons];
   const [defaultIcon, mobileIcon] = icons;
-  let name = (mobileIcon && window.innerWidth < 600) ? mobileIcon : defaultIcon;
+  let name = (mobileIcon && w.innerWidth < 600) ? mobileIcon : defaultIcon;
   let icon = `${name}.svg`;
   if (name.endsWith('.png')) {
     icon = name;
@@ -496,7 +591,7 @@ export async function searchSuggestions(query) {
   }
   const res = await fetch(`${upstreamURL}/api/catalog/search?q=${query}&s=1`);
   if (!res.ok) {
-    console.error(`failed to get suggestions (${res.status}): `, res);
+    log.error(`failed to get suggestions (${res.status}): `, res);
     throw Error('failed to get suggestions');
   }
 
@@ -513,9 +608,9 @@ export async function getPlaceholders() {
 
 /**
  * Formats a price given a currency
- * @param {*} amount
- * @param {*} currency
- * @returns
+ * @param {number} amount
+ * @param {string} currency
+ * @returns {string}
  */
 export function formatCurrency(amount, currency) {
   const formatter = new Intl.NumberFormat('en-US', {
@@ -545,11 +640,22 @@ export function addEventListeners(els, evs, cb) {
 }
 
 /**
- * Helper function guarentees the return of a number primitive
- * @param {string|number} value
- * @returns
+ * Listen to an event one time
+ * @param {HTMLElement} elem
+ * @param {string} ev
+ * @param {() => any} cb
+ * @returns {()=>void} manual remover function
  */
-export const getNumber = (value) => +value;
+export function once(elem, ev, cb) {
+  let remove;
+  const wrap = (...args) => {
+    remove();
+    cb.call(null, ...args);
+  };
+  elem.addEventListener(ev, wrap);
+  remove = () => elem.removeEventListener(ev, wrap);
+  return remove;
+}
 
 /**
  * Adds a query param to the window location
@@ -557,10 +663,10 @@ export const getNumber = (value) => +value;
  * @param {string} value
  */
 export function addQueryParam(key, value) {
-  const sp = new URLSearchParams(window.location.search);
+  const sp = new URLSearchParams(w.location.search);
   sp.set(key, value);
-  const path = `${window.location.pathname}?${sp.toString()}`;
-  window.history.pushState(null, '', path);
+  const path = `${w.location.pathname}?${sp.toString()}`;
+  w.history.pushState(null, '', path);
 }
 
 /**
@@ -569,11 +675,11 @@ export function addQueryParam(key, value) {
  * @param {string} value
  */
 export function removeQueryParam(key) {
-  const sp = new URLSearchParams(window.location.search);
+  const sp = new URLSearchParams(w.location.search);
   sp.delete(key);
   const paramsString = sp.toString();
-  const path = (paramsString !== '') ? `${window.location.pathname}?${paramsString}` : window.location.pathname;
-  window.history.pushState(null, '', path);
+  const path = (paramsString !== '') ? `${w.location.pathname}?${paramsString}` : w.location.pathname;
+  w.history.pushState(null, '', path);
 }
 
 /**
@@ -582,13 +688,8 @@ export function removeQueryParam(key) {
  * @param {string} value
  */
 export function clearQueryParams() {
-  window.history.pushState(null, '', window.location.pathname);
+  w.history.pushState(null, '', w.location.pathname);
 }
-
-export const PageTypes = [
-  'category',
-  'product',
-];
 
 /**
  * check if products are available in catalog
@@ -597,7 +698,7 @@ export const PageTypes = [
  * @param {Object} hints
  */
 export function checkProductsInCatalog(skus, account, hints) {
-  const nameLookup = window.categoriesNameDictionary;
+  const nameLookup = w.categoriesNameDictionary;
   if (account && account.config) {
     const allowedCategs = account.config.Categories.map((categ) => (nameLookup[categ] ? nameLookup[categ].uid : ''));
 
@@ -656,7 +757,7 @@ export function getSelectedAccount() {
 export function storeUserData(key, val) {
   const id = localStorage.getItem('selectedAccount');
   if (!id) {
-    console.warn('storeUserData() No account selected');
+    log.warn('storeUserData() No account selected');
     return;
   }
 
@@ -671,7 +772,7 @@ export function storeUserData(key, val) {
 export function retrieveUserData(key) {
   const id = localStorage.getItem('selectedAccount');
   if (!id) {
-    console.warn('retrieveUserData() No account selected');
+    log.warn('retrieveUserData() No account selected');
     return null;
   }
 
@@ -697,28 +798,6 @@ export function getUserAccount() {
 }
 
 /**
- * Initiates the login process
- */
-export async function signIn() {
-  quickLoadAuth = true;
-  const ev = new Event('login');
-  document.body.dispatchEvent(ev);
-}
-
-/**
- * Initiate logout
- */
-export async function signOut() {
-  quickLoadAuth = true;
-  const ev = new Event('logout');
-  document.body.dispatchEvent(ev);
-}
-
-export function isMobile() {
-  return window.innerWidth < 900;
-}
-
-/**
  *
  * Start the Helix Decoration Flow
  *
@@ -731,6 +810,12 @@ HelixApp.init({
   eagerHeader: true,
   favicon: '/styles/favicon.ico',
 })
+  .withLoadEager(async () => {
+    if (quickLoadAuth) {
+      log.debug(`quick load due to${ql[0] ? ' existing session' : ''}${ql[0] && ql[1] ? ' &' : ''}${ql[1] ? ' auth redirect' : ''}`);
+      await store.load('Auth');
+    }
+  })
   .withBuildAutoBlocks((main) => {
     try {
       if (PageTypes.includes(store.pageType)) {
@@ -741,7 +826,7 @@ HelixApp.init({
       }
     } catch (error) {
       // eslint-disable-next-line no-console
-      console.error('Auto Blocking failed', error);
+      log.error('Auto Blocking failed', error);
     }
   })
   .withDecorateSections((main) => {
@@ -772,11 +857,11 @@ HelixApp.init({
   .withLoadDelayed(() => {
     let delay = 4000;
     if (quickLoadAuth) {
-      // quick load, since no chance to impact PSI
-      console.debug('quick load');
       delay = 0;
+      // autoload all
+      store.autoLoad = Object.keys(store.graph);
     }
     // eslint-disable-next-line import/no-cycle
-    window.setTimeout(() => import('./delayed.js'), delay);
+    setTimeout(() => import('./delayed.js'), delay);
   })
   .decorate();

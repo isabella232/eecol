@@ -2,7 +2,6 @@ import {
   getPlaceholders,
   titleCase,
   getCategoriesKeyDictionary,
-  getNumber,
   addEventListeners,
   lookupCategory,
   addQueryParam,
@@ -13,6 +12,8 @@ import {
 } from '../../scripts/scripts.js';
 
 const ExcludedFilterKeys = ['fulltext', 'page', 'query'];
+
+const getNumber = (value) => +value;
 
 /**
  * The CategoryFilterController manages the state and behavior of the category filter.
@@ -583,7 +584,7 @@ class CategoryResultsController {
     <div class="${prefix}-card-pricing${account ? '' : ' hidden'}">
       <div class="pricing-content">
         <div class="pricing-loader">
-          <div class="dot-flashing"></div>
+          <div class="loading-progress"></div>
         </div>
       </div>
     </div>`;

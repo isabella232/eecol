@@ -1,0 +1,21 @@
+.portal#account-modal .account {
+  position: fixed;
+  top: 0;
+  right: 0;
+}
+
+.portal#account-modal .account-modal {
+  position: absolute;
+  z-index: 100;
+  width: 358px;
+  right: 7px;
+  top: calc(var(--nav-height) - 100%);
+}
+
+.portal#account-modal .account-mini {
+  background-color: #fff;
+  border: 1px solid var(--dark-border-color);
+  border-radius: 4px;
+  padding: 20px;
+  display: flex;
+}

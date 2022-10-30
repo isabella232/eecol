@@ -227,16 +227,21 @@ main input {
   max-width: 50rem;
   display: block;
   margin-bottom: 1rem;
-  padding: 0.75rem 0.6rem;    
-  border-radius: 0.25rem;
+  padding: 11px 16px;
   box-sizing: border-box;
   border: 1px solid var(--text-color);
   color: var(--text-color);
   background-color: var(--background-color);
+  border-radius: 5px;
 }
 
 main input:hover {
   border: 1px solid var(--text-color);
+}
+
+main input:focus-visible {
+  border-bottom-width: 2px;
+  outline: none;
 }
 
 main input:disabled {
@@ -295,47 +300,66 @@ main img {
 }
 
 /* Loader */
-.dot-flashing {
+.loader-wrapper {
   position: relative;
-  width: 10px;
-  height: 10px;
-  border-radius: 5px;
+}
+
+.loader {
+  position: absolute;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.loader-progress {
+  position: relative;
+  aspect-ratio: 1;
+  height: 50%;
+  max-height: 35px;
+  width: auto;
+  border-radius: 50%;
   background-color: var(--link-color);
   color: var(--link-color);
-  animation: dot-flashing 1s infinite linear alternate;
+  animation: loader-progress 1s infinite linear alternate;
   animation-delay: .5s;
 }
 
-.dot-flashing::before, .dot-flashing::after {
+.loader-progress::before, .loader-progress::after {
   content: '';
   display: inline-block;
   position: absolute;
   top: 0;
 }
 
-.dot-flashing::before {
-  left: -15px;
-  width: 10px;
-  height: 10px;
-  border-radius: 5px;
+.loader-progress::before {
+  left: calc(-100% - 50%);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
   background-color: var(--link-color);
   color: var(--link-color);
-  animation: dot-flashing 1s infinite alternate;
+  animation: loader-progress 1s infinite alternate;
   animation-delay: 0s;
 }
 
-.dot-flashing::after {
-  left: 15px;
-  width: 10px;
-  height: 10px;
-  border-radius: 5px;
+.loader-progress::after {
+  left: calc(100% + 50%);
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
   background-color: var(--link-color);
   color: var(--link-color);
-  animation: dot-flashing 1s infinite alternate;
+  animation: loader-progress 1s infinite alternate;
   animation-delay: 1s;
 }
 
-@keyframes dot-flashing {
+@keyframes loader-progress {
   0% {
     background-color: var(--link-color);
   }
@@ -403,6 +427,11 @@ main .section.dark {
 main .section .default-content-wrapper {
   text-align: center;
 }
+
+main .section.left .default-content-wrapper {
+  text-align: left;
+}
+
 
 main .section picture.section-background {
   position: absolute;

@@ -1,0 +1,117 @@
+/* === defaults === */ 
+
+.form.block {
+  position: relative;
+}
+
+.form.block .loader {
+  display: none;
+}
+
+.form.block.loading form {
+  opacity: 0;
+}
+
+.form.block.loading .loader {
+  display: flex;
+}
+
+main .section.form-container .default-content-wrapper h1,
+main .section.form-container .default-content-wrapper h2,
+main .section.form-container .default-content-wrapper h3 {
+  font-weight: 600;
+}
+
+main .section.form-container .default-content-wrapper h1::after {
+  border-left: 0 solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 10px solid #0099d8;
+  content: " ";
+  display: block;
+  margin: 8px 0 36px;
+  position: relative;
+  width: 142px;
+}
+
+form .field-wrapper {
+  min-width: 35%;
+}
+
+form .field-wrapper input {
+  font-size: var(--body-font-size-s);
+  font-weight: 700;
+}
+
+form .field-wrapper input:focus-visible {
+  margin-top: -1px;
+}
+
+form .field-wrapper input::placeholder {
+  font-size: var(--body-font-size-s);
+  font-weight: 100;
+}
+
+form .field-wrapper label {
+  font-size: var(--body-font-size-s);
+  font-weight: 700;
+}
+
+form .field-wrapper button {
+  font-size: var(--body-font-size-l);
+  width: 100%;
+  padding: 0.75rem;
+  margin-top: 1rem;
+  min-width: 135px;
+}
+
+/* === templates === */
+
+/* signin */
+
+main .section.form-signin-container:last-child {
+  margin-bottom: 6rem;
+}
+
+main .section.form-signin-container:last-child > div:first-child h1 {
+  margin-top: 1rem;
+}
+
+main .section.form-signin-container:last-child > div:first-child {
+  border-top: 1px solid var(--border-color);
+  margin-top: 2rem;
+}
+
+/* temp disable prod login */
+form.form-signin:not(.form-signin-beta) input {
+  pointer-events: none;
+}
+form.form-signin:not(.form-signin-beta) input,
+form.form-signin:not(.form-signin-beta) button {
+  background: #e4e4e4;
+  border: none;
+}
+form.form-signin:not(.form-signin-beta) input::placeholder,
+form.form-signin:not(.form-signin-beta) button {
+  color: #adadad;
+}
+
+form.form-signin button {
+  text-transform: uppercase;
+}
+
+form.form-signin input {
+
+}
+
+@media (min-width: 900px) {
+  form.form-signin {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: 25px;
+  }
+}
+
+/* review @todo */
+
+/* contact @todo */
+
