@@ -136,7 +136,9 @@ export const store = new (
         const [scope] = ev.split(':');
         const dest = Object.keys(this.graph).find((k) => k.toLowerCase() === scope);
         if (dest && !this.isReady(dest)) {
+          this._log.debug(`waiting for scope '${scope}' (${dest}) before emitting '${ev}'`);
           await this.load(dest);
+          this._log.debug(`scope '${scope}' ready`);
         }
         const hs = this._h[ev] || [];
         await Promise.all(hs.map((h) => h && h.call(null, data)));
@@ -209,13 +211,18 @@ export const store = new (
 
     async load(name) {
       if (this.isReady(name) || this.isLoading(name)) {
-        return this[name];
+        return this._p[name][1];
       }
       this._log.debug(`start loading ${name}`);
       this.setLoading(name);
 
       // load deps
-      await Promise.all((this.graph[name] || []).map(this.load.bind(this)));
+      const deps = this.graph[name];
+      if (deps && deps.length) {
+        this._log.debug(`'${name}' waiting for deps: `, deps);
+        await Promise.all((deps).map(this.load.bind(this)));
+        this._log.debug(`'${name}' deps ready, load now`);
+      }
 
       // load module
       const ready = this.whenReady(name);

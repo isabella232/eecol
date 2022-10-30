@@ -126,7 +126,9 @@ export class Cart {
  * @type {LazyModule<Cart>}
  */
 export default async function load(store) {
+  log.debug('load()');
   const cart = new Cart(store);
   await cart.load();
+  log.debug('ready');
   return cart;
 }

@@ -192,5 +192,8 @@ export class InventoryStore {
  * @type {LazyModule<'Inventory'>}
  */
 export default function load(store) {
-  return new InventoryStore(store);
+  log.debug('load()');
+  const inventory = new InventoryStore(store);
+  log.debug('ready');
+  return inventory;
 }
